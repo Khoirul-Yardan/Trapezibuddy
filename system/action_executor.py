@@ -24,6 +24,7 @@ class ActionExecutor:
             "open_notepad": self.open_notepad,
             "open_calculator": self.open_calculator,
             "open_browser": self.open_browser,
+            "open_vscode": self.open_vscode,
             "mouse_click": self.mouse_click,
             "mouse_move": self.mouse_move,
             "type_text": self.type_text,
@@ -33,6 +34,11 @@ class ActionExecutor:
             "close_window": self.close_active_window,
             "volume_up": self.volume_up,
             "volume_down": self.volume_down,
+            "create_folder": self.create_folder,
+            "create_file": self.create_file,
+            "open_folder": self.open_folder,
+            "run_code": self.run_code,
+            "move_character": self.move_character,
         }
     
     def execute(self, action_name: str, params: Dict[str, Any] = None) -> bool:
@@ -225,6 +231,101 @@ class ActionExecutor:
         except Exception as e:
             logger.error(f"Failed to decrease volume: {e}")
             return False
+    
+    # VSCode and File actions
+    def open_vscode(self, folder_path: str = None, **kwargs):
+        """Open VSCode, optionally with a specific folder"""
+        vscode_paths = [
+            r"C:\Program Files\Microsoft VS Code\Code.exe",
+            r"C:\Program Files (x86)\Microsoft VS Code\Code.exe",
+            "code"  # Try system PATH
+        ]
+        
+        for path in vscode_paths:
+            try:
+                if folder_path:
+                    if sys.platform == "win32":
+                        os.startfile(path, arguments=folder_path)
+                    else:
+                        subprocess.Popen([path, folder_path])
+                else:
+                    if sys.platform == "win32":
+                        os.startfile(path)
+                    else:
+                        subprocess.Popen([path])
+                
+                logger.info(f"VSCode opened {f'with folder: {folder_path}' if folder_path else ''}")
+                return True
+            except Exception as e:
+                logger.debug(f"Failed with path {path}: {e}")
+        
+        logger.warning("VSCode not found in typical locations")
+        return False
+    
+    def create_folder(self, folder_path: str, **kwargs):
+        """Create a folder at specified path"""
+        try:
+            os.makedirs(folder_path, exist_ok=True)
+            logger.info(f"Folder created: {folder_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create folder: {e}")
+            return False
+    
+    def create_file(self, file_path: str, content: str = "", **kwargs):
+        """Create a file with optional content"""
+        try:
+            # Create parent directories if needed
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            logger.info(f"File created: {file_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create file: {e}")
+            return False
+    
+    def open_folder(self, folder_path: str, **kwargs):
+        """Open folder in file explorer"""
+        try:
+            if sys.platform == "win32":
+                os.startfile(folder_path)
+            elif sys.platform == "darwin":  # macOS
+                subprocess.Popen(["open", folder_path])
+            else:  # Linux
+                subprocess.Popen(["xdg-open", folder_path])
+            
+            logger.info(f"Folder opened: {folder_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to open folder: {e}")
+            return False
+    
+    def run_code(self, code: str, language: str = "python", **kwargs):
+        """Execute code snippet"""
+        try:
+            if language.lower() == "python":
+                result = subprocess.run([sys.executable, "-c", code], 
+                                       capture_output=True, text=True, timeout=10)
+                logger.info(f"Python code executed: {result.stdout}")
+                return True
+            else:
+                logger.warning(f"Language {language} not supported for execution")
+                return False
+        except subprocess.TimeoutExpired:
+            logger.error("Code execution timed out")
+            return False
+        except Exception as e:
+            logger.error(f"Failed to execute code: {e}")
+            return False
+    
+    def move_character(self, x: int, y: int, **kwargs):
+        """Move character to specified position (requires character_widget reference)"""
+        # This will be handled by the main window calling the behavior_controller
+        logger.info(f"Character move requested to ({x}, {y})")
+        return True
     
     def get_available_actions(self) -> list:
         """Get list of available actions"""

@@ -1,9 +1,9 @@
 # Chat Panel - Interactive chat with character
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, 
-                               QPushButton, QTextEdit, QLabel, QScrollArea)
+                               QPushButton, QTextEdit, QLabel, QScrollArea, QComboBox)
 from PySide6.QtCore import Qt, Signal, QTimer, QSize
 from PySide6.QtGui import QFont, QIcon, QColor, QTextCursor
-from config.config import DIALOG_BOX_DURATION
+from config.config import DIALOG_BOX_DURATION, CHAT_THEME, CHAT_THEMES
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -16,10 +16,12 @@ class ChatPanel(QWidget):
     - Input field for commands/questions
     - Send button to submit
     - Can be toggled on/off with keyboard shortcut
+    - Multiple color themes available
     """
     
     message_sent = Signal(str)  # Emits user message
     panel_closed = Signal()
+    theme_changed = Signal(str)  # Emits new theme name
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -27,31 +29,27 @@ class ChatPanel(QWidget):
         # Message history
         self.messages = []
         
+        # Current theme
+        self.current_theme = CHAT_THEME
+        self.theme_colors = CHAT_THEMES.get(CHAT_THEME, CHAT_THEMES["modern_green"])
+        
         # Setup
         self._setup_ui()
-        logger.info("ChatPanel initialized")
+        logger.info(f"ChatPanel initialized with theme: {self.current_theme}")
     
     def _setup_ui(self):
-        """Setup UI"""
+        """Setup UI with current theme"""
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        
-        # Style
-        self.setStyleSheet("""
-            ChatPanel {
-                background-color: rgba(255, 255, 255, 0.95);
-                border: 2px solid #4CAF50;
-                border-radius: 8px;
-            }
-        """)
         
         # Main layout
         layout = QVBoxLayout()
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
         
-        # Header
+        # Header with theme selector
         header_layout = QHBoxLayout()
+        
         title = QLabel("💬 Chat with Assistant")
         title_font = QFont()
         title_font.setPointSize(12)
@@ -60,21 +58,23 @@ class ChatPanel(QWidget):
         header_layout.addWidget(title)
         header_layout.addStretch()
         
+        # Theme selector
+        theme_label = QLabel("Theme:")
+        header_layout.addWidget(theme_label)
+        
+        theme_combo = QComboBox()
+        theme_combo.addItems(list(CHAT_THEMES.keys()))
+        theme_combo.setCurrentText(self.current_theme)
+        theme_combo.currentTextChanged.connect(self._on_theme_changed)
+        theme_combo.setMaximumWidth(120)
+        header_layout.addWidget(theme_combo)
+        
         close_btn = QPushButton("✕")
         close_btn.setMaximumWidth(30)
         close_btn.setMinimumHeight(25)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #ff4444;
-                color: white;
-                border: none;
-                border-radius: 3px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #cc0000; }
-        """)
         close_btn.clicked.connect(self.hide_panel)
         header_layout.addWidget(close_btn)
+        
         layout.addLayout(header_layout)
         
         # Chat history display
@@ -82,16 +82,6 @@ class ChatPanel(QWidget):
         self.chat_display.setReadOnly(True)
         self.chat_display.setMinimumHeight(250)
         self.chat_display.setMinimumWidth(350)
-        self.chat_display.setStyleSheet("""
-            QTextEdit {
-                background-color: #f9f9f9;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                padding: 10px;
-                font-size: 11px;
-                font-family: 'Segoe UI', Arial;
-            }
-        """)
         layout.addWidget(self.chat_display)
         
         # Input section
@@ -102,18 +92,6 @@ class ChatPanel(QWidget):
         self.input_field.setPlaceholderText("Type your message here... (Enter to send)")
         self.input_field.setMinimumHeight(35)
         self.input_field.returnPressed.connect(self._on_send)
-        self.input_field.setStyleSheet("""
-            QLineEdit {
-                background-color: white;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                padding: 8px;
-                font-size: 11px;
-            }
-            QLineEdit:focus {
-                border: 2px solid #4CAF50;
-            }
-        """)
         input_layout.addWidget(self.input_field)
         
         # Send button
@@ -121,18 +99,6 @@ class ChatPanel(QWidget):
         send_btn.setMaximumWidth(70)
         send_btn.setMinimumHeight(35)
         send_btn.clicked.connect(self._on_send)
-        send_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 11px;
-            }
-            QPushButton:hover { background-color: #45a049; }
-            QPushButton:pressed { background-color: #3d8b40; }
-        """)
         input_layout.addWidget(send_btn)
         
         layout.addLayout(input_layout)
@@ -147,6 +113,9 @@ class ChatPanel(QWidget):
         layout.addWidget(info)
         
         self.setLayout(layout)
+        
+        # Apply theme
+        self._apply_theme()
     
     def _on_send(self):
         """Handle send button"""
@@ -166,24 +135,122 @@ class ChatPanel(QWidget):
         
         logger.debug(f"Chat message sent: {message}")
     
+    def _apply_theme(self):
+        """Apply current theme to all UI elements"""
+        colors = self.theme_colors
+        
+        # Panel background and border
+        self.setStyleSheet(f"""
+            ChatPanel {{
+                background-color: {colors['background']};
+                border: 2px solid {colors['border_color']};
+                border-radius: 8px;
+            }}
+            QLabel {{
+                color: {colors['text_color']};
+            }}
+            QComboBox {{
+                background-color: {colors['input_bg']};
+                color: {colors['text_color']};
+                border: 1px solid {colors['border_color']};
+                border-radius: 4px;
+                padding: 5px;
+                font-size: 10px;
+            }}
+        """)
+        
+        # Chat display
+        self.chat_display.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {colors['panel_bg']};
+                border: 1px solid {colors['border_color']};
+                border-radius: 4px;
+                padding: 10px;
+                font-size: 11px;
+                font-family: 'Segoe UI', Arial;
+                color: {colors['text_color']};
+            }}
+        """)
+        
+        # Input field
+        self.input_field.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {colors['input_bg']};
+                border: 1px solid {colors['border_color']};
+                border-radius: 4px;
+                padding: 8px;
+                font-size: 11px;
+                color: {colors['text_color']};
+            }}
+            QLineEdit:focus {{
+                border: 2px solid {colors['primary_color']};
+            }}
+        """)
+        
+        # Send button
+        for widget in self.findChildren(QPushButton):
+            if widget.text() == "Send":
+                widget.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {colors['primary_color']};
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        font-weight: bold;
+                        font-size: 11px;
+                        padding: 5px;
+                    }}
+                    QPushButton:hover {{ background-color: {colors['secondary_color']}; }}
+                    QPushButton:pressed {{ background-color: {colors['primary_color']}; opacity: 0.8; }}
+                """)
+            elif widget.text() == "✕":
+                widget.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: #ff4444;
+                        color: white;
+                        border: none;
+                        border-radius: 3px;
+                        font-weight: bold;
+                    }}
+                    QPushButton:hover {{ background-color: #cc0000; }}
+                """)
+        
+        logger.debug(f"Theme applied: {self.current_theme}")
+    
+    def _on_theme_changed(self, theme_name: str):
+        """Handle theme change from combo box"""
+        if theme_name in CHAT_THEMES:
+            self.current_theme = theme_name
+            self.theme_colors = CHAT_THEMES[theme_name]
+            self._apply_theme()
+            self.theme_changed.emit(theme_name)
+            
+            # Re-render chat to new theme
+            self.chat_display.clear()
+            for msg in self.messages:
+                self._add_message(msg['sender'], msg['message'], msg['is_user'])
+            
+            logger.info(f"Theme changed to: {theme_name}")
+    
     def _add_message(self, sender: str, message: str, is_user: bool = False):
         """Add message to chat display"""
         cursor = self.chat_display.textCursor()
         cursor.movePosition(QTextCursor.End)
         self.chat_display.setTextCursor(cursor)
         
-        # Format message
+        # Format message with current theme colors
+        colors = self.theme_colors
         if is_user:
-            color = "#0066cc"
+            color = colors['user_color']
             prefix = "👤 You"
         else:
-            color = "#009900"
+            color = colors['assistant_color']
             prefix = "🤖 Assistant"
         
         # Add HTML formatted message
         html = f"""<div style="margin-bottom: 10px;">
             <span style="color: {color}; font-weight: bold;">{prefix}:</span>
-            <span style="color: #333; margin-left: 5px;">{message}</span>
+            <span style="color: {colors['text_color']}; margin-left: 5px;">{message}</span>
         </div>"""
         
         self.chat_display.insertHtml(html)

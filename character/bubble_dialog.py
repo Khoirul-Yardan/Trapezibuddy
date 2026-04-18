@@ -1,7 +1,7 @@
 # Bubble Dialog - speech bubble for character dialogue
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
-from PySide6.QtCore import Qt, QTimer, Signal, QSize
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QFont
+from PySide6.QtCore import Qt, QTimer, Signal, QSize, QRect
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QFont, QLinearGradient, QPen
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -23,19 +23,21 @@ class BubbleDialog(QWidget):
         self.bubble_width = 250
         self.bubble_height = 100
         self.corner_radius = 15
-        self.pointer_height = 15
-        self.pointer_width = 20
+        self.pointer_height = 20  # Increased for better visibility
+        self.pointer_width = 25
         
         # Position tracking for following character
         self.follow_target_x = None
         self.follow_target_y = None
         self.is_following = False
         
-        # Colors
+        # Colors - improved design with better aesthetics
         self.bubble_color = QColor(255, 255, 255)  # White background
-        self.text_color = QColor(0, 0, 0)  # Black text
-        self.border_color = QColor(100, 100, 100)  # Gray border
+        self.bubble_accent = QColor(230, 242, 255)  # Light blue accent (more subtle)
+        self.text_color = QColor(30, 30, 50)  # Darker text for better readability
+        self.border_color = QColor(100, 160, 220)  # Nice blue border
         self.border_width = 2
+        self.shadow_color = QColor(0, 0, 0, 80)  # Darker shadow for depth
         
         # Auto-close timer
         self.auto_close_timer = QTimer()
@@ -58,29 +60,38 @@ class BubbleDialog(QWidget):
         Args:
             text: Text to display
             duration: How long to show (ms), 0 = indefinite
-            x, y: Screen position for bubble
+            x, y: Screen position for bubble (center of character)
         """
         self.text_content = text
         
         # Calculate bubble size based on text length
         lines = text.split('\n')
         line_count = len(lines)
-        max_line_width = max(len(line) for line in lines)
+        max_line_width = max(len(line) for line in lines) if lines else 0
         
         # Estimate width and height
         char_width = 8  # Approximate pixel width per character
-        line_height = 20
+        line_height = 22
         
         padding = 20
         self.bubble_width = max(150, min(300, max_line_width * char_width + padding * 2))
         self.bubble_height = max(60, line_count * line_height + padding * 2)
         
-        # Set widget size
-        total_height = self.bubble_height + self.pointer_height + 20
-        self.setFixedSize(self.bubble_width + 40, total_height)
+        # Set widget size (add padding for shadow/effects)
+        total_height = self.bubble_height + self.pointer_height + 5
+        self.setFixedSize(self.bubble_width + 40, total_height + 10)
         
-        # Position bubble above character
-        self.move(x - self.width() // 2, y - total_height)
+        # Position bubble - LEBIH DEKAT ke character
+        # Place directly above character (reduce distance further)
+        window_x = x - self.width() // 2
+        window_y = y - total_height - 5  # Lebih dekat! (was -10 before)
+        
+        # Clamp to screen bounds
+        screen_geometry = self.screen().availableGeometry() if self.screen() else QRect(0, 0, 1920, 1080)
+        window_x = max(0, min(window_x, screen_geometry.width() - self.width()))
+        window_y = max(10, min(window_y, screen_geometry.height() - self.height()))
+        
+        self.move(window_x, window_y)
         
         # Track position for following
         self.follow_target_x = x
@@ -94,7 +105,7 @@ class BubbleDialog(QWidget):
         self.show()
         self.raise_()
         
-        logger.debug(f"Showing bubble: '{text[:30]}...' at ({x}, {y})")
+        logger.debug(f"Showing bubble at ({window_x}, {window_y}): '{text[:30]}...'")
         
         # Auto-close if duration > 0
         if duration > 0:
@@ -121,11 +132,16 @@ class BubbleDialog(QWidget):
         Args:
             x, y: Center screen coordinates of character
         """
-        total_height = self.bubble_height + self.pointer_height + 20
+        total_height = self.bubble_height + self.pointer_height + 5
         new_x = x - self.width() // 2
-        new_y = y - total_height
+        new_y = y - total_height - 5  # Lebih dekat! (was -10 before)
+        
+        # Clamp to screen
+        screen_geometry = self.screen().availableGeometry() if self.screen() else QRect(0, 0, 1920, 1080)
+        new_x = max(0, min(new_x, screen_geometry.width() - self.width()))
+        new_y = max(10, min(new_y, screen_geometry.height() - self.height()))
+        
         self.move(new_x, new_y)
-        logger.debug(f"Bubble position updated to: ({new_x}, {new_y})")
     
     def set_colors(self, bubble_color: QColor = None, text_color: QColor = None, 
                    border_color: QColor = None):
@@ -139,13 +155,34 @@ class BubbleDialog(QWidget):
         self.update()
     
     def paintEvent(self, event):
-        """Paint the speech bubble"""
+        """Paint the speech bubble with improved design"""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
         
         # Bubble position (with padding)
-        bubble_x = 20
-        bubble_y = 10
+        bubble_x = 12
+        bubble_y = 3
+        
+        # Draw shadow (double layer for depth)
+        shadow_offset_1 = 2
+        shadow_offset_2 = 4
+        shadow_path_1 = QPainterPath()
+        shadow_path_1.addRoundedRect(
+            bubble_x + shadow_offset_1, bubble_y + shadow_offset_1,
+            self.bubble_width, self.bubble_height,
+            self.corner_radius, self.corner_radius
+        )
+        shadow_color_fade = QColor(0, 0, 0, 30)
+        painter.fillPath(shadow_path_1, shadow_color_fade)
+        
+        shadow_path_2 = QPainterPath()
+        shadow_path_2.addRoundedRect(
+            bubble_x + shadow_offset_2, bubble_y + shadow_offset_2,
+            self.bubble_width, self.bubble_height,
+            self.corner_radius, self.corner_radius
+        )
+        painter.fillPath(shadow_path_2, self.shadow_color)
         
         # Create rounded rectangle path for bubble
         path = QPainterPath()
@@ -168,22 +205,32 @@ class BubbleDialog(QWidget):
         # Combine paths
         path.addPath(pointer_path)
         
-        # Draw bubble fill
-        painter.fillPath(path, self.bubble_color)
+        # Draw bubble fill with gradient (improved)
+        gradient = QLinearGradient(bubble_x, bubble_y, bubble_x, bubble_y + self.bubble_height)
+        gradient.setColorAt(0, self.bubble_accent)  # Light blue top
+        gradient.setColorAt(0.5, self.bubble_color)  # White middle
+        gradient.setColorAt(1, self.bubble_color)   # White bottom
+        painter.fillPath(path, gradient)
         
-        # Draw bubble border
-        painter.setPen(self.border_color)
+        # Draw bubble border (with anti-aliasing)
+        border_pen = QPen()
+        border_pen.setColor(self.border_color)
+        border_pen.setWidth(self.border_width)
+        border_pen.setCapStyle(Qt.RoundCap)
+        border_pen.setJoinStyle(Qt.RoundJoin)
+        painter.setPen(border_pen)
         painter.drawPath(path)
         
-        # Draw text
+        # Draw text with excellent rendering
         painter.setPen(self.text_color)
-        font = QFont()
-        font.setPointSize(10)
+        font = QFont("Segoe UI", 10)
+        font.setStyleStrategy(QFont.PreferAntialias)
+        font.setLetterSpacing(QFont.PercentageSpacing, 102)
         painter.setFont(font)
         
-        text_rect = event.rect().adjusted(
-            bubble_x + 10, bubble_y + 10,
-            -(bubble_x + 10), -self.pointer_height - 10
+        text_rect = QRect(
+            int(bubble_x + 10), int(bubble_y + 6),
+            int(self.bubble_width - 20), int(self.bubble_height - 12)
         )
         
         painter.drawText(
