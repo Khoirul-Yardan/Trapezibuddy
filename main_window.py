@@ -9,7 +9,7 @@ from behavior.behavior_controller import BehaviorController
 from ai.ai_controller import AIController
 from system.action_executor import ActionExecutor
 from utils.sprite_scanner import SpriteScanner
-from config.config import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, DIALOG_BOX_DURATION, DRAG_BOUNDARY_ENABLED, DRAG_BOUNDARY_MARGIN, HOTKEYS_ENABLED, HOTKEY_SHOW_SETTINGS, HOTKEY_SIZE_INCREASE, HOTKEY_SIZE_DECREASE, HOTKEY_MOVE_UP, HOTKEY_MOVE_DOWN, HOTKEY_MOVE_LEFT, HOTKEY_MOVE_RIGHT, HOTKEY_TOGGLE_CHAT, ASSETS_DIR, SPRITES_DIR
+from config.config import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE,FULLSCREEN, DIALOG_BOX_DURATION, DRAG_BOUNDARY_ENABLED, DRAG_BOUNDARY_MARGIN, HOTKEYS_ENABLED, HOTKEY_SHOW_SETTINGS, HOTKEY_SIZE_INCREASE, HOTKEY_SIZE_DECREASE, HOTKEY_MOVE_UP, HOTKEY_MOVE_DOWN, HOTKEY_MOVE_LEFT, HOTKEY_MOVE_RIGHT, HOTKEY_TOGGLE_CHAT, ASSETS_DIR, SPRITES_DIR
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -70,33 +70,31 @@ class DesktopAssistantWindow(QMainWindow):
         logger.info("DesktopAssistantWindow initialized")
     
     def _setup_window(self):
-        """Setup frameless, transparent overlay window"""
-        # Set window properties
+        """Setup window - fullscreen or overlay mode"""
         self.setWindowTitle(WINDOW_TITLE)
-        self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
-        
-        # Set window flags for overlay
-        self.setWindowFlags(
-            Qt.WindowStaysOnTopHint |
-            Qt.FramelessWindowHint |
-            Qt.Tool |
-            Qt.NoDropShadowWindowHint
-        )
-        
-        # Make background transparent
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        
-        # Set widget as central widget
         self.setCentralWidget(self.character_widget)
         
-        # Position on screen (center area - should be visible)
-        desktop_size = self.screen().availableGeometry()
-        x = (desktop_size.width() - WINDOW_WIDTH) // 2
-        y = (desktop_size.height() - WINDOW_HEIGHT) // 2
-        self.move(max(0, x), max(0, y))
+        if FULLSCREEN:
+            self.showFullScreen()
+        else:
+            # Mode overlay transparan (desktop companion style)
+            self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+            self.setWindowFlags(
+                Qt.WindowStaysOnTopHint |
+                Qt.FramelessWindowHint |
+                Qt.Tool |
+                Qt.NoDropShadowWindowHint
+            )
+            self.setAttribute(Qt.WA_TranslucentBackground)
+            
+            # Posisikan di tengah layar
+            desktop_size = self.screen().availableGeometry()
+            x = (desktop_size.width() - WINDOW_WIDTH) // 2
+            y = (desktop_size.height() - WINDOW_HEIGHT) // 2
+            self.move(max(0, x), max(0, y))
         
-        logger.info("Window setup completed")
-    
+        logger.info(f"Window setup: {'fullscreen' if FULLSCREEN else 'overlay'} mode")
+        
     def _setup_chat_panel_position(self):
         """Setup initial chat panel position"""
         screen_geometry = self.screen().availableGeometry()

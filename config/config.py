@@ -2,9 +2,10 @@
 import os
 
 # Window Settings
-WINDOW_WIDTH = 512
-WINDOW_HEIGHT = 512
 WINDOW_TITLE = "Desktop Assistant"
+WINDOW_WIDTH = 200   # lebar window karakter (bukan fullscreen)
+WINDOW_HEIGHT = 200  # tinggi window karakter
+FULLSCREEN = False
 
 # Character Settings
 CHARACTER_SIZE = 60  # Percentage (100 = normal, 50 = half, 150 = 1.5x) - REDUCED FOR BETTER VIEW
