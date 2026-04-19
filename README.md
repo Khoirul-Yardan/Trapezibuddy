@@ -43,6 +43,12 @@ Desktop overlay assistant dengan sprite 2D karakter, behavior system FSM, dan in
 
 ---
 
+## Color Pallete & Typographic 
+
+<img width="720" alt="Image" src="https://github.com/user-attachments/assets/d6663cff-d512-400f-8387-b82342fffd39" />
+
+---
+
 ## Requirements
 
 - **Python:** 3.8+
