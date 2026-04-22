@@ -1,0 +1,36 @@
+{
+  "name": "trapezibuddy",
+  "version": "0.1.0",
+  "description": "Desktop companion interaktif untuk produktivitas",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "desktop",
+    "companion",
+    "productivity"
+  ],
+  "author": "TrapeziBuddy Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^41.2.2",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "build": {
+    "appId": "com.trapezibuddy.app",
+    "productName": "TrapeziBuddy",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}
