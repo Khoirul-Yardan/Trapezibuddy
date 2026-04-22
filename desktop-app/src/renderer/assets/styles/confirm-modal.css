@@ -1,0 +1,110 @@
+/* ─────────────────────────────────────────────────────────────
+   TAMBAHKAN ke bagian bawah companion.css
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Confirm Task Modal ──────────────────────────────────── */
+.confirm-modal {
+  width: 280px;
+}
+
+.confirm-body {
+  padding: 4px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Document icon */
+.confirm-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0 0;
+}
+
+.confirm-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Task name */
+.confirm-task-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-dark);
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Instruction text */
+.confirm-instruction {
+  font-size: 11px;
+  color: var(--c-mid);
+  text-align: left;
+  width: 100%;
+  line-height: 1.5;
+}
+
+/* Input field */
+.confirm-input {
+  width: 100%;
+  height: 42px;
+  background: var(--c-tech-white);
+  border: 1.5px solid var(--c-zen-gray);
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 12px;
+  color: var(--c-dark);
+  transition: border-color 0.15s;
+}
+
+.confirm-input::placeholder {
+  color: #C5B8AE;
+}
+
+.confirm-input:focus {
+  border-color: var(--c-coconut);
+  background: var(--c-white);
+  outline: none;
+}
+
+.confirm-input.error {
+  border-color: var(--c-urgent);
+  background: #FFF5F5;
+}
+
+/* Error message */
+.confirm-error {
+  font-size: 11px;
+  color: var(--c-urgent);
+  text-align: left;
+  width: 100%;
+  margin-top: -6px;
+}
+
+/* Confirm button */
+.btn-confirm {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--c-coconut);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 2px;
+}
+
+.btn-confirm:hover  { background: var(--c-thatch); }
+.btn-confirm:active { transform: scale(0.98); }
+
+.btn-confirm:disabled {
+  background: var(--c-zen-gray);
+  cursor: not-allowed;
+  opacity: 0.7;
+}

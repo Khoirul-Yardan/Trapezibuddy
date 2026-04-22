@@ -191,6 +191,81 @@
     </div>
   </div>
 
+  <!-- ─────────────────────────────────────────────────────────
+     TAMBAHKAN ini tepat sebelum tag </body> di companion.html
+     (setelah closing div modal Add Task yang sudah ada)
+     ───────────────────────────────────────────────────────── -->
+
+<!-- Confirm Task Modal -->
+<div class="modal-overlay" id="confirm-overlay" style="display:none">
+  <div class="modal confirm-modal">
+
+    <!-- Header -->
+    <div class="modal-header">
+      <span class="modal-title">Konfirmasi Tugas</span>
+      <button class="icon-btn dark" id="btn-close-confirm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="confirm-body">
+
+      <!-- Document icon -->
+      <div class="confirm-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="4" width="28" height="36" rx="3"
+                fill="#C8DFC5" stroke="#A2B29F" stroke-width="1.5"/>
+          <rect x="8" y="4" width="20" height="10" rx="3"
+                fill="#A2B29F"/>
+          <path d="M28 4 L36 12" stroke="#A2B29F" stroke-width="1.5"
+                stroke-linecap="round"/>
+          <rect x="28" y="4" width="8" height="8" rx="1"
+                fill="#EBF3EA" stroke="#A2B29F" stroke-width="1.5"/>
+          <line x1="14" y1="22" x2="30" y2="22"
+                stroke="#A2B29F" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="14" y1="28" x2="26" y2="28"
+                stroke="#A2B29F" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- Task name -->
+      <div class="confirm-task-name" id="confirm-task-name">
+        Review Q3 Marketing Strategy
+      </div>
+
+      <!-- Instruction -->
+      <div class="confirm-instruction" id="confirm-instruction">
+        To confirm, type "<span id="confirm-task-hint"></span>" below
+      </div>
+
+      <!-- Input -->
+      <input
+        class="confirm-input"
+        type="text"
+        id="confirm-input"
+        placeholder="Type Here . . ."
+        autocomplete="off"
+      />
+
+      <!-- Error message (hidden by default) -->
+      <div class="confirm-error" id="confirm-error" style="display:none">
+        Nama tugas tidak cocok. Coba lagi.
+      </div>
+
+      <!-- Confirm button -->
+      <button class="btn-confirm" id="btn-confirm-task">
+        Confirm This Task
+      </button>
+
+    </div>
+  </div>
+</div>
+
   <script src="../components/companion.js"></script>
 </body>
 </html>
