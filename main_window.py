@@ -374,23 +374,6 @@ class DesktopAssistantWindow(QMainWindow):
         
         logger.info(f"AI Response: {ai_response[:50]}...")
     
-    def process_voice_command(self, command: str):
-        """Process voice or text command"""
-        logger.info(f"Processing command: {command}")
-        
-        result = self.ai_controller.process_command(command)
-        logger.info(f"AI Intent: {result.get('intent')}")
-        
-        # Show AI response in dialog
-        response = result.get('response', 'Processing...')
-        self.show_ai_response(command, response)
-        
-        # Execute action if available
-        action = result.get('action')
-        if action:
-            params = result.get('parameters', {})
-            self.action_executor.execute(action, params)
-    
     def _demo_command(self):
         """Demo command execution (for testing)"""
         # This can be used to demo various commands
