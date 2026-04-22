@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>TrapeziBuddy</title>
+  <link rel="stylesheet" href="../assets/styles/global.css" />
+  <link rel="stylesheet" href="../assets/styles/companion.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── Drag region (header) ───────────────────────────── -->
+    <div class="panel-header" id="drag-region">
+      <span class="panel-title">Trapezi Buddy</span>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-settings" title="Pengaturan">
+          <!-- Settings SVG -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83
+              2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1
+              1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0
+              0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0
+              0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65
+              1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1
+              2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0
+              1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65
+              0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65
+              0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65
+              1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btn-minimize" title="Sembunyikan">
+          <!-- Minimize SVG -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Day Strip ─────────────────────────────────────── -->
+    <div class="day-strip" id="day-strip">
+      <!-- Diisi oleh companion.js -->
+    </div>
+
+    <!-- ── Mood Card ─────────────────────────────────────── -->
+    <div class="mood-card">
+      <div class="avatar">
+        <!-- Nanti diganti sprite karakter -->
+        <img src="../assets/icons/penguin-neutral.svg"
+             alt="companion" id="companion-sprite"
+             onerror="this.style.display='none'" />
+      </div>
+      <div class="mood-info">
+        <span class="mood-label" id="mood-label">You're Almost Done</span>
+        <span class="mood-sub" id="mood-sub">2/3 Task</span>
+      </div>
+      <div class="streak-badge" id="streak-badge">
+        <svg class="streak-icon" viewBox="0 0 24 24" fill="#FF7043">
+          <path d="M12 23C7.03 23 3 18.97 3 14c0-3.5 2-6.5 4.5-8.5C7 8 7.5
+            10 9 11c0-3 1.5-7 5-9 0 2.5 1.5 4.5 3 6 .5-1 .5-2 .5-3 2 2 3.5
+            5 3.5 8 0 4.97-4.03 9-9 9z"/>
+        </svg>
+        <span id="streak-count">12</span>
+      </div>
+    </div>
+
+    <!-- ── Focus Session Card ────────────────────────────── -->
+    <div class="focus-card">
+      <div class="focus-header">
+        <span class="focus-label">Focus Session</span>
+        <span class="focus-dot" id="focus-dot"></span>
+      </div>
+      <div class="focus-timer" id="focus-timer">25:00</div>
+      <div class="focus-sub">Deep Work in progress</div>
+    </div>
+
+    <!-- ── Task Section ──────────────────────────────────── -->
+    <div class="task-section">
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="active">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="12" width="4" height="9" rx="1"/>
+            <rect x="10" y="7" width="4" height="14" rx="1"/>
+            <rect x="17" y="3" width="4" height="18" rx="1"/>
+          </svg>
+          Task
+        </button>
+        <button class="tab-btn" data-tab="finished">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Finished
+        </button>
+      </div>
+
+      <!-- Task List Header -->
+      <div class="task-list-header">
+        <span class="task-list-title" id="task-list-title">Tugas Aktif</span>
+        <button class="add-task-btn" id="btn-add-task">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Task List -->
+      <div class="task-list" id="task-list">
+        <!-- Diisi oleh companion.js -->
+        <div class="task-empty" id="task-empty" style="display:none">
+          Tidak ada tugas 🎉
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add Task Modal -->
+  <div class="modal-overlay" id="modal-overlay" style="display:none">
+    <div class="modal" id="add-task-modal">
+      <div class="modal-header">
+        <span class="modal-title">Tambah Tugas Baru</span>
+        <button class="icon-btn dark" id="btn-close-modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label class="field-label">Nama Tugas</label>
+        <input class="field-input" type="text" id="task-name"
+               placeholder="Mengerjakan laporan..." />
+
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Tanggal Deadline</label>
+            <input class="field-input" type="date" id="task-date" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Jam</label>
+            <input class="field-input" type="time" id="task-time" value="23:59" />
+          </div>
+        </div>
+
+        <label class="field-label">Kategori</label>
+        <div class="category-row" id="category-row">
+          <button class="cat-tag active" data-cat="Kuliah">Kuliah</button>
+          <button class="cat-tag" data-cat="Project">Project</button>
+          <button class="cat-tag" data-cat="Personal">Personal</button>
+          <button class="cat-tag add-cat" id="btn-add-cat">+</button>
+        </div>
+
+        <label class="field-label">Prioritas</label>
+        <div class="priority-row">
+          <button class="prio-btn high"   data-prio="Tinggi">Tinggi</button>
+          <button class="prio-btn medium active" data-prio="Sedang">Sedang</button>
+          <button class="prio-btn low"    data-prio="Rendah">Rendah</button>
+        </div>
+
+        <div class="reminder-row">
+          <div>
+            <div class="reminder-title">Pengingat otomatis</div>
+            <div class="reminder-sub">Notifikasi 24 jam sebelum deadline</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="reminder-toggle" checked />
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btn-cancel-modal">Batal</button>
+        <button class="btn-save"   id="btn-save-task">Simpan Tugas</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../components/companion.js"></script>
+</body>
+</html>
