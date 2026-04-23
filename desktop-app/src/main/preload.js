@@ -22,8 +22,15 @@ contextBridge.exposeInMainWorld('trapezi', {
 
   // ── Window ────────────────────────────────────────────────
   window: {
-    minimize: () => ipcRenderer.send('window:minimize'),
-    hide:     () => ipcRenderer.send('window:hide'),
+    minimize:        () => ipcRenderer.send('window:minimize'),
+    hide:            () => ipcRenderer.send('window:hide'),
+    openAddTask:     ()             => ipcRenderer.invoke('modal:openAddTask'),
+    closeAddTask:    ()             => ipcRenderer.send('modal:closeAddTask'),
+    openConfirmTask: (taskId, name) => ipcRenderer.invoke('modal:openConfirmTask', { taskId, taskName: name }),
+    closeConfirmTask: ()            => ipcRenderer.send('modal:closeConfirmTask'),
+    taskCompleted:   ()             => ipcRenderer.send('modal:taskCompleted'),
+    taskAdded:       ()             => ipcRenderer.send('modal:taskAdded'),
+    onRefreshTasks:  (cb)           => ipcRenderer.on('refresh:tasks', cb),
   },
 
 })

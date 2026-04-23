@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Task</title>
+  <link rel="stylesheet" href="../assets/styles/global.css">
+  <link rel="stylesheet" href="../assets/styles/companion.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--c-bg);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 16px;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .modal-content {
+      background: var(--c-section-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, var(--c-coconut), var(--c-thatch));
+      padding: 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--c-dark);
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--c-dark);
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-close:hover {
+      opacity: 0.7;
+    }
+
+    .form-group {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .form-group:last-child {
+      border-bottom: none;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--c-dark);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--c-light);
+      border-radius: 6px;
+      font-size: 13px;
+      background: var(--c-white);
+      color: var(--c-dark);
+      font-family: inherit;
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--c-mid);
+      opacity: 0.6;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--c-coconut);
+      box-shadow: 0 0 0 2px rgba(231, 140, 77, 0.1);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--c-coconut);
+    }
+
+    .checkbox-label {
+      font-size: 13px;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .modal-footer {
+      padding: 12px;
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.02);
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--c-coconut);
+      color: var(--c-white);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #e07a4d;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(231, 140, 77, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--c-light);
+      color: var(--c-dark);
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .error-message {
+      display: none;
+      color: var(--c-urgent);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .modal-body {
+      padding: 16px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-content">
+    <div class="modal-header">
+      <span>Add New Task</span>
+      <button class="btn-close" id="btn-close">\u00d7</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="add-task-form">
+        <div class="form-group">
+          <label for="task-name">Task Name</label>
+          <input type="text" id="task-name" placeholder="What do you need to do?" required>
+          <div class="error-message" id="error-name"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="task-date">Deadline Date</label>
+          <input type="date" id="task-date">
+        </div>
+
+        <div class="form-group">
+          <label for="task-time">Deadline Time</label>
+          <input type="time" id="task-time">
+        </div>
+
+        <div class="form-group">
+          <label for="task-priority">Priority</label>
+          <select id="task-priority">
+            <option value="Rendah">Low</option>
+            <option value="Sedang" selected>Medium</option>
+            <option value="Tinggi">High</option>
+            <option value="Urgent">Urgent</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" id="task-reminder" checked>
+            <label for="task-reminder" class="checkbox-label">Enable reminder</label>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" id="btn-cancel">Cancel</button>
+      <button class="btn-primary" id="btn-save">Add Task</button>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('add-task-form');
+    const taskNameInput = document.getElementById('task-name');
+    const taskDateInput = document.getElementById('task-date');
+    const taskTimeInput = document.getElementById('task-time');
+    const prioritySelect = document.getElementById('task-priority');
+    const reminderCheckbox = document.getElementById('task-reminder');
+    const saveBtn = document.getElementById('btn-save');
+    const cancelBtn = document.getElementById('btn-cancel');
+    const closeBtn = document.getElementById('btn-close');
+
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    taskDateInput.value = today;
+
+    // Handle cancel
+    const closeModal = () => {
+      api.window.closeAddTask();
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    // Handle save
+    saveBtn.addEventListener('click', async () => {
+      const taskName = taskNameInput.value.trim();
+
+      if (!taskName) {
+        document.getElementById('error-name').textContent = 'Task name required';
+        document.getElementById('error-name').style.display = 'block';
+        taskNameInput.focus();
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Adding...';
+
+      try {
+        await api.tasks.add({
+          name: taskName,
+          deadline_date: taskDateInput.value,
+          deadline_time: taskTimeInput.value,
+          priority: prioritySelect.value,
+          reminder: reminderCheckbox.checked,
+        });
+
+        api.window.taskAdded();
+      } catch (err) {
+        console.error('Error adding task:', err);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Add Task';
+      }
+    });
+
+    // Focus task name on load
+    taskNameInput.focus();
+  </script>
+</body>
+</html>

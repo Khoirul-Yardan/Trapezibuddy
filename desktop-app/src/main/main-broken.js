@@ -42,10 +42,10 @@ function createCompanionWindow() {
     height:          700,
     x,
     y,
-    frame:           false,
-    transparent:     true,
-    alwaysOnTop:     true,
-    skipTaskbar:     false,
+    frame:           false,       // frameless — kita bikin header sendiri
+    transparent:     true,        // background transparan
+    alwaysOnTop:     true,        // selalu di atas app lain
+    skipTaskbar:     false,       // muncul di taskbar
     resizable:       false,
     hasShadow:       true,
     webPreferences: {
@@ -75,17 +75,28 @@ function createCompanionWindow() {
 
 // ── System Tray ──────────────────────────────────────────────
 function createTray() {
+  // Pakai default icon dulu — nanti ganti dengan icon penguin
   const icon = nativeImage.createEmpty()
   tray = new Tray(icon)
 
   const menu = Menu.buildFromTemplate([
     {
-      label: 'Buka',
-      click: () => companionWindow?.show()
+      label: 'Tampilkan TrapeziBuddy',
+      click: () => {
+        if (companionWindow) {
+          companionWindow.show()
+          companionWindow.focus()
+        } else {
+          createCompanionWindow()
+        }
+      }
     },
+    { type: 'separator' },
     {
-      type: 'separator'
+      label: 'Sembunyikan',
+      click: () => companionWindow?.hide()
     },
+    { type: 'separator' },
     {
       label: 'Keluar',
       click: () => app.quit()
@@ -259,6 +270,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  // Di Windows, app tetap jalan di tray walaupun window ditutup
   if (process.platform !== 'darwin') {
     // Jangan quit — biarkan tray tetap aktif
   }
