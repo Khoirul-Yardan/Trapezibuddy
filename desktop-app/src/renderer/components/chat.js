@@ -1,19 +1,7 @@
 // chat.js — TrapeziBuddy Chat Logic
-// Migrasi dari Python chat_panel.py ke Electron
-// AI backend: Ollama lokal (http://localhost:11434)
+// Electron UI + Python backend bridge (AIController + ActionExecutor)
 
 const api = window.trapezi
-
-// ── Config ───────────────────────────────────────────────────
-const OLLAMA_URL   = 'http://localhost:11434/api/generate'
-const OLLAMA_MODEL = 'llama2'  // ganti sesuai model yang diinstall
-
-// System prompt untuk karakter TrapeziBuddy
-const SYSTEM_PROMPT = `Kamu adalah TrapeziBuddy, asisten desktop companion yang friendly dan helpful.
-Kamu membantu pengguna mengelola tugas, memberikan semangat, dan menjadi teman ngobrol.
-Gunakan bahasa yang casual dan hangat, seperti teman dekat. 
-Jawaban singkat dan padat, maksimal 2-3 kalimat.
-Sesekali gunakan emoji yang relevan.`
 
 // ── State ────────────────────────────────────────────────────
 let isThinking = false
@@ -81,45 +69,17 @@ function hideTyping() {
   }
 }
 
-// ── Call Ollama ──────────────────────────────────────────────
-async function callOllama(userMessage) {
-  // Build prompt dengan history sederhana
-  const recentHistory = messageHistory.slice(-6)  // 3 pasang pesan terakhir
-  let historyText = ''
-  recentHistory.forEach(msg => {
-    const prefix = msg.role === 'user' ? 'User' : 'Assistant'
-    historyText += `${prefix}: ${msg.text}\n`
-  })
-
-  const fullPrompt = `${SYSTEM_PROMPT}\n\n${historyText}User: ${userMessage}\nAssistant:`
-
+// ── Call Python backend via Electron IPC ────────────────────
+async function callPythonBackend(userMessage) {
   try {
-    const res = await fetch(OLLAMA_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model:  OLLAMA_MODEL,
-        prompt: fullPrompt,
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(30000),
-    })
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-    const data = await res.json()
-    return data.response?.trim() ?? 'Hmm, aku lagi bingung. Coba tanya lagi ya!'
-
+    const result = await api.chat.sendMessage(userMessage)
+    if (!result?.ok) {
+      throw new Error(result?.response || 'Python backend tidak merespons.')
+    }
+    return result.response?.trim() || 'Hmm, aku lagi bingung. Coba tanya lagi ya!'
   } catch (err) {
-    console.error('Ollama error:', err)
-
-    // Fallback responses kalau Ollama tidak tersedia
-    const fallbacks = [
-      'Wah, kayaknya koneksi AI-ku lagi putus. Coba cek Ollama dulu ya!',
-      'Hmm, aku lagi susah mikir sekarang. Pastikan Ollama sudah jalan ya 😅',
-      'Sepertinya ada masalah teknis. Jalankan "ollama serve" dulu ya!',
-    ]
-    return fallbacks[Math.floor(Math.random() * fallbacks.length)]
+    console.error('Python backend error:', err)
+    return 'Backend Python sedang bermasalah. Cek terminal untuk detail error ya.'
   }
 }
 
@@ -146,7 +106,7 @@ async function sendMessage() {
   showTyping()
 
   // Get AI response
-  const response = await callOllama(text)
+  const response = await callPythonBackend(text)
 
   // Hide thinking, show response
   hideTyping()

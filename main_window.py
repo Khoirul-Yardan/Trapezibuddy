@@ -1,4 +1,6 @@
 # Main window - desktop overlay window
+import os
+import subprocess
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIcon
@@ -36,6 +38,7 @@ class DesktopAssistantWindow(QMainWindow):
         self.behavior_controller = BehaviorController(window_width=screen_width, screen_height=screen_height, window_height=WINDOW_HEIGHT)  # Pass dimensions
         self.ai_controller = AIController()
         self.action_executor = ActionExecutor()
+        self.electron_chat_process = None
         
         # Connect chat panel signals
         self.chat_panel.message_sent.connect(self._on_chat_message)
@@ -105,6 +108,51 @@ class DesktopAssistantWindow(QMainWindow):
         chat_y = 50
         self.chat_panel.move(chat_x, chat_y)
         logger.info("Chat panel positioned")
+
+    def _toggle_electron_chat(self):
+        """Toggle Electron chat window process (dev:chat)."""
+        if self.electron_chat_process and self.electron_chat_process.poll() is None:
+            self._stop_electron_chat()
+            return
+        self._start_electron_chat()
+
+    def _start_electron_chat(self):
+        """Start Electron chat frontend from desktop-app project."""
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        desktop_app_dir = os.path.join(project_root, 'desktop-app')
+        npm_cmd = 'npm.cmd' if os.name == 'nt' else 'npm'
+
+        if not os.path.isdir(desktop_app_dir):
+            logger.error(f"desktop-app folder not found: {desktop_app_dir}")
+            return
+
+        try:
+            self.electron_chat_process = subprocess.Popen(
+                [npm_cmd, 'run', 'dev:chat'],
+                cwd=desktop_app_dir,
+            )
+            logger.info("Electron chat started (npm run dev:chat)")
+        except Exception as e:
+            self.electron_chat_process = None
+            logger.error(f"Failed to start Electron chat: {e}")
+
+    def _stop_electron_chat(self):
+        """Stop Electron chat frontend process if still running."""
+        if not self.electron_chat_process:
+            return
+
+        try:
+            self.electron_chat_process.terminate()
+            self.electron_chat_process.wait(timeout=4)
+            logger.info("Electron chat stopped")
+        except Exception:
+            try:
+                self.electron_chat_process.kill()
+                logger.info("Electron chat killed")
+            except Exception as e:
+                logger.warning(f"Failed to stop Electron chat process: {e}")
+        finally:
+            self.electron_chat_process = None
     
     def _on_animation_changed(self, animation_name: str):
         """Handle animation change from behavior controller"""
@@ -393,9 +441,9 @@ class DesktopAssistantWindow(QMainWindow):
             # ESC - close application
             self.close()
         elif event.text().upper() == HOTKEY_TOGGLE_CHAT:
-            # B - toggle chat panel
-            self.chat_panel.toggle_panel()
-            logger.info("Chat panel toggled")
+            # B - toggle Electron chat window (replace legacy PySide chat panel)
+            self._toggle_electron_chat()
+            logger.info("Electron chat toggled")
         elif event.text().upper() == HOTKEY_SIZE_INCREASE:
             # D - increase size
             self.character_widget.increase_size(5)
@@ -477,7 +525,7 @@ class DesktopAssistantWindow(QMainWindow):
             "A/D - Size\n"
             "W/S - Up/Down\n"
             "Q/E - Left/Right\n"
-            "B - Chat Panel\n"
+            "B - Toggle Electron Chat\n"
             "F1 - Settings\n"
             "ESC - Exit"
         )
@@ -494,6 +542,7 @@ class DesktopAssistantWindow(QMainWindow):
     
     def cleanup(self):
         """Cleanup resources"""
+        self._stop_electron_chat()
         self.command_timer.stop()
         self.behavior_controller.cleanup()
         self.character_widget.cleanup()

@@ -34,4 +34,9 @@ contextBridge.exposeInMainWorld('trapezi', {
     openChat: () => ipcRenderer.invoke('window:openChat'),
     closeChat: () => ipcRenderer.send('window:closeChat'),
   },
+
+  // ── Chat (Python backend bridge) ─────────────────────────
+  chat: {
+    sendMessage: (message) => ipcRenderer.invoke('chat:sendMessage', message),
+  },
 })

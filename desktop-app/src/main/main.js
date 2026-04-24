@@ -4,6 +4,8 @@
 
 const { app, BrowserWindow, ipcMain, Tray, Menu, screen, nativeImage } = require('electron')
 const path = require('path')
+const fs = require('fs')
+const { spawn } = require('child_process')
 const Store = require('electron-store')
 
 // ── Data store (JSON lokal, otomatis di AppData) ─────────────
@@ -29,10 +31,70 @@ let chatWindow       = null
 let tray            = null
 const isDev         = process.argv.includes('--dev')
 
+const projectRoot = path.resolve(__dirname, '../../..')
+
 // ── Helper: Get page parameter untuk dev mode ────────────────
 function getDevPage() {
   const pageArg = process.argv.find(arg => arg.startsWith('--page='))
   return pageArg ? pageArg.split('=')[1] : null
+}
+
+function getPythonExecutable() {
+  const venvPython = process.platform === 'win32'
+    ? path.join(projectRoot, 'venv', 'Scripts', 'python.exe')
+    : path.join(projectRoot, 'venv', 'bin', 'python')
+
+  if (fs.existsSync(venvPython)) return venvPython
+  return process.platform === 'win32' ? 'python' : 'python3'
+}
+
+function callPythonChat(message) {
+  return new Promise((resolve, reject) => {
+    const python = getPythonExecutable()
+    const bridgeScript = path.join(projectRoot, 'chat_bridge.py')
+
+    if (!fs.existsSync(bridgeScript)) {
+      reject(new Error('chat_bridge.py tidak ditemukan'))
+      return
+    }
+
+    const child = spawn(
+      python,
+      [bridgeScript, '--message', message, '--execute-actions'],
+      { cwd: projectRoot }
+    )
+
+    let stdout = ''
+    let stderr = ''
+
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM')
+      reject(new Error('Python chat timeout (>35s)'))
+    }, 35000)
+
+    child.stdout.on('data', chunk => { stdout += chunk.toString() })
+    child.stderr.on('data', chunk => { stderr += chunk.toString() })
+
+    child.on('error', err => {
+      clearTimeout(timer)
+      reject(err)
+    })
+
+    child.on('close', code => {
+      clearTimeout(timer)
+      if (code !== 0) {
+        reject(new Error(stderr.trim() || `Python exited with code ${code}`))
+        return
+      }
+
+      try {
+        const payload = JSON.parse(stdout.trim())
+        resolve(payload)
+      } catch (err) {
+        reject(new Error(`Invalid bridge response: ${stdout.trim() || '(empty)'}`))
+      }
+    })
+  })
 }
 
 // ── Create companion window ──────────────────────────────────
@@ -191,6 +253,29 @@ ipcMain.handle('window:openChat', () => {
  
 ipcMain.on('window:closeChat', () => {
   chatWindow?.close()
+})
+
+ipcMain.handle('chat:sendMessage', async (_, message) => {
+  if (!message || typeof message !== 'string') {
+    return { ok: false, response: 'Pesan tidak valid.' }
+  }
+
+  try {
+    const result = await callPythonChat(message)
+    return {
+      ok: true,
+      response: result.response || 'Aku sedang mikir... coba ulangi ya.',
+      intent: result.intent || 'unknown',
+      actionsExecuted: result.actions_executed || 0,
+    }
+  } catch (err) {
+    return {
+      ok: false,
+      response: `Backend Python error: ${err.message}`,
+      intent: 'error',
+      actionsExecuted: 0,
+    }
+  }
 })
 
 // Settings
