@@ -1,296 +1,481 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Task</title>
-  <link rel="stylesheet" href="../assets/styles/global.css">
-  <link rel="stylesheet" href="../assets/styles/companion.css">
+  <title>Tambah Tugas</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-bg:        #F8EDE3;
+      --c-white:     #FFFFFF;
+      --c-thatch:    #798777;
+      --c-coconut:   #A2B29F;
+      --c-zen-gray:  #BDD2B6;
+      --c-dark:      #3B3B3A;
+      --c-mid:       #757676;
+      --c-light:     #F3F4F4;
+      --c-urgent:    #E57373;
+      --c-soon:      #EF9F27;
+    }
+
+    html, body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: transparent;
+      color: var(--c-dark);
+      -webkit-user-select: none;
+      user-select: none;
+      height: 100%;
     }
 
     body {
-      background: var(--c-bg);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 16px;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .modal-content {
-      background: var(--c-section-bg);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    }
-
-    .modal-header {
-      background: linear-gradient(135deg, var(--c-coconut), var(--c-thatch));
-      padding: 16px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--c-dark);
-      font-weight: 600;
-    }
-
-    .btn-close {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      color: var(--c-dark);
       padding: 0;
-      width: 24px;
-      height: 24px;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
     }
 
-    .btn-close:hover {
-      opacity: 0.7;
-    }
-
-    .form-group {
-      padding: 12px 0;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .form-group:last-child {
-      border-bottom: none;
-    }
-
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--c-dark);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    input[type="text"],
-    input[type="date"],
-    input[type="time"],
-    select {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid var(--c-light);
-      border-radius: 6px;
-      font-size: 13px;
+    /* ── Card wrapper ── */
+    .card {
+      width: 300px;
       background: var(--c-white);
-      color: var(--c-dark);
-      font-family: inherit;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
     }
 
-    input[type="text"]::placeholder {
-      color: var(--c-mid);
-      opacity: 0.6;
-    }
-
-    input:focus,
-    select:focus {
-      outline: none;
-      border-color: var(--c-coconut);
-      box-shadow: 0 0 0 2px rgba(231, 140, 77, 0.1);
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .checkbox-group {
+    /* ── Header ── */
+    .header {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      padding: 20px 20px 16px;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--c-thatch);
+    }
+
+    .btn-close {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--c-dark);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .btn-close:hover { background: #C62828; }
+    .btn-close svg { width: 14px; height: 14px; stroke: white; }
+
+    /* ── Body ── */
+    .body {
+      padding: 0 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── Field ── */
+    .field-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--c-dark);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .field-input {
+      width: 100%;
+      height: 44px;
+      background: var(--c-bg);
+      border: 1.5px solid transparent;
+      border-radius: 12px;
+      padding: 0 14px;
+      font-size: 13px;
+      color: var(--c-dark);
+      font-family: inherit;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    .field-input::placeholder { color: #C5A898; }
+    .field-input:focus { border-color: var(--c-coconut); background: var(--c-white); }
+    .field-input.error { border-color: var(--c-urgent); }
+
+    /* Date & time row */
+    .field-row {
+      display: flex;
+      gap: 10px;
+    }
+    .field-group { flex: 1; }
+
+    /* Date/time inputs — with icon hint */
+    .input-with-icon {
+      position: relative;
+    }
+    .input-with-icon .field-input {
+      padding-right: 36px;
+    }
+    .input-with-icon .field-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--c-mid);
+      pointer-events: none;
+    }
+
+    /* ── Category pills ── */
+    .cat-row {
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
     }
 
-    input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
+    .cat-tag {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 1.5px solid #D9CFC7;
+      background: var(--c-bg);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--c-dark);
       cursor: pointer;
-      accent-color: var(--c-coconut);
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .cat-tag:hover:not(.active) { border-color: var(--c-coconut); }
+    .cat-tag.active {
+      background: var(--c-thatch);
+      color: white;
+      border-color: var(--c-thatch);
     }
 
-    .checkbox-label {
-      font-size: 13px;
+    .cat-add {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: 12px;
+      border: 1.5px solid #D9CFC7;
+      background: var(--c-bg);
+      font-size: 20px;
+      color: var(--c-mid);
       cursor: pointer;
-      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      transition: all 0.15s;
     }
+    .cat-add:hover { border-color: var(--c-coconut); color: var(--c-dark); }
 
-    .modal-footer {
-      padding: 12px;
+    /* ── Priority buttons ── */
+    .prio-row {
       display: flex;
       gap: 8px;
-      background: rgba(0, 0, 0, 0.02);
-      border-top: 1px solid rgba(0, 0, 0, 0.05);
     }
 
-    button {
+    .prio-btn {
       flex: 1;
-      padding: 10px 12px;
+      height: 38px;
+      border-radius: 12px;
       border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s;
+      font-family: inherit;
+      background: var(--c-bg);
+      color: var(--c-mid);
     }
+    .prio-btn:hover:not(.active) { opacity: 0.85; }
 
-    .btn-primary {
-      background: var(--c-coconut);
-      color: var(--c-white);
+    .prio-btn.high         { background: #FADDD9; color: #C25B5B; }
+    .prio-btn.high.active  { background: #F4A9A9; color: #C62828; box-shadow: 0 2px 8px rgba(198,40,40,0.2); }
+    .prio-btn.med          { background: #FDE8C6; color: #C47D1A; }
+    .prio-btn.med.active   { background: #FFCC80; color: #E65100; box-shadow: 0 2px 8px rgba(230,81,0,0.2); }
+    .prio-btn.low          { background: #D6EDD3; color: #4A7A47; }
+    .prio-btn.low.active   { background: #C8E6C9; color: #2E7D32; box-shadow: 0 2px 8px rgba(46,125,50,0.2); }
+
+    /* ── Reminder toggle ── */
+    .reminder-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-
-    .btn-primary:hover:not(:disabled) {
-      background: #e07a4d;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(231, 140, 77, 0.3);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      background: var(--c-light);
+    .reminder-text .reminder-title {
+      font-size: 13px;
+      font-weight: 700;
       color: var(--c-dark);
     }
-
-    .btn-secondary:hover {
-      background: #e0e0e0;
+    .reminder-text .reminder-sub {
+      font-size: 11px;
+      color: var(--c-mid);
+      margin-top: 2px;
+      line-height: 1.4;
     }
 
-    .error-message {
-      display: none;
+    /* Toggle switch */
+    .toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: #CCCCCC;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: white;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-track { background: var(--c-coconut); }
+    .toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+
+    /* ── Footer ── */
+    .footer {
+      display: flex;
+      gap: 10px;
+      padding: 14px 20px;
+      background: var(--c-dark);
+      border-radius: 0 0 20px 20px;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      height: 44px;
+      border-radius: 12px;
+      border: none;
+      background: #F8C8C8;
+      color: #C62828;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: #F4A9A9; }
+
+    .btn-save {
+      flex: 2;
+      height: 44px;
+      border-radius: 12px;
+      border: none;
+      background: var(--c-coconut);
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-save:hover { background: var(--c-thatch); }
+    .btn-save:disabled { background: var(--c-zen-gray); cursor: not-allowed; }
+
+    /* Error text */
+    .error-text {
+      font-size: 11px;
       color: var(--c-urgent);
-      font-size: 12px;
       margin-top: 4px;
-    }
-
-    .modal-body {
-      padding: 16px;
-      max-height: 420px;
-      overflow-y: auto;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="modal-content">
-    <div class="modal-header">
-      <span>Add New Task</span>
-      <button class="btn-close" id="btn-close">\u00d7</button>
+  <div class="card">
+
+    <!-- Header -->
+    <div class="header">
+      <span class="header-title">Tambah Tugas Baru</span>
+      <button class="btn-close" id="btn-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white"
+             stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
     </div>
 
-    <div class="modal-body">
-      <form id="add-task-form">
-        <div class="form-group">
-          <label for="task-name">Task Name</label>
-          <input type="text" id="task-name" placeholder="What do you need to do?" required>
-          <div class="error-message" id="error-name"></div>
-        </div>
+    <!-- Body -->
+    <div class="body">
 
-        <div class="form-group">
-          <label for="task-date">Deadline Date</label>
-          <input type="date" id="task-date">
-        </div>
+      <!-- Nama Tugas -->
+      <div>
+        <label class="field-label">Nama Tugas</label>
+        <input class="field-input" type="text" id="task-name"
+               placeholder="Mengerjakan laporan..." autocomplete="off"/>
+        <div class="error-text" id="error-name">Nama tugas tidak boleh kosong</div>
+      </div>
 
-        <div class="form-group">
-          <label for="task-time">Deadline Time</label>
-          <input type="time" id="task-time">
-        </div>
-
-        <div class="form-group">
-          <label for="task-priority">Priority</label>
-          <select id="task-priority">
-            <option value="Rendah">Low</option>
-            <option value="Sedang" selected>Medium</option>
-            <option value="Tinggi">High</option>
-            <option value="Urgent">Urgent</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <div class="checkbox-group">
-            <input type="checkbox" id="task-reminder" checked>
-            <label for="task-reminder" class="checkbox-label">Enable reminder</label>
+      <!-- Deadline -->
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Tanggal Deadline</label>
+          <div class="input-with-icon">
+            <input class="field-input" type="date" id="task-date"/>
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
           </div>
         </div>
-      </form>
+        <div class="field-group">
+          <label class="field-label">Jam</label>
+          <div class="input-with-icon">
+            <input class="field-input" type="time" id="task-time" value="23:59"/>
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kategori -->
+      <div>
+        <label class="field-label">Kategori</label>
+        <div class="cat-row" id="cat-row">
+          <button class="cat-tag active" data-cat="Kuliah">Kuliah</button>
+          <button class="cat-tag" data-cat="Project">Project</button>
+          <button class="cat-tag" data-cat="Personal">Personal</button>
+          <button class="cat-add" id="btn-add-cat">+</button>
+        </div>
+      </div>
+
+      <!-- Prioritas -->
+      <div>
+        <label class="field-label">Prioritas</label>
+        <div class="prio-row">
+          <button class="prio-btn high" data-prio="Tinggi">Tinggi</button>
+          <button class="prio-btn med active" data-prio="Sedang">Sedang</button>
+          <button class="prio-btn low" data-prio="Rendah">Rendah</button>
+        </div>
+      </div>
+
+      <!-- Pengingat -->
+      <div class="reminder-row">
+        <div class="reminder-text">
+          <div class="reminder-title">Pengingat otomatis</div>
+          <div class="reminder-sub">Notifikasi 24 jam sebelum deadline</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="reminder-toggle" checked/>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
     </div>
 
-    <div class="modal-footer">
-      <button class="btn-secondary" id="btn-cancel">Cancel</button>
-      <button class="btn-primary" id="btn-save">Add Task</button>
+    <!-- Footer -->
+    <div class="footer">
+      <button class="btn-cancel" id="btn-cancel">Batal</button>
+      <button class="btn-save" id="btn-save">Simpan Tugas</button>
     </div>
+
   </div>
 
   <script>
-    const form = document.getElementById('add-task-form');
-    const taskNameInput = document.getElementById('task-name');
-    const taskDateInput = document.getElementById('task-date');
-    const taskTimeInput = document.getElementById('task-time');
-    const prioritySelect = document.getElementById('task-priority');
-    const reminderCheckbox = document.getElementById('task-reminder');
-    const saveBtn = document.getElementById('btn-save');
-    const cancelBtn = document.getElementById('btn-cancel');
-    const closeBtn = document.getElementById('btn-close');
+    const api = window.trapezi
 
-    // Set today's date as default
-    const today = new Date().toISOString().split('T')[0];
-    taskDateInput.value = today;
+    // Set today as default date
+    document.getElementById('task-date').value =
+      new Date().toISOString().split('T')[0]
 
-    // Handle cancel
-    const closeModal = () => {
-      api.window.closeAddTask();
-    };
+    // Category toggle
+    document.querySelectorAll('.cat-tag').forEach(tag => {
+      tag.addEventListener('click', () => tag.classList.toggle('active'))
+    })
 
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
+    // Add custom category
+    document.getElementById('btn-add-cat').addEventListener('click', () => {
+      const name = prompt('Nama kategori baru:')
+      if (!name?.trim()) return
+      const tag = document.createElement('button')
+      tag.className = 'cat-tag active'
+      tag.dataset.cat = name.trim()
+      tag.textContent = name.trim()
+      tag.addEventListener('click', () => tag.classList.toggle('active'))
+      document.getElementById('cat-row').insertBefore(
+        tag,
+        document.getElementById('btn-add-cat')
+      )
+    })
 
-    // Handle save
-    saveBtn.addEventListener('click', async () => {
-      const taskName = taskNameInput.value.trim();
+    // Priority toggle
+    document.querySelectorAll('.prio-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.prio-btn').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+      })
+    })
 
-      if (!taskName) {
-        document.getElementById('error-name').textContent = 'Task name required';
-        document.getElementById('error-name').style.display = 'block';
-        taskNameInput.focus();
-        return;
+    // Cancel / close
+    const closeModal = () => api.window.closeAddTask()
+    document.getElementById('btn-close').addEventListener('click', closeModal)
+    document.getElementById('btn-cancel').addEventListener('click', closeModal)
+
+    // Save
+    document.getElementById('btn-save').addEventListener('click', async () => {
+      const name = document.getElementById('task-name').value.trim()
+      const errorEl = document.getElementById('error-name')
+
+      if (!name) {
+        document.getElementById('task-name').classList.add('error')
+        errorEl.style.display = 'block'
+        document.getElementById('task-name').focus()
+        return
       }
 
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Adding...';
+      document.getElementById('task-name').classList.remove('error')
+      errorEl.style.display = 'none'
+
+      const saveBtn = document.getElementById('btn-save')
+      saveBtn.disabled = true
+      saveBtn.textContent = 'Menyimpan...'
+
+      const cats = [...document.querySelectorAll('.cat-tag.active')]
+        .map(b => b.dataset.cat)
+      const prio = document.querySelector('.prio-btn.active')?.dataset.prio ?? 'Sedang'
 
       try {
         await api.tasks.add({
-          name: taskName,
-          deadline_date: taskDateInput.value,
-          deadline_time: taskTimeInput.value,
-          priority: prioritySelect.value,
-          reminder: reminderCheckbox.checked,
-        });
-
-        api.window.taskAdded();
+          name,
+          deadline_date: document.getElementById('task-date').value,
+          deadline_time: document.getElementById('task-time').value || '23:59',
+          categories:    cats,
+          priority:      prio,
+          reminder:      document.getElementById('reminder-toggle').checked,
+        })
+        api.window.taskAdded()
       } catch (err) {
-        console.error('Error adding task:', err);
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Add Task';
+        console.error('Error adding task:', err)
+        saveBtn.disabled = false
+        saveBtn.textContent = 'Simpan Tugas'
       }
-    });
+    })
 
     // Focus task name on load
-    taskNameInput.focus();
+    document.getElementById('task-name').focus()
   </script>
 </body>
 </html>

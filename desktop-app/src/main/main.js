@@ -25,8 +25,15 @@ const store = new Store({
 let companionWindow  = null
 let addTaskWindow    = null
 let confirmTaskWindow = null
+let chatWindow       = null
 let tray            = null
 const isDev         = process.argv.includes('--dev')
+
+// ── Helper: Get page parameter untuk dev mode ────────────────
+function getDevPage() {
+  const pageArg = process.argv.find(arg => arg.startsWith('--page='))
+  return pageArg ? pageArg.split('=')[1] : null
+}
 
 // ── Create companion window ──────────────────────────────────
 function createCompanionWindow() {
@@ -144,6 +151,48 @@ ipcMain.handle('tasks:delete', (_, taskId) => {
   return true
 })
 
+ipcMain.handle('window:openChat', () => {
+  if (chatWindow) {
+    chatWindow.focus()
+    return
+  }
+ 
+  const { width } = screen.getPrimaryDisplay().workAreaSize
+  const [px, py]  = companionWindow.getPosition()
+ 
+  chatWindow = new BrowserWindow({
+    width:       300,
+    height:      680,
+    x:           px - 320,   // muncul di sebelah kiri companion panel
+    y:           py,
+    frame:       false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: false,
+    resizable:   false,
+    hasShadow:   true,
+    webPreferences: {
+      nodeIntegration:  false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    }
+  })
+ 
+  chatWindow.loadFile(
+    path.join(__dirname, '../renderer/pages/chat.html')
+  )
+ 
+  if (isDev) {
+    chatWindow.webContents.openDevTools({ mode: 'detach' })
+  }
+ 
+  chatWindow.on('closed', () => { chatWindow = null })
+})
+ 
+ipcMain.on('window:closeChat', () => {
+  chatWindow?.close()
+})
+
 // Settings
 ipcMain.handle('settings:get', () => store.get('settings'))
 ipcMain.handle('settings:set', (_, settings) => {
@@ -254,8 +303,47 @@ ipcMain.on('modal:taskAdded', () => {
 
 // ── App lifecycle ────────────────────────────────────────────
 app.whenReady().then(() => {
-  createCompanionWindow()
-  createTray()
+  // Dev mode: jika ada --page parameter, buka page spesifik
+  const devPage = isDev ? getDevPage() : null
+  
+  if (devPage) {
+    // Create window untuk page spesifik
+    const pageConfig = {
+      'chat': { file: 'chat.html', width: 300, height: 680 },
+      'add-task': { file: 'add-task.html', width: 300, height: 540 },
+      'confirm-task': { file: 'confirm-task.html', width: 280, height: 380 },
+    }
+    
+    const config = pageConfig[devPage] || pageConfig['chat']
+    const devWindow = new BrowserWindow({
+      width: config.width,
+      height: config.height,
+      frame: false,
+      transparent: true,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      resizable: false,
+      hasShadow: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, 'preload.js'),
+      }
+    })
+    
+    devWindow.loadFile(
+      path.join(__dirname, `../renderer/pages/${config.file}`)
+    )
+    
+    // Open dev tools otomatis
+    devWindow.webContents.openDevTools({ mode: 'detach' })
+    
+    devWindow.on('closed', () => { app.quit() })
+  } else {
+    // Normal mode: create companion window + tray
+    createCompanionWindow()
+    createTray()
+  }
 })
 
 app.on('window-all-closed', () => {

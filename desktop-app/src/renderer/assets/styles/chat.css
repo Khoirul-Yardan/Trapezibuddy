@@ -1,0 +1,208 @@
+/* chat.css — TrapeziBuddy Chat Page */
+
+/* ── App wrapper ────────────────────────────────────────── */
+#chat-app {
+  width: 280px;
+  height: 100vh;
+  background: var(--c-bg);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 12px;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.chat-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--c-thatch);
+  letter-spacing: -0.2px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--c-light);
+  color: var(--c-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  padding: 6px;
+  border: none;
+  cursor: pointer;
+}
+.icon-btn svg { width: 100%; height: 100%; }
+.icon-btn:hover { background: var(--c-zen-gray); }
+
+/* ── Messages area ──────────────────────────────────────── */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: none;
+}
+.chat-messages::-webkit-scrollbar { display: none; }
+
+/* ── Message group ──────────────────────────────────────── */
+.msg-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Companion = kiri */
+.msg-group.companion {
+  align-items: flex-start;
+}
+
+/* User = kanan */
+.msg-group.user {
+  align-items: flex-end;
+}
+
+/* ── Bubble ─────────────────────────────────────────────── */
+.bubble {
+  max-width: 200px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Companion bubble — dark green */
+.msg-group.companion .bubble {
+  background: var(--c-thatch);
+  color: white;
+  border-bottom-left-radius: 6px;
+}
+
+/* User bubble — warm cream/peach */
+.msg-group.user .bubble {
+  background: var(--c-tech-white);
+  color: var(--c-dark);
+  border-bottom-right-radius: 6px;
+  border: 1px solid #EAD9CC;
+}
+
+/* ── Timestamp ──────────────────────────────────────────── */
+.msg-time {
+  font-size: 11px;
+  color: var(--c-mid);
+  padding: 0 4px;
+}
+
+/* ── Typing indicator ───────────────────────────────────── */
+.typing-bubble {
+  background: var(--c-thatch);
+  border-radius: 18px;
+  border-bottom-left-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Input bar ──────────────────────────────────────────── */
+.chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 14px;
+  flex-shrink: 0;
+  background: var(--c-bg);
+}
+
+.chat-input {
+  flex: 1;
+  height: 42px;
+  background: var(--c-white);
+  border: 1.5px solid #E0D4CC;
+  border-radius: 21px;
+  padding: 0 16px;
+  font-size: 13px;
+  color: var(--c-dark);
+  font-family: var(--font-main);
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.chat-input::placeholder {
+  color: #B8A89C;
+}
+
+.chat-input:focus {
+  border-color: var(--c-coconut);
+}
+
+.send-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--c-thatch);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+  padding: 13px;
+}
+
+.send-btn svg {
+  width: 100%;
+  height: 100%;
+  fill: white;
+}
+
+.send-btn:hover  { background: var(--c-coconut); }
+.send-btn:active { transform: scale(0.93); }
+.send-btn:disabled {
+  background: var(--c-zen-gray);
+  cursor: not-allowed;
+}

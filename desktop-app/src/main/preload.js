@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('trapezi', {
     taskCompleted:   ()             => ipcRenderer.send('modal:taskCompleted'),
     taskAdded:       ()             => ipcRenderer.send('modal:taskAdded'),
     onRefreshTasks:  (cb)           => ipcRenderer.on('refresh:tasks', cb),
+    openChat: () => ipcRenderer.invoke('window:openChat'),
+    closeChat: () => ipcRenderer.send('window:closeChat'),
   },
-
 })
