@@ -2,8 +2,38 @@
 // TrapeziBuddy — Electron Main Process
 
 const { app, BrowserWindow, ipcMain, Tray, Menu, screen, nativeImage } = require('electron')
-const path = require('path')
+const path  = require('path')
 const Store = require('electron-store')
+const { spawn } = require('child_process')
+
+// ── Python companion process ──────────────────────────────────
+let pythonProcess = null
+
+function startPythonCompanion() {
+  // Path ke main.py — naik dua level dari desktop-app/src/main/
+  const pythonScript = path.join(__dirname, '..', '..', '..', 'main.py')
+
+  pythonProcess = spawn('python', [pythonScript], {
+    detached: false,
+    stdio:    'ignore',
+  })
+
+  pythonProcess.on('error', (err) => {
+    console.error('Failed to start Python companion:', err)
+  })
+
+  pythonProcess.on('close', (code) => {
+    console.log(`Python companion exited with code ${code}`)
+    pythonProcess = null
+  })
+}
+
+function stopPythonCompanion() {
+  if (pythonProcess) {
+    pythonProcess.kill()
+    pythonProcess = null
+  }
+}
 
 const store = new Store({
   defaults: {
@@ -33,9 +63,9 @@ function createSettingsWindow() {
 
   settingsWindow = new BrowserWindow({
     width:       520,
-    height:      380,
+    height:      440,
     x:           Math.floor(width  / 2 - 260),
-    y:           Math.floor(height / 2 - 190),
+    y:           Math.floor(height / 2 - 230),
     frame:       false,
     resizable:   false,
     hasShadow:   true,
@@ -110,6 +140,7 @@ ipcMain.on('window:startApp', (_, data) => {
   settingsWindow?.close()
   createCompanionWindow(size)
   createTray()
+  startPythonCompanion()  // ← spawn Python companion sekaligus
 })
 
 // ── IPC: Tasks ───────────────────────────────────────────────
@@ -220,6 +251,10 @@ app.whenReady().then(() => createSettingsWindow())
 
 app.on('window-all-closed', () => {
   if (!companionWindow && process.platform !== 'darwin') app.quit()
+})
+
+app.on('before-quit', () => {
+  stopPythonCompanion()
 })
 
 app.on('activate', () => {
