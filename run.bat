@@ -1,6 +1,6 @@
 @echo off
-REM Desktop Assistant 2D - Run Script
-REM Runs the application from source (no build needed)
+REM TrapeziBuddy - Run Script
+REM Frontend: Electron (desktop-app) | Backend: Python spawned by Electron
 
 echo.
 echo ===============================================
@@ -34,10 +34,31 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-REM Run application
+REM Check Node.js
+where node >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo Error: Node.js not found. Please install Node.js 18+
+    echo Download from: https://nodejs.org/
+    exit /b 1
+)
+
+REM Ensure desktop-app dependencies
+if not exist "desktop-app\node_modules" (
+    echo Installing Electron dependencies...
+    cd desktop-app
+    call npm install
+    if %ERRORLEVEL% NEQ 0 (
+        echo Error: Failed to install desktop-app dependencies
+        exit /b 1
+    )
+    cd ..
+)
+
+REM Run Electron frontend (this will spawn Python backend when Start Application is clicked)
 echo.
-echo Starting Desktop Assistant...
+echo Starting TrapeziBuddy Electron frontend...
 echo.
-python main.py
+cd desktop-app
+call npm run dev
 
 pause

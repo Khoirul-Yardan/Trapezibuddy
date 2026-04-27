@@ -5,15 +5,33 @@ const { app, BrowserWindow, ipcMain, Tray, Menu, screen, nativeImage } = require
 const path  = require('path')
 const Store = require('electron-store')
 const { spawn } = require('child_process')
+const fs = require('fs')
 
 // ── Python companion process ──────────────────────────────────
 let pythonProcess = null
 
-function startPythonCompanion() {
-  // Path ke main.py — naik dua level dari desktop-app/src/main/
-  const pythonScript = path.join(__dirname, '..', '..', '..', 'main.py')
+function getProjectRoot() {
+  return path.join(__dirname, '..', '..', '..')
+}
 
-  pythonProcess = spawn('python', [pythonScript], {
+function getPythonExecutable() {
+  const projectRoot = getProjectRoot()
+  const venvPython = process.platform === 'win32'
+    ? path.join(projectRoot, 'venv', 'Scripts', 'python.exe')
+    : path.join(projectRoot, 'venv', 'bin', 'python')
+
+  if (fs.existsSync(venvPython)) return venvPython
+  return process.platform === 'win32' ? 'python' : 'python3'
+}
+
+function startPythonCompanion(characterSize = 60) {
+  if (pythonProcess) return
+
+  const pythonScript = path.join(getProjectRoot(), 'main.py')
+  const pythonExec = getPythonExecutable()
+  const safeSize = Number.isFinite(characterSize) ? characterSize : 60
+
+  pythonProcess = spawn(pythonExec, [pythonScript, '--skip-settings', '--character-size', String(safeSize)], {
     detached: false,
     stdio:    'ignore',
   })
@@ -56,6 +74,70 @@ let confirmTaskWindow = null
 let chatWindow        = null
 let tray              = null
 const isDev           = process.argv.includes('--dev')
+
+function getDevPage() {
+  const pageArg = process.argv.find(arg => arg.startsWith('--page='))
+  return pageArg ? pageArg.split('=')[1] : null
+}
+
+function createStandalonePageWindow(pageName) {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+
+  const pageMap = {
+    chat: {
+      file: '../renderer/pages/chat.html',
+      width: 300,
+      height: 680,
+      x: Math.floor(width / 2 - 150),
+      y: Math.floor(height / 2 - 340),
+    },
+    companion: {
+      file: '../renderer/pages/companion.html',
+      width: 300,
+      height: 700,
+      x: Math.floor(width / 2 - 150),
+      y: Math.floor(height / 2 - 350),
+    },
+    'add-task': {
+      file: '../renderer/pages/add-task.html',
+      width: 300,
+      height: 580,
+      x: Math.floor(width / 2 - 150),
+      y: Math.floor(height / 2 - 290),
+    },
+    'confirm-task': {
+      file: '../renderer/pages/confirm-task.html',
+      width: 280,
+      height: 380,
+      x: Math.floor(width / 2 - 140),
+      y: Math.floor(height / 2 - 190),
+    },
+  }
+
+  const target = pageMap[pageName]
+  if (!target) return false
+
+  const win = new BrowserWindow({
+    width: target.width,
+    height: target.height,
+    x: target.x,
+    y: target.y,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    hasShadow: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    }
+  })
+
+  win.loadFile(path.join(__dirname, target.file))
+  if (isDev) win.webContents.openDevTools({ mode: 'detach' })
+  return true
+}
 
 // ── Settings Window ──────────────────────────────────────────
 function createSettingsWindow() {
@@ -140,7 +222,7 @@ ipcMain.on('window:startApp', (_, data) => {
   settingsWindow?.close()
   createCompanionWindow(size)
   createTray()
-  startPythonCompanion()  // ← spawn Python companion sekaligus
+  startPythonCompanion(size)
 })
 
 // ── IPC: Tasks ───────────────────────────────────────────────
@@ -247,7 +329,13 @@ ipcMain.handle('window:openChat', () => {
 ipcMain.on('window:closeChat', () => chatWindow?.close())
 
 // ── App lifecycle ────────────────────────────────────────────
-app.whenReady().then(() => createSettingsWindow())
+app.whenReady().then(() => {
+  const page = getDevPage()
+  if (page && createStandalonePageWindow(page)) {
+    return
+  }
+  createSettingsWindow()
+})
 
 app.on('window-all-closed', () => {
   if (!companionWindow && process.platform !== 'darwin') app.quit()
