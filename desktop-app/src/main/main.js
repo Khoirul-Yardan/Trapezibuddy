@@ -69,6 +69,7 @@ const store = new Store({
 
 let settingsWindow    = null
 let companionWindow   = null
+let minimizedWindow   = null
 let addTaskWindow     = null
 let confirmTaskWindow = null
 let chatWindow        = null
@@ -196,6 +197,46 @@ function createCompanionWindow(characterSize = 60) {
   companionWindow.on('closed', () => { companionWindow = null })
 }
 
+
+// ── Minimized header window ───────────────────────────────────────
+function createMinimizedWindow() {
+  if (minimizedWindow) {
+    minimizedWindow.focus()
+    return
+  }
+
+  // Ambil posisi companion window agar header bar muncul di tempat yang sama
+  const [cx, cy] = companionWindow
+    ? companionWindow.getPosition()
+    : [screen.getPrimaryDisplay().workAreaSize.width - 480, 40]
+
+  minimizedWindow = new BrowserWindow({
+    width:       460,
+    height:      44,
+    x:           cx,
+    y:           cy,
+    frame:       false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable:   false,
+    hasShadow:   false,
+    webPreferences: {
+      nodeIntegration:  false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    }
+  })
+
+  minimizedWindow.loadFile(
+    path.join(__dirname, '../renderer/pages/minimized-header.html')
+  )
+
+  if (isDev) minimizedWindow.webContents.openDevTools({ mode: 'detach' })
+
+  minimizedWindow.on('closed', () => { minimizedWindow = null })
+}
+
 // ── Tray ─────────────────────────────────────────────────────
 function createTray() {
   const icon = nativeImage.createEmpty()
@@ -266,7 +307,66 @@ ipcMain.handle('settings:get', () => store.get('settings'))
 ipcMain.handle('settings:set', (_, data) => { store.set('settings', data); return true })
 
 // ── IPC: Window ──────────────────────────────────────────────
-ipcMain.on('window:minimize', () => companionWindow?.minimize())
+// Track which page was active before minimize so restore() can re-open it
+let lastActivePage = 'active'
+
+ipcMain.on('window:minimize', () => {
+  // Determine which window is currently visible and hide it
+  if (chatWindow && chatWindow.isVisible && chatWindow.isVisible()) {
+    lastActivePage = 'chat'
+    chatWindow.hide()
+  } else if (companionWindow && companionWindow.isVisible && companionWindow.isVisible()) {
+    lastActivePage = 'active'
+    companionWindow.hide()
+  } else {
+    lastActivePage = 'active'
+  }
+
+  createMinimizedWindow()
+})
+
+ipcMain.on('window:restore', (_, page) => {
+  const target = page || lastActivePage || 'active'
+
+  // Close header
+  minimizedWindow?.close()
+
+  if (target === 'chat') {
+    // Ensure chat window exists and show it. Hide companion to avoid duplicate UI.
+    companionWindow?.hide()
+    if (chatWindow) {
+      chatWindow.show()
+      chatWindow.focus()
+    } else {
+      // Create chat window similar to window:openChat handler
+      const [px, py] = (companionWindow && companionWindow.getPosition) ? companionWindow.getPosition() : [screen.getPrimaryDisplay().workAreaSize.width - 315, 40]
+      chatWindow = new BrowserWindow({
+        width: 300, height: 680, x: px - 315, y: py,
+        frame: false, transparent: true, alwaysOnTop: true,
+        skipTaskbar: false, resizable: false, hasShadow: true,
+        webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
+      })
+      chatWindow.loadFile(path.join(__dirname, '../renderer/pages/chat.html'))
+      if (isDev) chatWindow.webContents.openDevTools({ mode: 'detach' })
+      chatWindow.on('closed', () => { chatWindow = null })
+    }
+  } else {
+    // Restore companion window and navigate if requested
+    if (!companionWindow) createCompanionWindow()
+    companionWindow?.show()
+    companionWindow?.focus()
+
+    try {
+      companionWindow?.webContents.send('navigate', target)
+    } catch (err) {
+      console.error('Failed to send navigate message:', err)
+    }
+  }
+
+  // reset lastActivePage
+  lastActivePage = 'active'
+})
+
 ipcMain.on('window:hide',     () => companionWindow?.hide())
 
 // ── IPC: Add Task ────────────────────────────────────────────

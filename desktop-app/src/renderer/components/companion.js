@@ -380,6 +380,22 @@ async function init() {
     updateMoodCard()
     renderTaskList()
   })
+
+  // Listen to navigation requests from main (e.g. restore with target page)
+  if (api.window.onNavigate) {
+    api.window.onNavigate((page) => {
+      if (!page) return
+      if (page === 'active' || page === 'finished') {
+        state.activeTab = page
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === page))
+        renderTaskList()
+      } else if (page === 'add-task') {
+        api.window.openAddTask()
+      } else if (page === 'chat') {
+        api.window.openChat()
+      }
+    })
+  }
 }
 
 // Set today's date as default on date input

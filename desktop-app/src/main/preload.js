@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('trapezi', {
     // Companion
     minimize:         ()             => ipcRenderer.send('window:minimize'),
     hide:             ()             => ipcRenderer.send('window:hide'),
+    restore:          (page)         => ipcRenderer.send('window:restore', page),
 
     // Add Task modal
     openAddTask:      ()             => ipcRenderer.invoke('modal:openAddTask'),
@@ -35,6 +36,8 @@ contextBridge.exposeInMainWorld('trapezi', {
 
     // Refresh listener
     onRefreshTasks:   (cb)           => ipcRenderer.on('refresh:tasks', cb),
+    // Navigation listener from main
+    onNavigate:       (cb)           => ipcRenderer.on('navigate', (_, page) => cb(page)),
 
     // Chat window
     openChat:         ()             => ipcRenderer.invoke('window:openChat'),
