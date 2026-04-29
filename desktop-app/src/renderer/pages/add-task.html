@@ -134,7 +134,7 @@
       pointer-events: none;
     }
 
-    /* ── Category pills ── */
+    /* ── Category pills (3D Pushable) ── */
     .cat-row {
       display: flex;
       flex-wrap: wrap;
@@ -142,32 +142,100 @@
     }
 
     .cat-tag {
-      padding: 7px 16px;
-      border-radius: 20px;
-      border: 1.5px solid #D9CFC7;
-      background: var(--c-bg);
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--c-dark);
+      position: relative;
+      border: none;
+      background: transparent;
+      padding: 0;
       cursor: pointer;
-      transition: all 0.15s;
+      outline-offset: 4px;
+      transition: filter 250ms;
+      height: 38px;
+      min-width: 78px;
+      border-radius: 999px;
       font-family: inherit;
-    }
-    .cat-tag:hover:not(.active) { border-color: var(--c-coconut); }
-    .cat-tag.active {
-      background: var(--c-thatch);
-      color: white;
-      border-color: var(--c-thatch);
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
 
+    .cat-tag .shadow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: hsl(0deg 0% 0% / 0.25);
+      will-change: transform;
+      transform: translateY(2px);
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .cat-tag .edge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      will-change: transform;
+      background: transparent;
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .cat-tag .front {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      color: white;
+      will-change: transform;
+      transform: translateY(-4px);
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    /* Kuliah (Blue) */
+    .cat-tag.cat-kuliah .edge {
+      background: linear-gradient(to left, #1565C0 0%, #1976D2 8%, #1976D2 92%, #1565C0 100%);
+    }
+    .cat-tag.cat-kuliah .front { background: #64B5F6; }
+
+    /* Project (Purple) */
+    .cat-tag.cat-project .edge {
+      background: linear-gradient(to left, #6A1B9A 0%, #7B1FA2 8%, #7B1FA2 92%, #6A1B9A 100%);
+    }
+    .cat-tag.cat-project .front { background: #BA68C8; }
+
+    /* Personal (Pink) */
+    .cat-tag.cat-personal .edge {
+      background: linear-gradient(to left, #C2185B 0%, #E91E63 8%, #E91E63 92%, #C2185B 100%);
+    }
+    .cat-tag.cat-personal .front { background: #F48FB1; }
+
+    .cat-tag:hover { filter: brightness(110%); }
+    .cat-tag:hover .front { transform: translateY(-6px); transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5); }
+    .cat-tag:hover .shadow { transform: translateY(4px); transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5); }
+    .cat-tag:active .front { transform: translateY(-1px); transition: transform 34ms; }
+    .cat-tag:active .shadow { transform: translateY(1px); transition: transform 34ms; }
+    .cat-tag.active .front { transform: translateY(-2px); }
+    .cat-tag.active .shadow { transform: translateY(1px); }
+    .cat-tag:focus:not(:focus-visible) { outline: none; }
+
     .cat-add {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       padding: 0;
-      border-radius: 12px;
-      border: 1.5px solid #D9CFC7;
+      border-radius: 999px;
+      border: 1.5px dashed #D9CFC7;
       background: var(--c-bg);
-      font-size: 20px;
+      font-size: 18px;
       color: var(--c-mid);
       cursor: pointer;
       display: flex;
@@ -176,35 +244,148 @@
       font-family: inherit;
       transition: all 0.15s;
     }
-    .cat-add:hover { border-color: var(--c-coconut); color: var(--c-dark); }
+    .cat-add:hover { border-color: var(--c-coconut); color: var(--c-dark); background: #fafafa; }
 
-    /* ── Priority buttons ── */
+    /* ── Priority buttons (3D Pushable) ── */
     .prio-row {
       display: flex;
       gap: 8px;
     }
 
-    .prio-btn {
+    .pushable {
+      position: relative;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      outline-offset: 4px;
+      transition: filter 250ms;
       flex: 1;
       height: 38px;
-      border-radius: 12px;
-      border: none;
+      font-family: inherit;
       font-size: 12px;
       font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
-      background: var(--c-bg);
-      color: var(--c-mid);
     }
-    .prio-btn:hover:not(.active) { opacity: 0.85; }
 
-    .prio-btn.high         { background: #FADDD9; color: #C25B5B; }
-    .prio-btn.high.active  { background: #F4A9A9; color: #C62828; box-shadow: 0 2px 8px rgba(198,40,40,0.2); }
-    .prio-btn.med          { background: #FDE8C6; color: #C47D1A; }
-    .prio-btn.med.active   { background: #FFCC80; color: #E65100; box-shadow: 0 2px 8px rgba(230,81,0,0.2); }
-    .prio-btn.low          { background: #D6EDD3; color: #4A7A47; }
-    .prio-btn.low.active   { background: #C8E6C9; color: #2E7D32; box-shadow: 0 2px 8px rgba(46,125,50,0.2); }
+    .shadow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: hsl(0deg 0% 0% / 0.25);
+      will-change: transform;
+      transform: translateY(2px);
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .edge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      will-change: transform;
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .front {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      color: white;
+      will-change: transform;
+      transform: translateY(-4px);
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    /* High priority (Red) */
+    .pushable.high .edge {
+      background: linear-gradient(
+        to left,
+        #C62828 0%,
+        #E53935 8%,
+        #E53935 92%,
+        #C62828 100%
+      );
+    }
+    .pushable.high .front {
+      background: #F4A9A9;
+      color: #C62828;
+    }
+
+    /* Medium priority (Orange) */
+    .pushable.med .edge {
+      background: linear-gradient(
+        to left,
+        #E65100 0%,
+        #FF9800 8%,
+        #FF9800 92%,
+        #E65100 100%
+      );
+    }
+    .pushable.med .front {
+      background: #FFCC80;
+      color: #E65100;
+    }
+
+    /* Low priority (Green) */
+    .pushable.low .edge {
+      background: linear-gradient(
+        to left,
+        #2E7D32 0%,
+        #4CAF50 8%,
+        #4CAF50 92%,
+        #2E7D32 100%
+      );
+    }
+    .pushable.low .front {
+      background: #C8E6C9;
+      color: #2E7D32;
+    }
+
+    .pushable:hover {
+      filter: brightness(110%);
+    }
+
+    .pushable:hover .front {
+      transform: translateY(-6px);
+      transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+    }
+
+    .pushable:hover .shadow {
+      transform: translateY(4px);
+      transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+    }
+
+    .pushable:active .front {
+      transform: translateY(-2px);
+      transition: transform 34ms;
+    }
+
+    .pushable:active .shadow {
+      transform: translateY(1px);
+      transition: transform 34ms;
+    }
+
+    /* Active state: stay pressed */
+    .pushable.active .front {
+      transform: translateY(-2px);
+    }
+
+    .pushable.active .shadow {
+      transform: translateY(1px);
+    }
+
+    .pushable:focus:not(:focus-visible) {
+      outline: none;
+    }
 
     /* ── Reminder toggle ── */
     .reminder-row {
@@ -355,9 +536,21 @@
       <div>
         <label class="field-label">Kategori</label>
         <div class="cat-row" id="cat-row">
-          <button class="cat-tag active" data-cat="Kuliah">Kuliah</button>
-          <button class="cat-tag" data-cat="Project">Project</button>
-          <button class="cat-tag" data-cat="Personal">Personal</button>
+          <button class="cat-tag active cat-kuliah" data-cat="Kuliah">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Kuliah</span>
+          </button>
+          <button class="cat-tag cat-project" data-cat="Project">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Project</span>
+          </button>
+          <button class="cat-tag cat-personal" data-cat="Personal">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Personal</span>
+          </button>
           <button class="cat-add" id="btn-add-cat">+</button>
         </div>
       </div>
@@ -366,9 +559,21 @@
       <div>
         <label class="field-label">Prioritas</label>
         <div class="prio-row">
-          <button class="prio-btn high" data-prio="Tinggi">Tinggi</button>
-          <button class="prio-btn med active" data-prio="Sedang">Sedang</button>
-          <button class="prio-btn low" data-prio="Rendah">Rendah</button>
+          <button class="pushable high" data-prio="Tinggi">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Tinggi</span>
+          </button>
+          <button class="pushable med active" data-prio="Sedang">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Sedang</span>
+          </button>
+          <button class="pushable low" data-prio="Rendah">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Rendah</span>
+          </button>
         </div>
       </div>
 
@@ -411,9 +616,13 @@
       const name = prompt('Nama kategori baru:')
       if (!name?.trim()) return
       const tag = document.createElement('button')
-      tag.className = 'cat-tag active'
+      tag.className = 'cat-tag active cat-custom'
       tag.dataset.cat = name.trim()
-      tag.textContent = name.trim()
+      tag.innerHTML = `
+        <span class="shadow"></span>
+        <span class="edge" style="background: linear-gradient(to left, #757676 0%, #969696 8%, #969696 92%, #757676 100%);"></span>
+        <span class="front" style="background: #BDBDBD; color: white;">${name.trim()}</span>
+      `
       tag.addEventListener('click', () => tag.classList.toggle('active'))
       document.getElementById('cat-row').insertBefore(
         tag,
@@ -422,9 +631,9 @@
     })
 
     // Priority toggle
-    document.querySelectorAll('.prio-btn').forEach(btn => {
+    document.querySelectorAll('.pushable').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.prio-btn').forEach(b => b.classList.remove('active'))
+        document.querySelectorAll('.pushable').forEach(b => b.classList.remove('active'))
         btn.classList.add('active')
       })
     })
@@ -455,7 +664,7 @@
 
       const cats = [...document.querySelectorAll('.cat-tag.active')]
         .map(b => b.dataset.cat)
-      const prio = document.querySelector('.prio-btn.active')?.dataset.prio ?? 'Sedang'
+      const prio = document.querySelector('.pushable.active')?.dataset.prio ?? 'Sedang'
 
       try {
         await api.tasks.add({

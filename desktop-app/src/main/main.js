@@ -199,8 +199,13 @@ function createCompanionWindow(characterSize = 60) {
 
 
 // ── Minimized header window ───────────────────────────────────────
-function createMinimizedWindow() {
+function createMinimizedWindow(activePage = 'active') {
   if (minimizedWindow) {
+    try {
+      minimizedWindow.webContents.send('minimized:activePage', activePage)
+    } catch (err) {
+      console.error('Failed to update minimized active page:', err)
+    }
     minimizedWindow.focus()
     return
   }
@@ -211,7 +216,7 @@ function createMinimizedWindow() {
     : [screen.getPrimaryDisplay().workAreaSize.width - 480, 40]
 
   minimizedWindow = new BrowserWindow({
-    width:       460,
+    width:       382,
     height:      44,
     x:           cx,
     y:           cy,
@@ -229,7 +234,8 @@ function createMinimizedWindow() {
   })
 
   minimizedWindow.loadFile(
-    path.join(__dirname, '../renderer/pages/minimized-header.html')
+    path.join(__dirname, '../renderer/pages/minimized-header.html'),
+    { query: { activePage } }
   )
 
   if (isDev) minimizedWindow.webContents.openDevTools({ mode: 'detach' })
@@ -322,7 +328,7 @@ ipcMain.on('window:minimize', () => {
     lastActivePage = 'active'
   }
 
-  createMinimizedWindow()
+  createMinimizedWindow(lastActivePage)
 })
 
 ipcMain.on('window:restore', (_, page) => {
