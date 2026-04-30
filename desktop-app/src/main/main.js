@@ -299,19 +299,28 @@ function createMinimizedWindow(activePage = 'active') {
     y: primaryWA.y + 40,
   }
 
-  // If companion exists, align minimized bar to companion *visually* (centered).
-  // This avoids the "shift" caused by minimized width (382) vs companion width (300).
-  const fromCompanion = companionWindow
+  // Anchor minimized bar to the currently active window:
+  // - when minimizing Chat, align to Chat window
+  // - otherwise align to Companion window
+  const anchor =
+    (activePage === 'chat' && chatWindow)
+      ? { key: 'chat', size: CHAT_SIZE, bounds: chatWindow.getBounds() }
+      : (companionWindow
+          ? { key: 'companion', size: COMPANION_SIZE, bounds: companionWindow.getBounds() }
+          : null)
+
+  const fromAnchor = anchor
     ? (() => {
-        const cb = companionWindow.getBounds()
-        const x = cb.x + Math.floor((cb.width - fallback.width) / 2)
-        const y = cb.y
+        const x = anchor.bounds.x + Math.floor((anchor.bounds.width - fallback.width) / 2)
+        const y = anchor.bounds.y
         return { ...fallback, x, y }
       })()
     : null
 
-  // If we have companion, prefer alignment; otherwise use last saved minimized bounds.
-  const b = fromCompanion ? (clampBoundsToWorkArea(fromCompanion) ?? fromCompanion) : getSavedBounds('minimized', fallback)
+  // If we have an anchor window, prefer alignment; otherwise use last saved minimized bounds.
+  const b = fromAnchor
+    ? (clampBoundsToWorkArea(fromAnchor) ?? fromAnchor)
+    : getSavedBounds('minimized', fallback)
 
   minimizedWindow = new BrowserWindow({
     width:       b.width,
@@ -340,23 +349,38 @@ function createMinimizedWindow(activePage = 'active') {
   wireBoundsPersistence(minimizedWindow, 'minimized')
 
   // When user drags minimized bar, we want restore to open companion at matching place.
-  // So we persist companion x/y as the "inverse" of our centering alignment.
+  // So we persist the active (anchor) window x/y as the "inverse" of our centering alignment,
+  // and keep the other window aligned with a fixed gap.
   minimizedWindow.on('move', () => {
     try {
       const mb = minimizedWindow.getBounds()
-      const companionWidth = COMPANION_SIZE.width
-      const x = mb.x - Math.floor((companionWidth - mb.width) / 2)
-      const y = mb.y
-      store.set('windowBounds.companion', { x, y, width: COMPANION_SIZE.width, height: COMPANION_SIZE.height })
-      store.set('windowPosition', { x, y })
+      const anchorKey =
+        (activePage === 'chat' && chatWindow) ? 'chat' : 'companion'
 
-      // Keep chat aligned relative to companion anchor
-      store.set('windowBounds.chat', {
-        x: x - (CHAT_SIZE.width + WINDOW_GAP),
-        y,
-        width: CHAT_SIZE.width,
-        height: CHAT_SIZE.height,
-      })
+      const anchorSize = anchorKey === 'chat' ? CHAT_SIZE : COMPANION_SIZE
+      const anchorX = mb.x - Math.floor((anchorSize.width - mb.width) / 2)
+      const anchorY = mb.y
+
+      if (anchorKey === 'companion') {
+        const cx = anchorX
+        const cy = anchorY
+        store.set('windowBounds.companion', { x: cx, y: cy, width: COMPANION_SIZE.width, height: COMPANION_SIZE.height })
+        store.set('windowPosition', { x: cx, y: cy }) // legacy
+        store.set('windowBounds.chat', {
+          x: cx - (CHAT_SIZE.width + WINDOW_GAP),
+          y: cy,
+          width: CHAT_SIZE.width,
+          height: CHAT_SIZE.height,
+        })
+      } else {
+        const chx = anchorX
+        const chy = anchorY
+        store.set('windowBounds.chat', { x: chx, y: chy, width: CHAT_SIZE.width, height: CHAT_SIZE.height })
+        const cx = chx + CHAT_SIZE.width + WINDOW_GAP
+        const cy = chy
+        store.set('windowBounds.companion', { x: cx, y: cy, width: COMPANION_SIZE.width, height: COMPANION_SIZE.height })
+        store.set('windowPosition', { x: cx, y: cy }) // legacy
+      }
     } catch (err) {
       console.error('Failed to sync minimized->companion position:', err)
     }
@@ -456,6 +480,46 @@ ipcMain.on('window:minimize', () => {
 ipcMain.on('window:restore', (_, page) => {
   const target = page || lastActivePage || 'active'
 
+  // If minimized header exists, use its current bounds as the single source of truth
+  // for where restored windows should appear (so switching Chat/Home from the minimized
+  // header keeps the same on-screen location).
+  const minimizedBounds = (() => {
+    try {
+      return minimizedWindow?.getBounds?.() ?? null
+    } catch {
+      return null
+    }
+  })()
+
+  const applyAnchorFromMinimized = (anchorKey) => {
+    if (!minimizedBounds) return
+    const anchorSize = anchorKey === 'chat' ? CHAT_SIZE : COMPANION_SIZE
+    const anchorX = minimizedBounds.x - Math.floor((anchorSize.width - minimizedBounds.width) / 2)
+    const anchorY = minimizedBounds.y
+
+    if (anchorKey === 'chat') {
+      store.set('windowBounds.chat', { x: anchorX, y: anchorY, width: CHAT_SIZE.width, height: CHAT_SIZE.height })
+      const cx = anchorX + CHAT_SIZE.width + WINDOW_GAP
+      store.set('windowBounds.companion', { x: cx, y: anchorY, width: COMPANION_SIZE.width, height: COMPANION_SIZE.height })
+      store.set('windowPosition', { x: cx, y: anchorY }) // legacy
+    } else {
+      store.set('windowBounds.companion', { x: anchorX, y: anchorY, width: COMPANION_SIZE.width, height: COMPANION_SIZE.height })
+      store.set('windowPosition', { x: anchorX, y: anchorY }) // legacy
+      store.set('windowBounds.chat', {
+        x: anchorX - (CHAT_SIZE.width + WINDOW_GAP),
+        y: anchorY,
+        width: CHAT_SIZE.width,
+        height: CHAT_SIZE.height,
+      })
+    }
+  }
+
+  // If user restores from minimized header, pre-seed the bounds based on the button they clicked.
+  // This makes "Chat -> minimized -> click Home" open companion at the same minimized location.
+  if (minimizedBounds) {
+    applyAnchorFromMinimized(target === 'chat' ? 'chat' : 'companion')
+  }
+
   // Close header
   minimizedWindow?.close()
 
@@ -463,6 +527,10 @@ ipcMain.on('window:restore', (_, page) => {
     // Ensure chat window exists and show it. Hide companion to avoid duplicate UI.
     companionWindow?.hide()
     if (chatWindow) {
+      if (minimizedBounds) {
+        const b = getSavedBounds('chat', chatWindow.getBounds())
+        chatWindow.setBounds(b)
+      }
       chatWindow.show()
       chatWindow.focus()
     } else {
@@ -497,6 +565,10 @@ ipcMain.on('window:restore', (_, page) => {
   } else {
     // Restore companion window and navigate if requested
     if (!companionWindow) createCompanionWindow()
+    if (companionWindow && minimizedBounds) {
+      const b = getSavedBounds('companion', companionWindow.getBounds())
+      companionWindow.setBounds(b)
+    }
     companionWindow?.show()
     companionWindow?.focus()
 
