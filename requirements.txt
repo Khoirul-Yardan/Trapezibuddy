@@ -1,9 +1,9 @@
 # Desktop Assistant 2D - Python Dependencies
-PySide6==6.7.1
+PySide6>=6.8.0
 pyautogui==0.9.53
-Pillow==10.2.0
+Pillow>=10.2.0
 requests==2.31.0
-PyInstaller==6.6.0
+PyInstaller>=6.8.0
 pyperclip==1.8.2
 
 # Google Generative AI (Gemini) integration

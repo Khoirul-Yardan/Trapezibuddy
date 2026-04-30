@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>TrapeziBuddy — Minimized</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-bg:        #FBFBFB;
+      --c-cal-bg:    #FDF2E8;
+      --c-zen-gray:  #BDD2B6;
+      --c-coconut:   #A2B29F;
+      --c-thatch:    #798777;
+      --c-dark:      #3B3B3A;
+      --c-mid:       #757676;
+      --c-light:     #F3F4F4;
+      --c-white:     #FFFFFF;
+      --c-urgent:    #E57373;
+      --font-main:   'Segoe UI', system-ui, sans-serif;
+    }
+
+    html, body {
+      font-family: var(--font-main);
+      background: transparent;
+      overflow: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+      height: 44px;
+      width: 100%;
+    }
+
+    /* ── Header bar wrapper ──────────────────────────────── */
+    .header-bar {
+      width: 100%;
+      height: 44px;
+      background: var(--c-dark);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px 0 8px;
+      gap: 6px;
+      -webkit-app-region: drag;
+    }
+
+    /* ── Streak pill ─────────────────────────────────────── */
+    .streak-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--c-zen-gray);
+      border-radius: 14px;
+      padding: 4px 10px 4px 7px;
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    .flame-icon {
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .flame-icon svg { width: 14px; height: 14px; }
+
+    .streak-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--c-dark);
+    }
+
+    /* ── Task progress chip ──────────────────────────────── */
+    .task-chip {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 6px;
+      flex-shrink: 0;
+    }
+
+    .task-progress {
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .task-label {
+      font-size: 10px;
+      color: var(--c-zen-gray);
+      line-height: 1.1;
+    }
+
+    /* ── Divider ─────────────────────────────────────────── */
+    .divider {
+      width: 1px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+    }
+
+    /* ── Spacer ──────────────────────────────────────────── */
+    .spacer { flex: 1; }
+
+    /* ── Date & time ─────────────────────────────────────── */
+    .datetime {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.55);
+      flex-shrink: 0;
+      white-space: nowrap;
+      letter-spacing: 0.1px;
+    }
+
+    /* ── Icon buttons ────────────────────────────────────── */
+    .icon-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      padding: 6px;
+      color: rgba(255, 255, 255, 0.65);
+      -webkit-app-region: no-drag;
+    }
+
+    .icon-btn svg { width: 100%; height: 100%; }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .icon-btn.active {
+      background: rgba(189, 210, 182, 0.34);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(189, 210, 182, 0.55);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Expand button — slightly more prominent */
+    .icon-btn.expand {
+      background: rgba(255, 255, 255, 0.10);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .icon-btn.expand:hover {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar" id="header-bar">
+
+    <!-- Streak pill -->
+    <div class="streak-pill">
+      <div class="flame-icon">
+        <svg viewBox="0 0 24 24" fill="#FF7043">
+          <path d="M12 23C7.03 23 3 18.97 3 14c0-3.5 2-6.5 4.5-8.5C7 8 7.5
+            10 9 11c0-3 1.5-7 5-9 0 2.5 1.5 4.5 3 6 .5-1 .5-2
+            .5-3 2 2 3.5 5 3.5 8 0 4.97-4.03 9-9 9z"/>
+        </svg>
+      </div>
+      <span class="streak-num" id="streak-count">0</span>
+    </div>
+
+    <!-- Task progress -->
+    <div class="task-chip">
+      <span class="task-progress" id="task-progress">0/0</span>
+      <span class="task-label">Task</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="spacer"></div>
+
+    <!-- Date & time -->
+    <span class="datetime" id="datetime-display">--/--/----&nbsp;&nbsp;--:-- --</span>
+
+    <div class="divider"></div>
+
+    <!-- Chat icon -->
+    <button class="icon-btn" id="btn-chat" title="Chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    </button>
+
+    <!-- Home / restore icon -->
+    <button class="icon-btn" id="btn-home" title="Tampilkan panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </button>
+
+    <!-- Settings icon -->
+    <button class="icon-btn" id="btn-settings" title="Pengaturan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83
+          2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1
+          1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0
+          0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0
+          0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65
+          1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1
+          2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0
+          1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65
+          0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65
+          0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65
+          1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+
+    <!-- Expand (restore companion panel) -->
+    <button class="icon-btn expand" id="btn-expand" title="Buka panel penuh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 3 21 3 21 9"/>
+        <polyline points="9 21 3 21 3 15"/>
+        <line x1="21" y1="3" x2="14" y2="10"/>
+        <line x1="3" y1="21" x2="10" y2="14"/>
+      </svg>
+    </button>
+
+  </div>
+
+  <script src="../components/minimized-header.js"></script>
+</body>
+</html>

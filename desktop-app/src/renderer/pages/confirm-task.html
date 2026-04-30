@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Task</title>
+  <link rel="stylesheet" href="../assets/styles/global.css">
+  <link rel="stylesheet" href="../assets/styles/companion.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--c-bg);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 16px;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .modal-content {
+      background: var(--c-section-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, var(--c-done), var(--c-coconut));
+      padding: 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--c-dark);
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--c-dark);
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-close:hover {
+      opacity: 0.7;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .task-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--c-dark);
+      margin-bottom: 16px;
+      word-wrap: break-word;
+      background: rgba(0, 0, 0, 0.02);
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 3px solid var(--c-done);
+    }
+
+    .instruction {
+      font-size: 13px;
+      color: var(--c-mid);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .instruction strong {
+      color: var(--c-dark);
+      font-weight: 600;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid var(--c-light);
+      border-radius: 6px;
+      font-size: 13px;
+      background: var(--c-white);
+      color: var(--c-dark);
+      font-family: 'Courier New', monospace;
+      margin-bottom: 8px;
+      transition: border-color 0.2s ease;
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--c-mid);
+      opacity: 0.6;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--c-coconut);
+      box-shadow: 0 0 0 2px rgba(231, 140, 77, 0.1);
+    }
+
+    input[type="text"].error {
+      border-color: var(--c-urgent);
+      background: rgba(231, 76, 60, 0.05);
+    }
+
+    .error-message {
+      display: none;
+      color: var(--c-urgent);
+      font-size: 12px;
+      margin-bottom: 12px;
+      padding: 8px;
+      background: rgba(231, 76, 60, 0.1);
+      border-radius: 4px;
+      border-left: 2px solid var(--c-urgent);
+    }
+
+    .modal-footer {
+      padding: 12px;
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.02);
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--c-done);
+      color: var(--c-white);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #5cb85c;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(92, 184, 92, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--c-light);
+      color: var(--c-dark);
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-content">
+    <div class="modal-header">
+      <span>Confirm Task Completion</span>
+      <button class="btn-close" id="btn-close">\u00d7</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="task-name" id="task-name-display"></div>
+
+      <div class="instruction" id="instruction"></div>
+
+      <div class="error-message" id="error-message"></div>
+
+      <input 
+        type="text" 
+        id="confirm-input" 
+        placeholder="Type the task name above to confirm"
+      >
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" id="btn-cancel">Cancel</button>
+      <button class="btn-primary" id="btn-confirm" disabled>Confirm</button>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const taskId = urlParams.get('taskId');
+    const taskName = urlParams.get('taskName');
+
+    const taskNameDisplay = document.getElementById('task-name-display');
+    const instruction = document.getElementById('instruction');
+    const confirmInput = document.getElementById('confirm-input');
+    const confirmBtn = document.getElementById('btn-confirm');
+    const cancelBtn = document.getElementById('btn-cancel');
+    const closeBtn = document.getElementById('btn-close');
+    const errorMessage = document.getElementById('error-message');
+
+    // Set task name
+    taskNameDisplay.textContent = taskName || 'Untitled Task';
+    instruction.innerHTML = `To confirm, type <strong>"${taskName}"</strong> below`;
+
+    // Handle cancel
+    const closeModal = () => {
+      api.window.closeConfirmTask();
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    // Handle input
+    confirmInput.addEventListener('input', () => {
+      const val = confirmInput.value.trim();
+
+      // Reset error
+      confirmInput.classList.remove('error');
+      errorMessage.style.display = 'none';
+
+      // Enable button only if input matches
+      confirmBtn.disabled = val.toLowerCase() !== taskName?.toLowerCase();
+    });
+
+    // Handle confirm
+    confirmBtn.addEventListener('click', async () => {
+      const val = confirmInput.value.trim();
+      const expected = taskName?.trim();
+
+      // Validate
+      if (val.toLowerCase() !== expected?.toLowerCase()) {
+        confirmInput.classList.add('error');
+        errorMessage.textContent = 'Task name does not match. Please try again.';
+        errorMessage.style.display = 'block';
+        confirmInput.focus();
+        return;
+      }
+
+      // Process completion
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Completing...';
+
+      try {
+        await api.tasks.complete(taskId);
+        api.window.taskCompleted();
+      } catch (err) {
+        console.error('Error completing task:', err);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm';
+      }
+    });
+
+    // Focus input on load
+    setTimeout(() => confirmInput.focus(), 100);
+  </script>
+</body>
+</html>

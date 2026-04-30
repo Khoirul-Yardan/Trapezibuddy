@@ -1,0 +1,64 @@
+/* ─────────────────────────────────────────────────────────────
+   FIX: Modal overlay tertumpuk & bayangan hitam
+   
+   GANTI semua rule .modal-overlay di companion.css dengan ini:
+   ───────────────────────────────────────────────────────────── */
+
+/* Root harus relatif agar overlay bisa absolute di dalamnya */
+body {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+#app {
+  position: relative;  /* ← tambahkan ini */
+  width: 300px;
+  background: var(--c-bg);
+  border-radius: var(--radius-xl);
+  overflow: visible;   /* ← ubah dari hidden ke visible */
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px 0 14px;
+}
+
+/* ── Modal Overlay — full window cover ───────────────────── */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+
+  /* Fix: clip overlay agar tidak keluar window bounds */
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+/* ── Modal box ───────────────────────────────────────────── */
+.modal {
+  width: 272px;           /* sedikit lebih kecil dari window 300px */
+  background: var(--c-white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-modal);
+
+  /* Pastikan modal tidak keluar dari overlay */
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* ── Confirm modal (lebih kecil) ─────────────────────────── */
+.confirm-modal {
+  width: 260px;
+}
+
+/* ── Sembunyikan scrollbar di modal ──────────────────────── */
+.modal::-webkit-scrollbar { display: none; }

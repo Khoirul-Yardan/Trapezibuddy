@@ -11,6 +11,7 @@ Usage:
 
 import sys
 import os
+import argparse
 
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -28,6 +29,11 @@ logger = setup_logger(__name__)
 
 def main():
     """Main application entry point"""
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--skip-settings', action='store_true')
+    parser.add_argument('--character-size', type=int, default=60)
+    args, _ = parser.parse_known_args()
+
     logger.info("="*60)
     logger.info("Desktop Assistant 2D - Starting")
     logger.info("="*60)
@@ -52,16 +58,22 @@ def main():
     
     signal.signal(signal.SIGINT, signal_handler)
     
-    # Show settings panel first
-    logger.info("Showing initial settings panel...")
-    settings_panel = SettingsPanel()
-    if settings_panel.exec() != SettingsPanel.Accepted:
-        logger.info("Settings cancelled by user")
-        return
-    
-    settings = settings_panel.get_settings()
-    initial_size = settings.get('character_size', 60)
-    logger.info(f"Settings applied: character_size={initial_size}%")
+    # Settings flow:
+    # - Electron mode: skip Python settings and trust CLI args
+    # - Standalone mode: keep old settings panel behavior
+    if args.skip_settings:
+        initial_size = max(30, min(200, args.character_size))
+        logger.info(f"Skipping Python settings panel (Electron mode), character_size={initial_size}%")
+    else:
+        logger.info("Showing initial settings panel...")
+        settings_panel = SettingsPanel()
+        if settings_panel.exec() != SettingsPanel.Accepted:
+            logger.info("Settings cancelled by user")
+            return
+
+        settings = settings_panel.get_settings()
+        initial_size = settings.get('character_size', 60)
+        logger.info(f"Settings applied: character_size={initial_size}%")
     
     # Create main window
     window = DesktopAssistantWindow()

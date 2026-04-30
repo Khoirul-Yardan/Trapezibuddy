@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tambah Tugas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-bg:        #F8EDE3;
+      --c-white:     #FFFFFF;
+      --c-thatch:    #798777;
+      --c-coconut:   #A2B29F;
+      --c-zen-gray:  #BDD2B6;
+      --c-dark:      #3B3B3A;
+      --c-mid:       #757676;
+      --c-light:     #F3F4F4;
+      --c-urgent:    #E57373;
+      --c-soon:      #EF9F27;
+    }
+
+    html, body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: transparent;
+      color: var(--c-dark);
+      -webkit-user-select: none;
+      user-select: none;
+      height: 100%;
+    }
+
+    body {
+      padding: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    /* ── Card wrapper ── */
+    .card {
+      width: 300px;
+      background: var(--c-white);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 20px 16px;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--c-thatch);
+    }
+
+    .btn-close {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--c-dark);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .btn-close:hover { background: #C62828; }
+    .btn-close svg { width: 14px; height: 14px; stroke: white; }
+
+    /* ── Body ── */
+    .body {
+      padding: 0 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── Field ── */
+    .field-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--c-dark);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .field-input {
+      width: 100%;
+      height: 44px;
+      background: var(--c-bg);
+      border: 1.5px solid transparent;
+      border-radius: 12px;
+      padding: 0 14px;
+      font-size: 13px;
+      color: var(--c-dark);
+      font-family: inherit;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    .field-input::placeholder { color: #C5A898; }
+    .field-input:focus { border-color: var(--c-coconut); background: var(--c-white); }
+    .field-input.error { border-color: var(--c-urgent); }
+
+    /* Date & time row */
+    .field-row {
+      display: flex;
+      gap: 10px;
+    }
+    .field-group { flex: 1; }
+
+    /* Date/time inputs — with icon hint */
+    .input-with-icon {
+      position: relative;
+    }
+    .input-with-icon .field-input {
+      padding-right: 36px;
+    }
+    .input-with-icon .field-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--c-mid);
+      pointer-events: none;
+    }
+
+    /* Native date/time picker indicator (Windows/Chromium) can look "double"
+       when we also show our own SVG icon. Hide the native icon visually, but
+       keep its hit-area so click still opens the picker. */
+    input[type="date"].field-input,
+    input[type="time"].field-input {
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: none;
+    }
+
+    input[type="date"].field-input::-webkit-calendar-picker-indicator,
+    input[type="time"].field-input::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      cursor: pointer;
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 36px;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Ensure text doesn't overlap on narrow widths */
+    input[type="date"].field-input::-webkit-datetime-edit,
+    input[type="time"].field-input::-webkit-datetime-edit {
+      padding-right: 2px;
+    }
+
+    /* ── Category pills (3D Pushable) ── */
+    .cat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .cat-tag {
+      position: relative;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      outline-offset: 4px;
+      transition: filter 250ms;
+      height: 38px;
+      min-width: 78px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    .cat-tag .shadow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: hsl(0deg 0% 0% / 0.25);
+      will-change: transform;
+      transform: translateY(2px);
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .cat-tag .edge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      will-change: transform;
+      background: transparent;
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .cat-tag .front {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      color: white;
+      will-change: transform;
+      transform: translateY(-4px);
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    /* Kuliah (Blue) */
+    .cat-tag.cat-kuliah .edge {
+      background: linear-gradient(to left, #1565C0 0%, #1976D2 8%, #1976D2 92%, #1565C0 100%);
+    }
+    .cat-tag.cat-kuliah .front { background: #64B5F6; }
+
+    /* Project (Purple) */
+    .cat-tag.cat-project .edge {
+      background: linear-gradient(to left, #6A1B9A 0%, #7B1FA2 8%, #7B1FA2 92%, #6A1B9A 100%);
+    }
+    .cat-tag.cat-project .front { background: #BA68C8; }
+
+    /* Personal (Pink) */
+    .cat-tag.cat-personal .edge {
+      background: linear-gradient(to left, #C2185B 0%, #E91E63 8%, #E91E63 92%, #C2185B 100%);
+    }
+    .cat-tag.cat-personal .front { background: #F48FB1; }
+
+    .cat-tag:hover { filter: brightness(110%); }
+    .cat-tag:hover .front { transform: translateY(-6px); transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5); }
+    .cat-tag:hover .shadow { transform: translateY(4px); transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5); }
+    .cat-tag:active .front { transform: translateY(-1px); transition: transform 34ms; }
+    .cat-tag:active .shadow { transform: translateY(1px); transition: transform 34ms; }
+    .cat-tag.active .front { transform: translateY(-2px); }
+    .cat-tag.active .shadow { transform: translateY(1px); }
+    .cat-tag:focus:not(:focus-visible) { outline: none; }
+
+    .cat-add {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 999px;
+      border: 1.5px dashed #D9CFC7;
+      background: var(--c-bg);
+      font-size: 18px;
+      color: var(--c-mid);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .cat-add:hover { border-color: var(--c-coconut); color: var(--c-dark); background: #fafafa; }
+
+    /* ── Priority buttons (3D Pushable) ── */
+    .prio-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pushable {
+      position: relative;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      outline-offset: 4px;
+      transition: filter 250ms;
+      flex: 1;
+      height: 38px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .shadow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: hsl(0deg 0% 0% / 0.25);
+      will-change: transform;
+      transform: translateY(2px);
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .edge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      will-change: transform;
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .front {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      color: white;
+      will-change: transform;
+      transform: translateY(-4px);
+      transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    /* High priority (Red) */
+    .pushable.high .edge {
+      background: linear-gradient(
+        to left,
+        #C62828 0%,
+        #E53935 8%,
+        #E53935 92%,
+        #C62828 100%
+      );
+    }
+    .pushable.high .front {
+      background: #F4A9A9;
+      color: #C62828;
+    }
+
+    /* Medium priority (Orange) */
+    .pushable.med .edge {
+      background: linear-gradient(
+        to left,
+        #E65100 0%,
+        #FF9800 8%,
+        #FF9800 92%,
+        #E65100 100%
+      );
+    }
+    .pushable.med .front {
+      background: #FFCC80;
+      color: #E65100;
+    }
+
+    /* Low priority (Green) */
+    .pushable.low .edge {
+      background: linear-gradient(
+        to left,
+        #2E7D32 0%,
+        #4CAF50 8%,
+        #4CAF50 92%,
+        #2E7D32 100%
+      );
+    }
+    .pushable.low .front {
+      background: #C8E6C9;
+      color: #2E7D32;
+    }
+
+    .pushable:hover {
+      filter: brightness(110%);
+    }
+
+    .pushable:hover .front {
+      transform: translateY(-6px);
+      transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+    }
+
+    .pushable:hover .shadow {
+      transform: translateY(4px);
+      transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+    }
+
+    .pushable:active .front {
+      transform: translateY(-2px);
+      transition: transform 34ms;
+    }
+
+    .pushable:active .shadow {
+      transform: translateY(1px);
+      transition: transform 34ms;
+    }
+
+    /* Active state: stay pressed */
+    .pushable.active .front {
+      transform: translateY(-2px);
+    }
+
+    .pushable.active .shadow {
+      transform: translateY(1px);
+    }
+
+    .pushable:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    /* ── Reminder toggle ── */
+    .reminder-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .reminder-text .reminder-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--c-dark);
+    }
+    .reminder-text .reminder-sub {
+      font-size: 11px;
+      color: var(--c-mid);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    /* Toggle switch */
+    .toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: #CCCCCC;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: white;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-track { background: var(--c-coconut); }
+    .toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+
+    /* ── Footer ── */
+    .footer {
+      display: flex;
+      gap: 10px;
+      padding: 14px 20px;
+      background: var(--c-dark);
+      border-radius: 0 0 20px 20px;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      height: 44px;
+      border-radius: 12px;
+      border: none;
+      background: #F8C8C8;
+      color: #C62828;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: #F4A9A9; }
+
+    .btn-save {
+      flex: 2;
+      height: 44px;
+      border-radius: 12px;
+      border: none;
+      background: var(--c-coconut);
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-save:hover { background: var(--c-thatch); }
+    .btn-save:disabled { background: var(--c-zen-gray); cursor: not-allowed; }
+
+    /* Error text */
+    .error-text {
+      font-size: 11px;
+      color: var(--c-urgent);
+      margin-top: 4px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+
+    <!-- Header -->
+    <div class="header">
+      <span class="header-title">Tambah Tugas Baru</span>
+      <button class="btn-close" id="btn-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white"
+             stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+
+      <!-- Nama Tugas -->
+      <div>
+        <label class="field-label">Nama Tugas</label>
+        <input class="field-input" type="text" id="task-name"
+               placeholder="Mengerjakan laporan..." autocomplete="off"/>
+        <div class="error-text" id="error-name">Nama tugas tidak boleh kosong</div>
+      </div>
+
+      <!-- Deadline -->
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Tanggal Deadline</label>
+          <div class="input-with-icon">
+            <input class="field-input" type="date" id="task-date"/>
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Jam</label>
+          <div class="input-with-icon">
+            <input class="field-input" type="time" id="task-time" value="23:59"/>
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kategori -->
+      <div>
+        <label class="field-label">Kategori</label>
+        <div class="cat-row" id="cat-row">
+          <button class="cat-tag active cat-kuliah" data-cat="Kuliah">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Kuliah</span>
+          </button>
+          <button class="cat-tag cat-project" data-cat="Project">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Project</span>
+          </button>
+          <button class="cat-tag cat-personal" data-cat="Personal">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Personal</span>
+          </button>
+          <button class="cat-add" id="btn-add-cat">+</button>
+        </div>
+      </div>
+
+      <!-- Prioritas -->
+      <div>
+        <label class="field-label">Prioritas</label>
+        <div class="prio-row">
+          <button class="pushable high" data-prio="Tinggi">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Tinggi</span>
+          </button>
+          <button class="pushable med active" data-prio="Sedang">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Sedang</span>
+          </button>
+          <button class="pushable low" data-prio="Rendah">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front">Rendah</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pengingat -->
+      <div class="reminder-row">
+        <div class="reminder-text">
+          <div class="reminder-title">Pengingat otomatis</div>
+          <div class="reminder-sub">Notifikasi 24 jam sebelum deadline</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="reminder-toggle" checked/>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <button class="btn-cancel" id="btn-cancel">Batal</button>
+      <button class="btn-save" id="btn-save">Simpan Tugas</button>
+    </div>
+
+  </div>
+
+  <script>
+    const api = window.trapezi
+
+    // Set today as default date
+    document.getElementById('task-date').value =
+      new Date().toISOString().split('T')[0]
+
+    // Category toggle
+    document.querySelectorAll('.cat-tag').forEach(tag => {
+      tag.addEventListener('click', () => tag.classList.toggle('active'))
+    })
+
+    // Add custom category
+    document.getElementById('btn-add-cat').addEventListener('click', () => {
+      const name = prompt('Nama kategori baru:')
+      if (!name?.trim()) return
+      const tag = document.createElement('button')
+      tag.className = 'cat-tag active cat-custom'
+      tag.dataset.cat = name.trim()
+      tag.innerHTML = `
+        <span class="shadow"></span>
+        <span class="edge" style="background: linear-gradient(to left, #757676 0%, #969696 8%, #969696 92%, #757676 100%);"></span>
+        <span class="front" style="background: #BDBDBD; color: white;">${name.trim()}</span>
+      `
+      tag.addEventListener('click', () => tag.classList.toggle('active'))
+      document.getElementById('cat-row').insertBefore(
+        tag,
+        document.getElementById('btn-add-cat')
+      )
+    })
+
+    // Priority toggle
+    document.querySelectorAll('.pushable').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.pushable').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+      })
+    })
+
+    // Cancel / close
+    const closeModal = () => api.window.closeAddTask()
+    document.getElementById('btn-close').addEventListener('click', closeModal)
+    document.getElementById('btn-cancel').addEventListener('click', closeModal)
+
+    // Save
+    document.getElementById('btn-save').addEventListener('click', async () => {
+      const name = document.getElementById('task-name').value.trim()
+      const errorEl = document.getElementById('error-name')
+
+      if (!name) {
+        document.getElementById('task-name').classList.add('error')
+        errorEl.style.display = 'block'
+        document.getElementById('task-name').focus()
+        return
+      }
+
+      document.getElementById('task-name').classList.remove('error')
+      errorEl.style.display = 'none'
+
+      const saveBtn = document.getElementById('btn-save')
+      saveBtn.disabled = true
+      saveBtn.textContent = 'Menyimpan...'
+
+      const cats = [...document.querySelectorAll('.cat-tag.active')]
+        .map(b => b.dataset.cat)
+      const prio = document.querySelector('.pushable.active')?.dataset.prio ?? 'Sedang'
+
+      try {
+        await api.tasks.add({
+          name,
+          deadline_date: document.getElementById('task-date').value,
+          deadline_time: document.getElementById('task-time').value || '23:59',
+          categories:    cats,
+          priority:      prio,
+          reminder:      document.getElementById('reminder-toggle').checked,
+        })
+        api.window.taskAdded()
+      } catch (err) {
+        console.error('Error adding task:', err)
+        saveBtn.disabled = false
+        saveBtn.textContent = 'Simpan Tugas'
+      }
+    })
+
+    // Focus task name on load
+    document.getElementById('task-name').focus()
+  </script>
+</body>
+</html>
