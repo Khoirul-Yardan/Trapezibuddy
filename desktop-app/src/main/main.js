@@ -64,6 +64,12 @@ const store = new Store({
       last_active: null,
     },
     windowPosition: { x: null, y: null },
+    windowBounds: {
+      companion: null,
+      minimized: null,
+      chat: null,
+      settings: null,
+    },
   }
 })
 
@@ -75,6 +81,71 @@ let confirmTaskWindow = null
 let chatWindow        = null
 let tray              = null
 const isDev           = process.argv.includes('--dev')
+
+const COMPANION_SIZE = { width: 300, height: 700 }
+const CHAT_SIZE = { width: 300, height: 680 }
+const MINIMIZED_SIZE = { width: 382, height: 44 }
+const WINDOW_GAP = 15
+
+function clampBoundsToWorkArea(bounds) {
+  if (!bounds) return null
+  const { x, y, width, height } = bounds
+  if (![x, y, width, height].every(Number.isFinite)) return null
+
+  // Find best matching display for the given bounds
+  const display = screen.getDisplayMatching({ x, y, width, height })
+  const wa = display?.workArea ?? screen.getPrimaryDisplay().workArea
+
+  const w = Math.min(Math.max(Math.floor(width), 180), wa.width)
+  const h = Math.min(Math.max(Math.floor(height), 120), wa.height)
+
+  const minX = wa.x
+  const minY = wa.y
+  const maxX = wa.x + wa.width - w
+  const maxY = wa.y + wa.height - h
+
+  return {
+    x: Math.min(Math.max(Math.floor(x), minX), maxX),
+    y: Math.min(Math.max(Math.floor(y), minY), maxY),
+    width: w,
+    height: h,
+  }
+}
+
+function getSavedBounds(key, fallback) {
+  const saved = clampBoundsToWorkArea(store.get(`windowBounds.${key}`))
+  if (saved) return saved
+
+  // Backward compat: older builds stored only x/y for companion
+  if (key === 'companion') {
+    const pos = store.get('windowPosition')
+    if (pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) && fallback) {
+      const migrated = clampBoundsToWorkArea({ ...fallback, x: pos.x, y: pos.y })
+      if (migrated) return migrated
+    }
+  }
+
+  return clampBoundsToWorkArea(fallback) ?? fallback
+}
+
+function wireBoundsPersistence(win, key) {
+  if (!win) return
+  const save = () => {
+    try {
+      store.set(`windowBounds.${key}`, win.getBounds())
+    } catch (err) {
+      console.error(`Failed to persist bounds for ${key}:`, err)
+    }
+  }
+
+  // 'move' fires while dragging; 'moved' is not always consistent across platforms
+  win.on('move', save)
+  win.on('moved', save)
+  win.on('resize', save)
+  win.on('closed', () => {
+    // keep last known bounds even after close; no-op
+  })
+}
 
 function getDevPage() {
   const pageArg = process.argv.find(arg => arg.startsWith('--page='))
@@ -144,11 +215,19 @@ function createStandalonePageWindow(pageName) {
 function createSettingsWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
 
+  const fallback = {
+    width: 520,
+    height: 440,
+    x: Math.floor(width / 2 - 260),
+    y: Math.floor(height / 2 - 230),
+  }
+  const b = getSavedBounds('settings', fallback)
+
   settingsWindow = new BrowserWindow({
-    width:       520,
-    height:      440,
-    x:           Math.floor(width  / 2 - 260),
-    y:           Math.floor(height / 2 - 230),
+    width:       b.width,
+    height:      b.height,
+    x:           b.x,
+    y:           b.y,
     frame:       false,
     resizable:   false,
     hasShadow:   true,
@@ -164,22 +243,22 @@ function createSettingsWindow() {
   )
 
   if (isDev) settingsWindow.webContents.openDevTools({ mode: 'detach' })
+  wireBoundsPersistence(settingsWindow, 'settings')
   settingsWindow.on('closed', () => { settingsWindow = null })
 }
 
 // ── Companion Window ─────────────────────────────────────────
 function createCompanionWindow(characterSize = 60) {
   const { width } = screen.getPrimaryDisplay().workAreaSize
-  const savedPos  = store.get('windowPosition')
-  const x = savedPos.x ?? width - 320
-  const y = savedPos.y ?? 40
+  const fallback = { width: COMPANION_SIZE.width, height: COMPANION_SIZE.height, x: width - 320, y: 40 }
+  const b = getSavedBounds('companion', fallback)
 
   const settings = store.get('settings')
   settings.character_size = characterSize
   store.set('settings', settings)
 
   companionWindow = new BrowserWindow({
-    width: 300, height: 700, x, y,
+    width: b.width, height: b.height, x: b.x, y: b.y,
     frame: false, transparent: true, alwaysOnTop: true,
     skipTaskbar: false, resizable: false, hasShadow: true,
     webPreferences: {
@@ -189,7 +268,9 @@ function createCompanionWindow(characterSize = 60) {
   })
 
   companionWindow.loadFile(path.join(__dirname, '../renderer/pages/companion.html'))
-  companionWindow.on('moved', () => {
+  wireBoundsPersistence(companionWindow, 'companion')
+  // keep legacy key updated for older code paths/tools
+  companionWindow.on('move', () => {
     const [x, y] = companionWindow.getPosition()
     store.set('windowPosition', { x, y })
   })
@@ -210,16 +291,33 @@ function createMinimizedWindow(activePage = 'active') {
     return
   }
 
-  // Ambil posisi companion window agar header bar muncul di tempat yang sama
-  const [cx, cy] = companionWindow
-    ? companionWindow.getPosition()
-    : [screen.getPrimaryDisplay().workAreaSize.width - 480, 40]
+  const primaryWA = screen.getPrimaryDisplay().workArea
+  const fallback = {
+    width: MINIMIZED_SIZE.width,
+    height: MINIMIZED_SIZE.height,
+    x: primaryWA.x + primaryWA.width - 480,
+    y: primaryWA.y + 40,
+  }
+
+  // If companion exists, align minimized bar to companion *visually* (centered).
+  // This avoids the "shift" caused by minimized width (382) vs companion width (300).
+  const fromCompanion = companionWindow
+    ? (() => {
+        const cb = companionWindow.getBounds()
+        const x = cb.x + Math.floor((cb.width - fallback.width) / 2)
+        const y = cb.y
+        return { ...fallback, x, y }
+      })()
+    : null
+
+  // If we have companion, prefer alignment; otherwise use last saved minimized bounds.
+  const b = fromCompanion ? (clampBoundsToWorkArea(fromCompanion) ?? fromCompanion) : getSavedBounds('minimized', fallback)
 
   minimizedWindow = new BrowserWindow({
-    width:       382,
-    height:      44,
-    x:           cx,
-    y:           cy,
+    width:       b.width,
+    height:      b.height,
+    x:           b.x,
+    y:           b.y,
     frame:       false,
     transparent: true,
     alwaysOnTop: true,
@@ -239,6 +337,30 @@ function createMinimizedWindow(activePage = 'active') {
   )
 
   if (isDev) minimizedWindow.webContents.openDevTools({ mode: 'detach' })
+  wireBoundsPersistence(minimizedWindow, 'minimized')
+
+  // When user drags minimized bar, we want restore to open companion at matching place.
+  // So we persist companion x/y as the "inverse" of our centering alignment.
+  minimizedWindow.on('move', () => {
+    try {
+      const mb = minimizedWindow.getBounds()
+      const companionWidth = COMPANION_SIZE.width
+      const x = mb.x - Math.floor((companionWidth - mb.width) / 2)
+      const y = mb.y
+      store.set('windowBounds.companion', { x, y, width: COMPANION_SIZE.width, height: COMPANION_SIZE.height })
+      store.set('windowPosition', { x, y })
+
+      // Keep chat aligned relative to companion anchor
+      store.set('windowBounds.chat', {
+        x: x - (CHAT_SIZE.width + WINDOW_GAP),
+        y,
+        width: CHAT_SIZE.width,
+        height: CHAT_SIZE.height,
+      })
+    } catch (err) {
+      console.error('Failed to sync minimized->companion position:', err)
+    }
+  })
 
   minimizedWindow.on('closed', () => { minimizedWindow = null })
 }
@@ -344,16 +466,32 @@ ipcMain.on('window:restore', (_, page) => {
       chatWindow.show()
       chatWindow.focus()
     } else {
-      // Create chat window similar to window:openChat handler
-      const [px, py] = (companionWindow && companionWindow.getPosition) ? companionWindow.getPosition() : [screen.getPrimaryDisplay().workAreaSize.width - 315, 40]
+      // Create chat window (prefer saved bounds; otherwise derive from companion)
+      const primaryWA = screen.getPrimaryDisplay().workArea
+      const fallback = {
+        width: CHAT_SIZE.width,
+        height: CHAT_SIZE.height,
+        x: primaryWA.x + primaryWA.width - (CHAT_SIZE.width + COMPANION_SIZE.width + WINDOW_GAP + 20),
+        y: primaryWA.y + 40,
+      }
+
+      const derived = companionWindow?.getBounds
+        ? (() => {
+            const cb = companionWindow.getBounds()
+            return { ...fallback, x: cb.x - (CHAT_SIZE.width + WINDOW_GAP), y: cb.y }
+          })()
+        : null
+
+      const b = getSavedBounds('chat', derived ?? fallback)
       chatWindow = new BrowserWindow({
-        width: 300, height: 680, x: px - 315, y: py,
+        width: b.width, height: b.height, x: b.x, y: b.y,
         frame: false, transparent: true, alwaysOnTop: true,
         skipTaskbar: false, resizable: false, hasShadow: true,
         webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
       })
       chatWindow.loadFile(path.join(__dirname, '../renderer/pages/chat.html'))
       if (isDev) chatWindow.webContents.openDevTools({ mode: 'detach' })
+      wireBoundsPersistence(chatWindow, 'chat')
       chatWindow.on('closed', () => { chatWindow = null })
     }
   } else {
@@ -421,15 +559,32 @@ ipcMain.on('modal:taskCompleted', () => {
 // ── IPC: Chat ────────────────────────────────────────────────
 ipcMain.handle('window:openChat', () => {
   if (chatWindow) { chatWindow.focus(); return }
-  const [px, py] = companionWindow.getPosition()
+
+  const primaryWA = screen.getPrimaryDisplay().workArea
+  const fallback = {
+    width: CHAT_SIZE.width,
+    height: CHAT_SIZE.height,
+    x: primaryWA.x + primaryWA.width - (CHAT_SIZE.width + COMPANION_SIZE.width + WINDOW_GAP + 20),
+    y: primaryWA.y + 40,
+  }
+
+  const derived = companionWindow?.getBounds
+    ? (() => {
+        const cb = companionWindow.getBounds()
+        return { ...fallback, x: cb.x - (CHAT_SIZE.width + WINDOW_GAP), y: cb.y }
+      })()
+    : null
+
+  const b = getSavedBounds('chat', derived ?? fallback)
   chatWindow = new BrowserWindow({
-    width: 300, height: 680, x: px - 315, y: py,
+    width: b.width, height: b.height, x: b.x, y: b.y,
     frame: false, transparent: true, alwaysOnTop: true,
     skipTaskbar: false, resizable: false, hasShadow: true,
     webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
   })
   chatWindow.loadFile(path.join(__dirname, '../renderer/pages/chat.html'))
   if (isDev) chatWindow.webContents.openDevTools({ mode: 'detach' })
+  wireBoundsPersistence(chatWindow, 'chat')
   chatWindow.on('closed', () => { chatWindow = null })
 })
 ipcMain.on('window:closeChat', () => chatWindow?.close())

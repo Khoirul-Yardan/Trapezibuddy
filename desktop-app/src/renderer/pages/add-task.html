@@ -134,6 +134,35 @@
       pointer-events: none;
     }
 
+    /* Native date/time picker indicator (Windows/Chromium) can look "double"
+       when we also show our own SVG icon. Hide the native icon visually, but
+       keep its hit-area so click still opens the picker. */
+    input[type="date"].field-input,
+    input[type="time"].field-input {
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: none;
+    }
+
+    input[type="date"].field-input::-webkit-calendar-picker-indicator,
+    input[type="time"].field-input::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      cursor: pointer;
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 36px;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Ensure text doesn't overlap on narrow widths */
+    input[type="date"].field-input::-webkit-datetime-edit,
+    input[type="time"].field-input::-webkit-datetime-edit {
+      padding-right: 2px;
+    }
+
     /* ── Category pills (3D Pushable) ── */
     .cat-row {
       display: flex;
