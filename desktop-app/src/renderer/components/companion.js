@@ -7,6 +7,7 @@ const api = window.trapezi
 let state = {
   tasks:       [],
   activeTab:   'active',
+  finishedFilter: 'today', // today | last3 | week | all
   streak:      0,
   focusActive: true,
 }
@@ -37,6 +38,90 @@ function calcDeadlineLabel(deadline_date, deadline_time) {
   return `${Math.floor(diffHrs / 24)} days left`
 }
 
+function safeDate(value) {
+  const d = value ? new Date(value) : null
+  return d && !Number.isNaN(d.getTime()) ? d : null
+}
+
+function getTaskCreatedAt(task) {
+  return safeDate(task.created_at) ?? new Date()
+}
+
+function getTaskCompletedAt(task) {
+  // completed_at added when completing; fallback for older tasks
+  return safeDate(task.completed_at) ?? safeDate(task.updated_at) ?? getTaskCreatedAt(task)
+}
+
+function startOfDay(date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function startOfWeek(date) {
+  // Monday as week start
+  const d = startOfDay(date)
+  const day = (d.getDay() + 6) % 7 // 0=Mon
+  d.setDate(d.getDate() - day)
+  return d
+}
+
+function hashString(str) {
+  // stable hash for deterministic message pick
+  let h = 2166136261
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+function pick(list, seedStr) {
+  const h = hashString(seedStr)
+  return list[h % list.length]
+}
+
+function getDoneSubtitle(task) {
+  const createdAt = getTaskCreatedAt(task)
+  const doneAt = getTaskCompletedAt(task)
+  const deadline = safeDate(`${task.deadline_date}T${task.deadline_time}`) ?? null
+
+  const speedMs = doneAt - createdAt
+  const mins = speedMs / 60000
+
+  const quick = [
+    'Wow that was quick.',
+    'Speedrun completed.',
+    'Fast hands, nice.',
+    "You’re on fire.",
+  ]
+
+  const onTime = [
+    'You are super.',
+    'Nice work, keep it up.',
+    'Clean finish. Respect.',
+    'Solid discipline.',
+  ]
+
+  const late = [
+    'You disappoint me.',
+    'Late… but done.',
+    'Better late than never.',
+    'Try harder next time.',
+  ]
+
+  // If no valid deadline, base on completion speed only
+  if (!deadline) {
+    if (mins <= 30) return pick(quick, task.id + ':quick')
+    return pick(onTime, task.id + ':ontime')
+  }
+
+  const diffMs = deadline - doneAt // positive = early/on-time
+  if (diffMs < 0) return pick(late, task.id + ':late')
+  if (mins <= 30) return pick(quick, task.id + ':quick')
+  return pick(onTime, task.id + ':ontime')
+}
+
 const SVG_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
   <polyline points="20 6 9 17 4 12"/>
@@ -46,6 +131,12 @@ const SVG_CLOCK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="10"/>
   <polyline points="12 6 12 12 16 14"/>
+</svg>`
+
+const SVG_SPARK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 2l1.2 4.2L17 8l-3.8 1.8L12 14l-1.2-4.2L7 8l3.8-1.8L12 2z"/>
+  <path d="M19 13l.7 2.4L22 16l-2.3.6L19 19l-.7-2.4L16 16l2.3-.6L19 13z"/>
 </svg>`
 
 // ── Day Strip ────────────────────────────────────────────────
@@ -83,7 +174,10 @@ function updateMoodCard() {
 // ── Task Card ────────────────────────────────────────────────
 function createTaskCard(task) {
   const urgency  = calcUrgency(task.deadline_date, task.deadline_time, task.is_done)
-  const dlLabel  = calcDeadlineLabel(task.deadline_date, task.deadline_time)
+  const dlLabel  = task.is_done
+    ? getDoneSubtitle(task)
+    : calcDeadlineLabel(task.deadline_date, task.deadline_time)
+  const icon = task.is_done ? SVG_SPARK : SVG_CLOCK
 
   const card = document.createElement('div')
   card.className = 'task-card'
@@ -99,7 +193,7 @@ function createTaskCard(task) {
       <div class="task-text">
         <span class="task-name ${task.is_done ? 'done' : ''}">${task.name}</span>
         <div class="task-deadline ${urgency}">
-          ${SVG_CLOCK}
+          ${icon}
           <span>${dlLabel}</span>
         </div>
       </div>
@@ -119,15 +213,32 @@ function renderTaskList() {
   const list  = document.getElementById('task-list')
   const empty = document.getElementById('task-empty')
   const title = document.getElementById('task-list-title')
+  const filtersEl = document.getElementById('finished-filters')
 
   // Clear existing cards (preserve empty placeholder)
   list.querySelectorAll('.task-card').forEach(c => c.remove())
 
+  const now = new Date()
+  const rangeStart = (() => {
+    if (state.finishedFilter === 'all') return null
+    if (state.finishedFilter === 'today') return startOfDay(now)
+    if (state.finishedFilter === 'last3') return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+    if (state.finishedFilter === 'week') return startOfWeek(now)
+    return startOfDay(now)
+  })()
+
   const filtered = state.activeTab === 'active'
     ? state.tasks.filter(t => !t.is_done)
-    : state.tasks.filter(t =>  t.is_done)
+    : state.tasks
+        .filter(t => t.is_done)
+        .filter(t => {
+          if (!rangeStart) return true
+          const doneAt = getTaskCompletedAt(t)
+          return doneAt >= rangeStart
+        })
 
   title.textContent = state.activeTab === 'active' ? 'Tugas Aktif' : 'Selesai'
+  if (filtersEl) filtersEl.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
 
   if (filtered.length === 0) {
     empty.style.display = 'block'
@@ -266,6 +377,19 @@ function initTabBar() {
   })
 }
 
+function initFinishedFilters() {
+  const el = document.getElementById('finished-filters')
+  if (!el) return
+  el.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      el.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      state.finishedFilter = btn.dataset.filter || 'today'
+      renderTaskList()
+    })
+  })
+}
+
 // ── Add Task Modal ───────────────────────────────────────────
 function initModal() {
   const overlay   = document.getElementById('modal-overlay')
@@ -369,6 +493,7 @@ async function init() {
   updateMoodCard()
   renderTaskList()
   initTabBar()
+  initFinishedFilters()
   initModal()
   initConfirmModal()
   initWindowControls()

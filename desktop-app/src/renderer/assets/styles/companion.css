@@ -272,6 +272,37 @@
   padding: 0 16px;
 }
 
+.finished-filters {
+  display: flex;
+  gap: 8px;
+  padding: 6px 16px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.finished-filters::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.75);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.14);
+  transition: all 0.15s;
+  flex: 0 0 auto;
+}
+.filter-chip:hover {
+  background: rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.9);
+}
+.filter-chip.active {
+  background: var(--c-coconut);
+  border-color: transparent;
+  color: #1f1f1f;
+}
+
 .task-list-title {
   font-size: 15px;
   font-weight: 700;
