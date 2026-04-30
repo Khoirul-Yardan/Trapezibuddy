@@ -167,11 +167,70 @@ def generate_all_placeholder_sprites():
         return False
 
 
-def get_sprite_config() -> dict:
-    """Get sprite configuration - uses Gugu character assets"""
-    gugu_sprites_dir = os.path.join(SPRITES_DIR, "gugu")
+def load_frame_sequence_from_folder(folder_path: str) -> list:
+    """
+    Load all image frames from a folder in sorted order
     
-    # Use real gugu assets if they exist, otherwise use placeholder
+    Args:
+        folder_path: Path to folder containing frame images
+        
+    Returns:
+        List of file paths sorted in order
+    """
+    image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+    frames = []
+    
+    if not os.path.exists(folder_path):
+        return []
+    
+    try:
+        all_files = sorted(os.listdir(folder_path))
+        for filename in all_files:
+            if any(filename.lower().endswith(ext) for ext in image_extensions):
+                full_path = os.path.join(folder_path, filename)
+                frames.append(full_path)
+    except Exception as e:
+        print(f"Error reading folder {folder_path}: {e}")
+    
+    return frames
+
+
+def get_sprite_config() -> dict:
+    """Get sprite configuration - uses Gugu character assets from Sprite Sheet Contents"""
+    sprite_sheets_dir = os.path.join(ASSETS_DIR, "Sprite Sheet Contents")
+    
+    # Check for frame sequence assets (individual frame files)
+    if os.path.exists(sprite_sheets_dir):
+        config = {}
+        
+        # Define emotion states and their folders
+        emotion_map = {
+            "idle": "Neutral",
+            "happy": "Happy",
+            "interact": "Happy",  # Map interact to Happy animation
+            "sad": "Sad",
+            "worried": "Worried",
+            "neglected": "Neglected",
+            "walk_left": "Run Left Side",
+            "walk_right": "Run Right Side",
+        }
+        
+        for state_name, folder_name in emotion_map.items():
+            folder_path = os.path.join(sprite_sheets_dir, folder_name)
+            frames = load_frame_sequence_from_folder(folder_path)
+            
+            if frames:
+                config[state_name] = {
+                    "type": "sequence",
+                    "frames": frames,
+                    "fps": 7,  # Frames per second for animation
+                }
+        
+        if config:
+            return config
+    
+    # Fallback to single-frame gugu assets if they exist
+    gugu_sprites_dir = os.path.join(SPRITES_DIR, "gugu")
     if os.path.exists(gugu_sprites_dir):
         # Using individual frames from gugu folder
         return {
@@ -199,7 +258,7 @@ def get_sprite_config() -> dict:
                 "fps": 10,
                 "type": "single_frame"
             },
-            "interact": {
+            "happy": {
                 "path": os.path.join(gugu_sprites_dir, "happy.png"),
                 "frame_width": None,
                 "frame_height": None,
@@ -232,37 +291,37 @@ def get_sprite_config() -> dict:
                 "type": "single_frame"
             }
         }
-    else:
-        # Fallback to placeholder sprites
-        return {
-            "idle": {
-                "path": os.path.join(SPRITES_DIR, "idle.png"),
-                "frame_width": 64,
-                "frame_height": 64,
-                "num_frames": 4,
-                "fps": 8
-            },
-            "walk_left": {
-                "path": os.path.join(SPRITES_DIR, "walk_left.png"),
-                "frame_width": 64,
-                "frame_height": 64,
-                "num_frames": 8,
-                "fps": 12
-            },
-            "walk_right": {
-                "path": os.path.join(SPRITES_DIR, "walk_right.png"),
-                "frame_width": 64,
-                "frame_height": 64,
-                "num_frames": 8,
-                "fps": 12
-            },
-            "interact": {
-                "path": os.path.join(SPRITES_DIR, "interact.png"),
-                "frame_width": 64,
-                "frame_height": 64,
-                "num_frames": 3,
-                "fps": 10
-            }
+    
+    # Fallback to placeholder sprites
+    return {
+        "idle": {
+            "path": os.path.join(SPRITES_DIR, "idle.png"),
+            "frame_width": 64,
+            "frame_height": 64,
+            "num_frames": 4,
+            "fps": 8
+        },
+        "walk_left": {
+            "path": os.path.join(SPRITES_DIR, "walk_left.png"),
+            "frame_width": 64,
+            "frame_height": 64,
+            "num_frames": 8,
+            "fps": 12
+        },
+        "walk_right": {
+            "path": os.path.join(SPRITES_DIR, "walk_right.png"),
+            "frame_width": 64,
+            "frame_height": 64,
+            "num_frames": 8,
+            "fps": 12
+        },
+        "happy": {
+            "path": os.path.join(SPRITES_DIR, "interact.png"),
+            "frame_width": 64,
+            "frame_height": 64,
+            "num_frames": 3,
+            "fps": 10
+        }
     }
 
 

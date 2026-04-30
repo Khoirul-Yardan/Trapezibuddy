@@ -1,200 +1,155 @@
 #!/usr/bin/env python3
-"""
-Automatic Sprite Generator
-Scans assets folder and creates sprites from PNG files
-Supports individual frames or spritesheet generation
-"""
-
 import os
 import glob
+import json
 from pathlib import Path
 from PIL import Image
-from utils.logger import setup_logger
-
-logger = setup_logger(__name__)
 
 
 class SpriteScanner:
-    """Automatically scan and generate sprites from PNG files"""
-    
-    def __init__(self, assets_dir: str, sprites_dir: str):
+    def __init__(self, assets_dir: str, sprites_dir: str = None):
         self.assets_dir = Path(assets_dir)
-        self.sprites_dir = Path(sprites_dir)
+        self.sprites_dir = Path(sprites_dir) if sprites_dir else self.assets_dir / "sprites"
+
+    # =============================
+    # SCAN FOR FRAME SEQUENCE DIRECTORIES
+    # =============================
+    def scan_frame_sequences(self):
+        """Scan for frame sequence directories in Sprite Sheet Contents"""
+        frame_sequences = {}
         
-        if not self.assets_dir.exists():
-            logger.warning(f"Assets directory not found: {assets_dir}")
-        if not self.sprites_dir.exists():
-            logger.warning(f"Sprites directory not found: {sprites_dir}")
-    
-    def scan_for_sprites(self) -> dict:
-        """
-        Scan assets and sprites folders for PNG files
-        Returns dict of animation_name -> [image_paths]
-        """
+        frame_sequences_path = self.assets_dir / "Sprite Sheet Contents"
+        
+        if not frame_sequences_path.exists():
+            print("[INFO] Sprite Sheet Contents folder not found")
+            return frame_sequences
+        
+        # Look for subdirectories (Happy, Neglected, Sad, etc.)
+        try:
+            for item in sorted(os.listdir(frame_sequences_path)):
+                item_path = frame_sequences_path / item
+                
+                if item_path.is_dir():
+                    # Get all image files in this directory
+                    image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+                    image_files = []
+                    
+                    for filename in sorted(os.listdir(item_path)):
+                        if any(filename.lower().endswith(ext) for ext in image_extensions):
+                            image_files.append(str(item_path / filename))
+                    
+                    if image_files:
+                        # Use lowercase name as animation key
+                        anim_name = item.lower().replace(" ", "_")
+                        frame_sequences[anim_name] = image_files
+                        print(f"[FRAMES] {anim_name}: {len(image_files)} frames from '{item}' folder")
+        
+        except Exception as e:
+            print(f"[ERROR] Scanning frame sequences: {e}")
+        
+        return frame_sequences
+
+    # =============================
+    # SCAN FILES (FIXED)
+    # =============================
+    def scan_for_sprites(self):
         sprites = {}
-        
-        # Scan assets directory
-        if self.assets_dir.exists():
-            for subfolder in self.assets_dir.iterdir():
-                if subfolder.is_dir():
-                    anim_name = subfolder.name.lower()
-                    png_files = sorted(glob.glob(str(subfolder / "*.png")))
-                    
-                    if png_files:
-                        sprites[anim_name] = png_files
-                        logger.info(f"Found animation '{anim_name}': {len(png_files)} frames")
-        
-        # Scan sprites directory for character folders
-        if self.sprites_dir.exists():
-            for char_folder in self.sprites_dir.iterdir():
-                if char_folder.is_dir():
-                    char_name = char_folder.name.lower()
-                    
-                    # Scan for animation subfolders
-                    for anim_folder in char_folder.iterdir():
-                        if anim_folder.is_dir():
-                            anim_name = f"{char_name}_{anim_folder.name}".lower()
-                            png_files = sorted(glob.glob(str(anim_folder / "*.png")))
-                            
-                            if png_files and anim_name not in sprites:
-                                sprites[anim_name] = png_files
-                                logger.info(f"Found character animation '{anim_name}': {len(png_files)} frames")
-        
+
+        if not self.sprites_dir.exists():
+            print("[WARNING] sprites folder not found")
+            return sprites
+
+        # 🔥 SCAN PNG LANGSUNG (INI FIX UTAMA)
+        png_files = sorted(glob.glob(str(self.sprites_dir / "*.png")))
+
+        for file in png_files:
+            name = Path(file).stem.lower()
+            sprites[name] = file
+
         return sprites
-    
-    def get_animation_config(self) -> dict:
-        """
-        Generate animation config from scanned sprites
-        Returns dict suitable for load_character_sprites
-        """
-        sprites = self.scan_for_sprites()
+
+    # =============================
+    # DETECT SPRITESHEET
+    # =============================
+    def detect_spritesheet(self, path):
+        img = Image.open(path)
+        total_w, total_h = img.size
+
+        # cek JSON (optional)
+        json_path = path.replace(".png", ".json")
+
+        if os.path.exists(json_path):
+            with open(json_path) as f:
+                data = json.load(f)
+
+            frame_w = data[0]["w"]
+            frame_h = data[0]["h"]
+            num_frames = len(data)
+
+            return frame_w, frame_h, num_frames
+
+        # 🔥 AUTO DETECT
+        frame_h = total_h
+        num_frames = total_w // frame_h
+
+        if num_frames <= 0:
+            num_frames = 1
+
+        frame_w = total_w // num_frames
+
+        return frame_w, frame_h, num_frames
+
+    # =============================
+    # BUILD CONFIG (ENHANCED)
+    # =============================
+    def get_animation_config(self):
         config = {}
         
-        for anim_name, png_files in sprites.items():
-            if not png_files:
+        # 1. Load frame sequences FIRST (priority over spritesheet PNGs)
+        frame_sequences = self.scan_frame_sequences()
+        for name, frame_files in frame_sequences.items():
+            config[name] = {
+                "type": "sequence",
+                "frames": frame_files,
+                "fps": 7
+            }
+            print(f"[OK] {name}: FRAME SEQUENCE with {len(frame_files)} frames")
+        
+        # 2. Load individual spritesheet PNGs
+        sprites = self.scan_for_sprites()
+        for name, path in sprites.items():
+            # Skip if already loaded as frame sequence
+            if name in config:
+                print(f"[SKIP] {name}: Already loaded as frame sequence")
                 continue
             
-            # Get first image to determine frame dimensions
             try:
-                img = Image.open(png_files[0])
-                width, height = img.size
-                num_frames = len(png_files)
-                
-                # Determine if single frame or animation
-                if num_frames == 1:
-                    # Single frame - might be spritesheet or single sprite
-                    config[anim_name] = {
-                        'path': png_files[0],
-                        'frame_width': width,
-                        'frame_height': height,
-                        'num_frames': 1,
-                        'fps': 10,
-                        'type': 'single'
-                    }
-                else:
-                    # Multiple frames - treat as animation
-                    config[anim_name] = {
-                        'path': png_files[0],  # First frame path (for reference)
-                        'frame_width': width,
-                        'frame_height': height,
-                        'num_frames': num_frames,
-                        'fps': 10,
-                        'type': 'sequence',
-                        'frames': png_files  # All frame paths
-                    }
-                
-                logger.info(f"Animation config created for '{anim_name}': {num_frames} frames @ {width}x{height}")
-                
+                w, h, n = self.detect_spritesheet(path)
+
+                config[name] = {
+                    "path": path,
+                    "frame_width": w,
+                    "frame_height": h,
+                    "num_frames": n,
+                    "fps": 7,
+                    "type": "spritesheet"
+                }
+
+                print(f"[OK] {name}: SPRITESHEET with {n} frames ({w}x{h})")
+
             except Exception as e:
-                logger.error(f"Failed to process {png_files[0]}: {e}")
-                continue
-        
-        return config
-    
-    def generate_basic_sprites(self) -> dict:
-        """
-        Generate sprite config with sensible defaults
-        Maps found images to animation names
-        """
-        config = {}
-        sprites = self.scan_for_sprites()
-        
-        # Map common animation names
-        animation_map = {
-            'idle': ['idle', 'stand', 'default'],
-            'walk': ['walk', 'move', 'run'],
-            'walk_left': ['walk_left', 'walk_left', 'move_left'],
-            'walk_right': ['walk_right', 'walk_right', 'move_right'],
-            'interact': ['interact', 'talk', 'action'],
-            'jump': ['jump', 'bounce'],
-            'happy': ['happy', 'smile', 'celebrate'],
-        }
-        
-        # Try to map found sprites to standard animations
-        for std_anim, variants in animation_map.items():
-            for sprite_name, frames in sprites.items():
-                if any(variant.lower() in sprite_name.lower() for variant in variants):
-                    if frames and std_anim not in config:
-                        img = Image.open(frames[0])
-                        w, h = img.size
-                        config[std_anim] = {
-                            'path': frames[0],
-                            'frame_width': w,
-                            'frame_height': h,
-                            'num_frames': len(frames),
-                            'fps': 10,
-                            'type': 'sequence' if len(frames) > 1 else 'single',
-                            'frames': frames
-                        }
-                        logger.info(f"Mapped '{sprite_name}' -> '{std_anim}'")
-                        break
-        
+                print(f"[ERROR] {name}:", e)
+
         return config
 
 
-class FrameSequenceLoader:
-    """Load animation from sequence of PNG frames"""
-    
-    @staticmethod
-    def load_frames(frame_paths: list) -> list:
-        """
-        Load sequence of PNG frames
-        Returns list of PIL Image objects
-        """
-        frames = []
-        for path in frame_paths:
-            try:
-                img = Image.open(path)
-                frames.append(img)
-            except Exception as e:
-                logger.error(f"Failed to load frame {path}: {e}")
-        
-        return frames
-    
-    @staticmethod
-    def create_animation_from_frames(frame_paths: list, fps: int = 10) -> dict:
-        """
-        Create animation dict from frame sequence
-        
-        Args:
-            frame_paths: List of paths to PNG frames
-            fps: Frames per second
-        
-        Returns:
-            Dict with frame_interval and frames info
-        """
-        frames = FrameSequenceLoader.load_frames(frame_paths)
-        
-        if not frames:
-            logger.error("No frames loaded!")
-            return {}
-        
-        frame_interval = int(1000 / fps)  # Convert fps to milliseconds
-        
-        return {
-            'frames': frames,
-            'frame_interval': frame_interval,
-            'num_frames': len(frames),
-            'fps': fps,
-            'paths': frame_paths
-        }
+# =============================
+# TEST
+# =============================
+if __name__ == "__main__":
+    scanner = SpriteScanner("assets")
+    config = scanner.get_animation_config()
+
+    print("\n=== RESULT ===")
+    for k, v in config.items():
+        print(k, "=>", v)

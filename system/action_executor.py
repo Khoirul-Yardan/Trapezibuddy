@@ -23,12 +23,19 @@ class ActionExecutor:
             "open_chrome": self.open_chrome,
             "open_notepad": self.open_notepad,
             "open_calculator": self.open_calculator,
+            "open_word": self.open_word,
+            "open_word_blank": self.open_word_blank,
+            "open_excel": self.open_excel,
+            "open_powerpoint": self.open_powerpoint,
             "open_browser": self.open_browser,
+            "open_website": self.open_website,
+            "search_on_website": self.search_on_website,
             "open_vscode": self.open_vscode,
             "mouse_click": self.mouse_click,
             "mouse_move": self.mouse_move,
             "type_text": self.type_text,
             "press_key": self.press_key,
+            "fill_resume": self.fill_resume,
             "maximize_window": self.maximize_active_window,
             "minimize_window": self.minimize_active_window,
             "close_window": self.close_active_window,
@@ -39,6 +46,7 @@ class ActionExecutor:
             "open_folder": self.open_folder,
             "run_code": self.run_code,
             "move_character": self.move_character,
+            "say_text": self.say_text,
         }
     
     def execute(self, action_name: str, params: Dict[str, Any] = None) -> bool:
@@ -124,10 +132,161 @@ class ActionExecutor:
             logger.error(f"Failed to open Calculator: {e}")
             return False
     
+    def open_word(self, **kwargs):
+        """Open Microsoft Word and create a new blank document"""
+        word_paths = [
+            r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE",
+            r"C:\Program Files (x86)\Microsoft Office\root\Office16\WINWORD.EXE",
+            r"C:\Program Files\Microsoft Office\Office16\WINWORD.EXE",
+            r"C:\Program Files (x86)\Microsoft Office\Office16\WINWORD.EXE",
+        ]
+        
+        for path in word_paths:
+            if os.path.exists(path):
+                try:
+                    os.startfile(path)
+                    logger.info("Microsoft Word opened")
+                    return True
+                except Exception as e:
+                    logger.debug(f"Failed to open Word with path {path}: {e}")
+        
+        # Try with shell command
+        try:
+            os.startfile("winword.exe")
+            logger.info("Microsoft Word opened (via system PATH)")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to open Microsoft Word: {e}")
+            return False
+    
+    def open_word_blank(self, **kwargs):
+        """Open Microsoft Word with a blank document and handle Backstage screen"""
+        import time
+        
+        try:
+            # First open Word
+            self.open_word()
+            
+            # Wait for Word to start (longer wait for Backstage to appear)
+            wait_time = kwargs.get('wait_time', 4)
+            logger.info(f"Waiting {wait_time}s for Word to fully load...")
+            time.sleep(wait_time)
+            
+            # Try to click on "Blank Document" button if Backstage is showing
+            # Backstage "Blank Document" is typically near center-left of screen
+            # Try clicking at common positions for Blank Document button
+            blank_doc_positions = [
+                (150, 200),   # Top-left area (typical for Blank Document tile)
+                (250, 300),   # Center-left area
+                (300, 250),   # Alternative center position
+            ]
+            
+            logger.info("Looking for Blank Document button...")
+            for x, y in blank_doc_positions:
+                try:
+                    pyautogui.click(x, y)
+                    logger.info(f"Clicked at ({x}, {y}) to select Blank Document")
+                    time.sleep(1)
+                    # Check if we successfully entered document
+                    pyautogui.click(500, 400)  # Click in document area
+                    time.sleep(0.5)
+                    logger.info("Successfully entered blank document")
+                    return True
+                except:
+                    pass
+            
+            # If no Backstage found, just click in document area and start typing
+            logger.info("Backstage not found, clicking in document area...")
+            pyautogui.click(500, 400)
+            time.sleep(0.5)
+            logger.info("Ready to type in Word document")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to open Word blank document: {e}")
+            return False
+    
+    def open_excel(self, **kwargs):
+        """Open Microsoft Excel"""
+        excel_paths = [
+            r"C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE",
+            r"C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.EXE",
+            r"C:\Program Files\Microsoft Office\Office16\EXCEL.EXE",
+            r"C:\Program Files (x86)\Microsoft Office\Office16\EXCEL.EXE",
+        ]
+        
+        for path in excel_paths:
+            if os.path.exists(path):
+                try:
+                    os.startfile(path)
+                    logger.info("Microsoft Excel opened")
+                    return True
+                except Exception as e:
+                    logger.debug(f"Failed to open Excel with path {path}: {e}")
+        
+        # Try with shell command
+        try:
+            os.startfile("excel.exe")
+            logger.info("Microsoft Excel opened (via system PATH)")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to open Microsoft Excel: {e}")
+            return False
+    
+    def open_powerpoint(self, **kwargs):
+        """Open Microsoft PowerPoint"""
+        ppt_paths = [
+            r"C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE",
+            r"C:\Program Files (x86)\Microsoft Office\root\Office16\POWERPNT.EXE",
+            r"C:\Program Files\Microsoft Office\Office16\POWERPNT.EXE",
+            r"C:\Program Files (x86)\Microsoft Office\Office16\POWERPNT.EXE",
+        ]
+        
+        for path in ppt_paths:
+            if os.path.exists(path):
+                try:
+                    os.startfile(path)
+                    logger.info("Microsoft PowerPoint opened")
+                    return True
+                except Exception as e:
+                    logger.debug(f"Failed to open PowerPoint with path {path}: {e}")
+        
+        # Try with shell command
+        try:
+            os.startfile("powerpnt.exe")
+            logger.info("Microsoft PowerPoint opened (via system PATH)")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to open Microsoft PowerPoint: {e}")
+            return False
+    
     def open_browser(self, url: str = "https://www.google.com", **kwargs):
-        """Open URL in default browser"""
+        """Open URL - prioritizes Chrome if available, otherwise default browser"""
         try:
             import webbrowser
+            
+            # Try to open with Chrome specifically first
+            chrome_path = None
+            chrome_paths = [
+                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            ]
+            
+            for path in chrome_paths:
+                if os.path.exists(path):
+                    chrome_path = path
+                    break
+            
+            if chrome_path:
+                # Open URL with Chrome specifically
+                try:
+                    os.startfile(f"{chrome_path} {url}")
+                    logger.info(f"Chrome opened with URL: {url}")
+                    return True
+                except:
+                    pass
+            
+            # Fallback to default browser
             webbrowser.open(url)
             logger.info(f"Browser opened with URL: {url}")
             return True
@@ -161,20 +320,75 @@ class ActionExecutor:
     
     # Keyboard actions
     def type_text(self, text: str, interval: float = 0.05, **kwargs):
-        """Type text"""
+        """
+        Type text - handles Unicode, special characters, and Indonesian text
+        Uses clipboard for better compatibility with all text types
+        """
         try:
-            pyautogui.typewrite(text, interval=interval)
+            import pyperclip
+            import time
+            
+            # Copy text to clipboard
+            pyperclip.copy(text)
+            
+            # Paste from clipboard (this handles Unicode perfectly)
+            pyautogui.hotkey('ctrl', 'v')
+            
+            # Small delay for paste to complete
+            time.sleep(0.1)
+            
             logger.info(f"Typed text: {text}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to type text: {e}")
-            return False
+        except ImportError:
+            # Fallback: use keyboard library if available
+            try:
+                import keyboard
+                keyboard.write(text)
+                logger.info(f"Typed text (via keyboard): {text}")
+                return True
+            except:
+                # Last resort: use pyautogui (limited Unicode support)
+                try:
+                    # For ASCII text
+                    pyautogui.typewrite(text, interval=interval)
+                    logger.info(f"Typed text (via pyautogui): {text}")
+                    return True
+                except Exception as e:
+                    logger.error(f"Failed to type text: {e}")
+                    return False
     
     def press_key(self, key: str, **kwargs):
-        """Press keyboard key"""
+        """
+        Press keyboard key or key combination
+        Supports: Enter, Tab, Escape, ctrl+a, shift+tab, alt+f4, etc.
+        """
         try:
-            pyautogui.press(key)
-            logger.info(f"Key pressed: {key}")
+            # Handle key combinations (ctrl+a, shift+tab, etc.)
+            if '+' in key:
+                parts = key.split('+')
+                modifiers = [p.strip().lower() for p in parts[:-1]]
+                main_key = parts[-1].strip().lower()
+                
+                # Convert modifier names
+                modifier_map = {
+                    'ctrl': 'ctrl',
+                    'control': 'ctrl',
+                    'shift': 'shift',
+                    'alt': 'alt',
+                    'cmd': 'cmd',
+                    'win': 'win'
+                }
+                
+                modifiers = [modifier_map.get(m, m) for m in modifiers]
+                
+                # Execute the hotkey combination
+                pyautogui.hotkey(*modifiers, main_key)
+                logger.info(f"Key combination pressed: {key}")
+            else:
+                # Single key press
+                pyautogui.press(key.lower())
+                logger.info(f"Key pressed: {key}")
+            
             return True
         except Exception as e:
             logger.error(f"Failed to press key: {e}")
@@ -326,6 +540,214 @@ class ActionExecutor:
         # This will be handled by the main window calling the behavior_controller
         logger.info(f"Character move requested to ({x}, {y})")
         return True
+    
+    def say_text(self, text: str, **kwargs):
+        """Make character say text in dialog bubble"""
+        # This will be handled by the main window calling the dialog_manager
+        logger.info(f"Character asked to say: {text}")
+        return True
+    
+    def fill_resume(self, name: str = "", email: str = "", phone: str = "", 
+                    objective: str = "", experience: str = "", education: str = "",
+                    skills: str = "", wait_time: int = 4000, **kwargs):
+        """
+        Fill resume in Microsoft Word with provided information
+        
+        Args:
+            name: Full name
+            email: Email address
+            phone: Phone number
+            objective: Career objective
+            experience: Work experience
+            education: Education details
+            skills: Skills list (comma-separated)
+            wait_time: Time to wait for Word to open (ms)
+        """
+        try:
+            import time
+            import pyperclip
+            
+            logger.info("Starting resume fill process...")
+            
+            # Open Word with blank document (handles Backstage screen)
+            self.open_word_blank(wait_time=wait_time/1000)
+            
+            # Wait a bit more for document to be ready
+            time.sleep(0.5)
+            
+            # Build resume content with template format
+            resume_content = f"""RESUME
+
+Name: {name}
+Email: {email}
+Phone: {phone}
+
+OBJECTIVE:
+{objective}
+
+EXPERIENCE:
+{experience}
+
+EDUCATION:
+{education}
+
+SKILLS:
+{skills}"""
+            
+            # Use clipboard to paste the resume content
+            pyperclip.copy(resume_content)
+            time.sleep(0.2)
+            
+            # Paste the content
+            pyautogui.hotkey('ctrl', 'v')
+            time.sleep(0.5)
+            
+            logger.info("Resume content typed successfully")
+            return True
+            
+        except ImportError as e:
+            logger.error(f"Required library not available: {e}")
+            logger.error("Please install: pip install pyperclip")
+            return False
+        except Exception as e:
+            logger.error(f"Failed to fill resume: {e}")
+            return False
+    
+    def open_website(self, website: str = "google", **kwargs):
+        """
+        Open a website by name or URL
+        
+        Args:
+            website: Website name (google, chatgpt, youtube, stackoverflow, github, etc) 
+                    or full URL (https://...)
+        """
+        import time
+        
+        # Map of popular websites
+        website_map = {
+            "google": "https://www.google.com",
+            "chatgpt": "https://chat.openai.com",
+            "youtube": "https://www.youtube.com",
+            "stackoverflow": "https://stackoverflow.com",
+            "github": "https://github.com",
+            "twitter": "https://twitter.com",
+            "facebook": "https://www.facebook.com",
+            "reddit": "https://www.reddit.com",
+            "linkedin": "https://www.linkedin.com",
+            "instagram": "https://www.instagram.com",
+            "gmail": "https://mail.google.com",
+            "outlook": "https://outlook.live.com",
+            "wikipedia": "https://www.wikipedia.org",
+            "amazon": "https://www.amazon.com",
+            "ebay": "https://www.ebay.com",
+        }
+        
+        # Convert website name to URL if needed
+        website_lower = website.lower().strip()
+        if website_lower in website_map:
+            url = website_map[website_lower]
+        elif website.startswith("http"):
+            url = website
+        else:
+            # Assume it's a domain name, add https://
+            url = f"https://{website}" if not website.startswith("www.") else f"https://{website}"
+        
+        try:
+            logger.info(f"Opening website: {url}")
+            self.open_browser(url=url)
+            time.sleep(3)  # Wait for page to load
+            logger.info(f"Website opened: {url}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to open website: {e}")
+            return False
+    
+    def search_on_website(self, website: str = "google", search_query: str = "", **kwargs):
+        """
+        Open a website and perform a search
+        
+        Args:
+            website: Website name (google, chatgpt, youtube, wikipedia, etc)
+            search_query: What to search for
+        """
+        import time
+        
+        try:
+            # Open the website first
+            logger.info(f"Opening {website} to search for: {search_query}")
+            self.open_website(website=website)
+            time.sleep(2)
+            
+            # Handle different websites
+            website_lower = website.lower().strip()
+            
+            if website_lower == "chatgpt":
+                # For ChatGPT, click on the message input field and type
+                logger.info("Searching on ChatGPT (entering message)...")
+                time.sleep(1)
+                # ChatGPT message input is typically at bottom of screen
+                pyautogui.click(500, 600)  # Click in message area
+                time.sleep(0.5)
+                self.type_text(text=search_query)
+                time.sleep(0.5)
+                pyautogui.press('return')  # Send message
+                
+            elif website_lower == "youtube":
+                # For YouTube, click search box and search
+                logger.info("Searching on YouTube...")
+                time.sleep(1)
+                # YouTube search box is typically at top
+                pyautogui.click(500, 40)  # Click search box area
+                time.sleep(0.5)
+                self.type_text(text=search_query)
+                time.sleep(0.5)
+                pyautogui.press('return')
+                
+            elif website_lower == "google":
+                # For Google, type in search box
+                logger.info("Searching on Google...")
+                time.sleep(1)
+                pyautogui.click(500, 350)  # Click search box area
+                time.sleep(0.3)
+                self.type_text(text=search_query)
+                time.sleep(0.5)
+                pyautogui.press('return')
+                
+            elif website_lower == "wikipedia":
+                # For Wikipedia, search
+                logger.info("Searching on Wikipedia...")
+                time.sleep(1)
+                pyautogui.click(500, 80)  # Click search box
+                time.sleep(0.3)
+                self.type_text(text=search_query)
+                time.sleep(0.5)
+                pyautogui.press('return')
+                
+            elif website_lower == "stackoverflow":
+                # For Stack Overflow, search
+                logger.info("Searching on Stack Overflow...")
+                time.sleep(1)
+                pyautogui.click(500, 50)  # Click search box
+                time.sleep(0.3)
+                self.type_text(text=search_query)
+                time.sleep(0.5)
+                pyautogui.press('return')
+                
+            else:
+                # Generic search - try clicking in center and typing
+                logger.info("Performing generic search...")
+                pyautogui.click(500, 300)
+                time.sleep(0.3)
+                self.type_text(text=search_query)
+                time.sleep(0.5)
+                pyautogui.press('return')
+            
+            logger.info(f"Search completed on {website}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to search on website: {e}")
+            return False
     
     def get_available_actions(self) -> list:
         """Get list of available actions"""

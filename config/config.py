@@ -54,8 +54,8 @@ SPONTANEOUS_CHAT_INTERVAL_MIN = 15000  # Minimum time between spontaneous chats 
 SPONTANEOUS_CHAT_INTERVAL_MAX = 45000  # Maximum time between spontaneous chats (ms)
 SPONTANEOUS_CHAT_DURATION = 4000  # Duration to show dialog (ms)
 
-# Chat Panel Theme Settings
-CHAT_THEME = "modern_green"  # Options: "modern_green", "dark_blue", "light_purple", "vibrant", "ocean"
+# Chat Panel Theme Settings - SINGLE THEME FOR BETTER PERFORMANCE
+CHAT_THEME = "modern_green"
 CHAT_THEMES = {
     "modern_green": {
         "primary_color": "#4CAF50",
@@ -67,60 +67,34 @@ CHAT_THEMES = {
         "border_color": "#4CAF50",
         "input_bg": "#ffffff",
         "panel_bg": "#f9f9f9"
-    },
-    "dark_blue": {
-        "primary_color": "#1E88E5",
-        "secondary_color": "#1565C0",
-        "background": "rgba(33, 33, 33, 0.98)",
-        "text_color": "#E0E0E0",
-        "user_color": "#64B5F6",
-        "assistant_color": "#81C784",
-        "border_color": "#1E88E5",
-        "input_bg": "#424242",
-        "panel_bg": "#303030"
-    },
-    "light_purple": {
-        "primary_color": "#7C4DFF",
-        "secondary_color": "#651FFF",
-        "background": "rgba(248, 245, 255, 0.97)",
-        "text_color": "#212121",
-        "user_color": "#9C27B0",
-        "assistant_color": "#7B1FA2",
-        "border_color": "#7C4DFF",
-        "input_bg": "#ffffff",
-        "panel_bg": "#F3E5F5"
-    },
-    "vibrant": {
-        "primary_color": "#FF6B6B",
-        "secondary_color": "#EE5A52",
-        "background": "rgba(255, 250, 250, 0.96)",
-        "text_color": "#2C3E50",
-        "user_color": "#FF6B6B",
-        "assistant_color": "#4ECDC4",
-        "border_color": "#FF6B6B",
-        "input_bg": "#ffffff",
-        "panel_bg": "#FCE4EC"
-    },
-    "ocean": {
-        "primary_color": "#00BCD4",
-        "secondary_color": "#0097A7",
-        "background": "rgba(224, 247, 250, 0.95)",
-        "text_color": "#01579B",
-        "user_color": "#0277BD",
-        "assistant_color": "#00838F",
-        "border_color": "#00BCD4",
-        "input_bg": "#E0F7FA",
-        "panel_bg": "#B2EBF2"
     }
 }
 
 # AI Settings
 AI_ENABLED = True
-AI_TYPE = "local"  # "openai" or "local"
-AI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-AI_MODEL = "gpt-4"
-OLLAMA_URL = "http://localhost:11434"  # For local Ollama
-OLLAMA_MODEL = "llama2"
+AI_TYPE = "gemini"  # "openai", "local", or "gemini"
+AI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # Get from environment variable
+AI_MODEL = "gemini-2.5-flash"  # Gemini model to use (latest version)
+GEMINI_SAFETY_SETTINGS = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE",
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE",
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE",
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE",
+    },
+]
+OLLAMA_URL = "http://localhost:11434"  # For local Ollama (legacy)
+OLLAMA_MODEL = "llama2"  # For local Ollama (legacy)
 
 # Asset Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

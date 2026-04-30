@@ -148,6 +148,22 @@ class CharacterWidget(QWidget):
             animation = Animation(animation_name, pixmap, frame_width, frame_height, num_frames, fps)
             self.animation_controller.add_animation(animation)
         
+        return True
+    
+    def load_frame_sequence(self, animation_name: str, frame_files: list, fps: int = 7):
+        """
+        Load animation from a sequence of individual frame files
+        
+        Args:
+            animation_name: Name of the animation
+            frame_files: List of image file paths in sequence order
+            fps: Frames per second for animation
+            
+        Returns:
+            True if successfully loaded, False otherwise
+        """
+        return self.animation_controller.load_frame_sequence(animation_name, frame_files, fps=fps)
+        
         logger.info(f"Spritesheet loaded: {animation_name}")
         return True
     

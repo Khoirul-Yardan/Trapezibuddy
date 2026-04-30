@@ -1,8 +1,8 @@
 # Chat Panel - Interactive chat with character
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, 
-                               QPushButton, QTextEdit, QLabel, QScrollArea, QComboBox)
-from PySide6.QtCore import Qt, Signal, QTimer, QSize
-from PySide6.QtGui import QFont, QIcon, QColor, QTextCursor
+                               QPushButton, QTextEdit, QLabel)
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QFont, QColor
 from config.config import DIALOG_BOX_DURATION, CHAT_THEME, CHAT_THEMES
 from utils.logger import setup_logger
 
@@ -47,10 +47,10 @@ class ChatPanel(QWidget):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
         
-        # Header with theme selector
+        # Header - simplified without theme selector (performance improvement)
         header_layout = QHBoxLayout()
         
-        title = QLabel("💬 Chat with Assistant")
+        title = QLabel("Chat with Assistant")
         title_font = QFont()
         title_font.setPointSize(12)
         title_font.setBold(True)
@@ -58,18 +58,7 @@ class ChatPanel(QWidget):
         header_layout.addWidget(title)
         header_layout.addStretch()
         
-        # Theme selector
-        theme_label = QLabel("Theme:")
-        header_layout.addWidget(theme_label)
-        
-        theme_combo = QComboBox()
-        theme_combo.addItems(list(CHAT_THEMES.keys()))
-        theme_combo.setCurrentText(self.current_theme)
-        theme_combo.currentTextChanged.connect(self._on_theme_changed)
-        theme_combo.setMaximumWidth(120)
-        header_layout.addWidget(theme_combo)
-        
-        close_btn = QPushButton("✕")
+        close_btn = QPushButton("X")
         close_btn.setMaximumWidth(30)
         close_btn.setMinimumHeight(25)
         close_btn.clicked.connect(self.hide_panel)
@@ -104,7 +93,7 @@ class ChatPanel(QWidget):
         layout.addLayout(input_layout)
         
         # Info text
-        info = QLabel("💡 Tip: Press B to toggle chat panel | Type any message or command")
+        info = QLabel("Tip: Press B to toggle chat | Type messages or commands")
         info.setStyleSheet("""
             color: #666;
             font-size: 10px;
@@ -116,24 +105,43 @@ class ChatPanel(QWidget):
         
         # Apply theme
         self._apply_theme()
+        
+        # Show auto-greeting
+        self._show_auto_greeting()
+    
+    def _show_auto_greeting(self):
+        """Show auto-greeting when chat panel is created"""
+        import random
+        
+        greeting_messages = [
+            "Pagi! Atau sore ya? Hehe",
+            "Halo! Lama gak ada teman ngobrol",
+            "Hei, apa kabar? Sedang sibuk ya?",
+            "Wah, muncul juga! Aku kangen nih",
+            "Hai! Aku tadi nonton kamu bekerja, looks productive!",
+        ]
+        
+        greeting = random.choice(greeting_messages)
+        self._add_message("Assistant", greeting, is_user=False)
+        logger.info(f"Auto-greeting: {greeting}")
     
     def _on_send(self):
-        """Handle send button"""
+        """Handle send button - optimized"""
         message = self.input_field.text().strip()
         if not message:
             return
         
+        # Clear input immediately (before other operations)
+        self.input_field.clear()
+        
         # Add user message to display
         self._add_message("You", message, is_user=True)
         
-        # Emit signal for processing
+        # Emit signal for processing (AI happens in background)
         self.message_sent.emit(message)
         
-        # Clear input
-        self.input_field.clear()
+        # Keep focus
         self.input_field.setFocus()
-        
-        logger.debug(f"Chat message sent: {message}")
     
     def _apply_theme(self):
         """Apply current theme to all UI elements"""
@@ -214,50 +222,34 @@ class ChatPanel(QWidget):
                     }}
                     QPushButton:hover {{ background-color: #cc0000; }}
                 """)
-        
-        logger.debug(f"Theme applied: {self.current_theme}")
     
     def _on_theme_changed(self, theme_name: str):
-        """Handle theme change from combo box"""
+        """Handle theme change from combo box - fast theme update without re-rendering"""
         if theme_name in CHAT_THEMES:
             self.current_theme = theme_name
             self.theme_colors = CHAT_THEMES[theme_name]
             self._apply_theme()
             self.theme_changed.emit(theme_name)
-            
-            # Re-render chat to new theme
-            self.chat_display.clear()
-            for msg in self.messages:
-                self._add_message(msg['sender'], msg['message'], msg['is_user'])
-            
-            logger.info(f"Theme changed to: {theme_name}")
+            logger.debug(f"Theme changed to: {theme_name}")
+            # Note: Don't re-render messages - just update styling for new messages
     
     def _add_message(self, sender: str, message: str, is_user: bool = False):
-        """Add message to chat display"""
-        cursor = self.chat_display.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.chat_display.setTextCursor(cursor)
-        
+        """Add message to chat display - optimized for speed"""
         # Format message with current theme colors
         colors = self.theme_colors
         if is_user:
             color = colors['user_color']
-            prefix = "👤 You"
+            prefix = "You"
         else:
             color = colors['assistant_color']
-            prefix = "🤖 Assistant"
+            prefix = "Assistant"
         
-        # Add HTML formatted message
-        html = f"""<div style="margin-bottom: 10px;">
-            <span style="color: {color}; font-weight: bold;">{prefix}:</span>
-            <span style="color: {colors['text_color']}; margin-left: 5px;">{message}</span>
-        </div>"""
+        # Simpler HTML with less overhead
+        html = f"<p style='color: {color}; font-weight: bold; margin: 8px 0 2px 0;'>{prefix}:</p>"
+        html += f"<p style='color: {colors['text_color']}; margin: 0 0 10px 15px;'>{message}</p>"
         
-        self.chat_display.insertHtml(html)
-        
-        # Auto-scroll to bottom
-        scrollbar = self.chat_display.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        # Append HTML - faster than full document manipulation
+        self.chat_display.append(html)
         
         # Save to history
         self.messages.append({
@@ -270,21 +262,16 @@ class ChatPanel(QWidget):
         """Add assistant response to chat"""
         self._add_message("Assistant", message, is_user=False)
     
+    def add_user_message(self, message: str):
+        """Add user message to chat (synchronized from bubble)"""
+        self._add_message("You", message, is_user=True)
+    
     def add_thinking(self):
-        """Show thinking indicator"""
-        cursor = self.chat_display.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.chat_display.setTextCursor(cursor)
-        
-        html = """<div style="margin-bottom: 10px;">
-            <span style="color: #009900; font-weight: bold;">🤖 Assistant:</span>
-            <span style="color: #999; margin-left: 5px; font-style: italic;">Thinking...</span>
-        </div>"""
-        
-        self.chat_display.insertHtml(html)
-        
-        scrollbar = self.chat_display.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        """Show thinking indicator - optimized"""
+        colors = self.theme_colors
+        html = f"<p style='color: {colors['assistant_color']}; font-weight: bold; margin: 8px 0 2px 0;'>Assistant:</p>"
+        html += f"<p style='color: #999; margin: 0 0 10px 15px; font-style: italic;'>Thinking...</p>"
+        self.chat_display.append(html)
     
     def clear_messages(self):
         """Clear chat history"""

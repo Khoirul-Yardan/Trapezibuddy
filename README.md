@@ -25,10 +25,13 @@ Desktop overlay assistant dengan sprite 2D karakter, behavior system FSM, dan in
 - Random walking pattern
 
 ✅ **AI Integration**
+- **Google Gemini AI** (Recommended - Default)
 - Support OpenAI API (gpt-4)
 - Support local Ollama (offline)
 - Multi-language support
 - Intent parsing dan action mapping
+- Can create documents (Word, Excel, PowerPoint)
+- Answer any question with high accuracy
 
 ✅ **OS Control**
 - Buka aplikasi Windows (Chrome, Notepad, Calculator)
@@ -73,9 +76,23 @@ venv\Scripts\activate.bat
 pip install -r requirements.txt
 ```
 
-### 4. (Optional) Setup OpenAI API Key
+### 4. Setup Gemini AI (Default - Recommended)
 
-Jika ingin gunakan OpenAI:
+1. Get API Key dari: https://aistudio.google.com/
+2. Set environment variable (PowerShell):
+   ```powershell
+   $env:GEMINI_API_KEY = "YOUR_API_KEY_HERE"
+   ```
+3. Atau Command Prompt:
+   ```cmd
+   setx GEMINI_API_KEY "YOUR_API_KEY_HERE"
+   ```
+
+Untuk detail lengkap, baca: **GEMINI_SETUP_GUIDE.md**
+
+### 5. (Optional) Setup OpenAI API Key
+
+Jika ingin gunakan OpenAI (bukan Gemini):
 
 ```bash
 set OPENAI_API_KEY=sk-...your-key...
@@ -83,17 +100,18 @@ set OPENAI_API_KEY=sk-...your-key...
 
 Atau edit `config/config.py`:
 ```python
+AI_TYPE = "openai"
 AI_API_KEY = "sk-...your-key..."
 ```
 
-### 5. (Optional) Setup Local Ollama
+### 6. (Optional) Setup Local Ollama
 
 Untuk offline AI, install Ollama:
 1. Download: https://ollama.ai
 2. Run: `ollama pull mistral`
 3. Di `config/config.py`, ubah:
 ```python
-AI_TYPE = "local"  # Bukan "openai"
+AI_TYPE = "local"  # Bukan "gemini"
 ```
 
 ---

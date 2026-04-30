@@ -7,6 +7,7 @@ from character.bubble_dialog import BubbleDialog
 from ui.chat_panel import ChatPanel
 from behavior.behavior_controller import BehaviorController
 from ai.ai_controller import AIController
+from ai.ai_worker import AIWorker
 from system.action_executor import ActionExecutor
 from utils.sprite_scanner import SpriteScanner
 from config.config import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, DIALOG_BOX_DURATION, DRAG_BOUNDARY_ENABLED, DRAG_BOUNDARY_MARGIN, HOTKEYS_ENABLED, HOTKEY_SHOW_SETTINGS, HOTKEY_SIZE_INCREASE, HOTKEY_SIZE_DECREASE, HOTKEY_MOVE_UP, HOTKEY_MOVE_DOWN, HOTKEY_MOVE_LEFT, HOTKEY_MOVE_RIGHT, HOTKEY_TOGGLE_CHAT, ASSETS_DIR, SPRITES_DIR
@@ -36,6 +37,9 @@ class DesktopAssistantWindow(QMainWindow):
         self.behavior_controller = BehaviorController(window_width=screen_width, screen_height=screen_height, window_height=WINDOW_HEIGHT)  # Pass dimensions
         self.ai_controller = AIController()
         self.action_executor = ActionExecutor()
+        
+        # AI worker for background processing (prevents UI freeze)
+        self.ai_worker = None
         
         # Connect chat panel signals
         self.chat_panel.message_sent.connect(self._on_chat_message)
@@ -108,7 +112,6 @@ class DesktopAssistantWindow(QMainWindow):
     
     def _on_animation_changed(self, animation_name: str):
         """Handle animation change from behavior controller"""
-        logger.debug(f"Animation changed to: {animation_name}")
         self.character_widget.set_animation(animation_name)
     
     def _on_position_changed(self, x: int, y: int):
@@ -125,7 +128,6 @@ class DesktopAssistantWindow(QMainWindow):
         clamped_y = max(0, min(y, screen_height - WINDOW_HEIGHT))
         
         # Move the window to the new position
-        logger.debug(f"Moving window to: ({clamped_x}, {clamped_y}) [clamped from ({x}, {y})]")
         self.move(clamped_x, clamped_y)
         
         # Start timer to update dialog position
@@ -168,7 +170,7 @@ class DesktopAssistantWindow(QMainWindow):
     
     def load_character_sprites(self, sprite_config: dict = None):
         """
-        Load character sprites
+        Load character sprites - supports both spritesheet and frame sequence animations
         
         Args:
             sprite_config: Dict with sprite path and frame info
@@ -183,18 +185,28 @@ class DesktopAssistantWindow(QMainWindow):
         try:
             logger.info(f"Loading {len(sprite_config)} sprites from config...")
             for anim_name, config in sprite_config.items():
-                # Check if this is a single-frame image (like gugu character assets)
+                # Check if this is a frame sequence animation
                 sprite_type = config.get('type', 'spritesheet')
                 
-                success = self.character_widget.load_spritesheet(
-                    anim_name,
-                    config['path'],
-                    config.get('frame_width'),
-                    config.get('frame_height'),
-                    config['num_frames'],
-                    config.get('fps', 10),
-                    sprite_type=sprite_type
-                )
+                if sprite_type == 'sequence' and 'frames' in config:
+                    # Load as frame sequence (multiple individual frame files)
+                    success = self.character_widget.load_frame_sequence(
+                        anim_name,
+                        config['frames'],
+                        config.get('fps', 7)
+                    )
+                else:
+                    # Load as traditional spritesheet
+                    success = self.character_widget.load_spritesheet(
+                        anim_name,
+                        config['path'],
+                        config.get('frame_width'),
+                        config.get('frame_height'),
+                        config['num_frames'],
+                        config.get('fps', 10),
+                        sprite_type=sprite_type
+                    )
+                
                 if success:
                     logger.info(f"Loaded sprite: {anim_name} (type: {sprite_type})")
                 else:
@@ -211,18 +223,6 @@ class DesktopAssistantWindow(QMainWindow):
             # Fallback to placeholders
             logger.info("Falling back to placeholder animations...")
             self.character_widget.create_placeholder_animations()
-    
-    def process_voice_command(self, command: str):
-        """Process voice or text command"""
-        logger.info(f"Processing command: {command}")
-        
-        result = self.ai_controller.process_command(command)
-        logger.info(f"AI Intent: {result.get('intent')}")
-        
-        action = result.get('action')
-        if action:
-            params = result.get('parameters', {})
-            self.action_executor.execute(action, params)
     
     def show_character_dialog(self, text: str, duration: int = DIALOG_BOX_DURATION):
         """
@@ -242,7 +242,6 @@ class DesktopAssistantWindow(QMainWindow):
         
         self.bubble_dialog.set_character_colors("assistant")
         self.bubble_dialog.show_text(text, duration, window_center_x, window_top_y)
-        logger.info(f"Character dialog: {text[:50]}...")
     
     def show_user_dialog(self, text: str, duration: int = DIALOG_BOX_DURATION):
         """
@@ -265,15 +264,46 @@ class DesktopAssistantWindow(QMainWindow):
         logger.info(f"User dialog: {text[:50]}...")
     
     def _on_chat_message(self, message: str):
-        """Handle message from chat panel"""
-        logger.info(f"Chat message received: {message}")
+        """
+        Handle message from chat panel - uses background thread for AI
+        Only AI response will be shown in bubble, user message only in chat panel
+        """
+        # Add user message to chat panel ONLY (NOT in bubble)
+        self.chat_panel.add_user_message(message)
         
-        # Show thinking state in chat
+        # Show thinking state in chat immediately
         self.chat_panel.add_thinking()
         
-        # Process with AI
-        result = self.ai_controller.process_command(message)
+        # Stop any previous AI worker
+        if self.ai_worker is not None:
+            self.ai_worker.quit()
+            self.ai_worker.wait()
+        
+        # Create new worker for this request
+        self.ai_worker = AIWorker(self.ai_controller, message)
+        self.ai_worker.response_ready.connect(
+            lambda result: self._on_ai_response(result, message)
+        )
+        self.ai_worker.error_occurred.connect(self._on_ai_error)
+        
+        # Start processing in background thread
+        self.ai_worker.start()
+    
+    def _on_ai_response(self, result: dict, original_message: str):
+        """
+        Handle AI response from worker thread
+        Shows response ONLY in bubble dialog and chat panel
+        """
+        logger.info(f"AI response received from worker thread")
         response = result.get('response', 'Hmm, let me think about that...')
+        
+        logger.info(f"AI response text: {response[:60]}...")
+        
+        # Immediately add response to chat panel
+        self.chat_panel.add_assistant_response(response)
+        
+        # Show AI response in bubble IMMEDIATELY (no delay)
+        self.show_character_dialog(response, duration=3000)
         
         # Execute actions if available (supports multiple actions with delays)
         actions = result.get('actions', [])
@@ -287,11 +317,16 @@ class DesktopAssistantWindow(QMainWindow):
             logger.info(f"Executing single action: {action}")
             self.action_executor.execute(action, params)
         
-        # Add response to chat
-        QTimer.singleShot(1500, lambda: self._add_chat_response(response, message))
+        logger.info(f"AI response displayed in bubble: {response[:50]}...")
         
-        # Also show in bubble dialog
-        self.show_ai_response(message, response)
+        # Clean up worker
+        self.ai_worker = None
+    
+    def _on_ai_error(self, error: str):
+        """Handle AI error"""
+        logger.error(f"AI processing error: {error}")
+        self.chat_panel.add_assistant_response(f"Sorry, I encountered an error: {error}")
+        self.ai_worker = None
     
     def _execute_actions_sequence(self, actions: list):
         """Execute multiple actions with delays between them"""
@@ -322,7 +357,6 @@ class DesktopAssistantWindow(QMainWindow):
     def _add_chat_response(self, response: str, original_message: str):
         """Add AI response to chat panel after thinking delay"""
         self.chat_panel.add_assistant_response(response)
-        logger.debug(f"Chat response added: {response[:50]}...")
     
     def _on_spontaneous_chat(self, chat_dict: dict):
         """
@@ -335,10 +369,12 @@ class DesktopAssistantWindow(QMainWindow):
         message = chat_dict.get('message', '')
         duration = chat_dict.get('duration', 4000)
         
-        logger.info(f"Spontaneous chat triggered: {chat_type} - '{message[:50]}...'")
-        
-        # Show the dialogue immediately
+        # Show the dialogue in character bubble
         self.show_character_dialog(message, duration=duration)
+        
+        # Also show in chat panel if it's visible
+        if self.chat_panel.isVisible():
+            self.chat_panel.add_assistant_response(message)
         
         # Optionally: Generate more natural response via AI
         # This would make the dialogue more dynamic

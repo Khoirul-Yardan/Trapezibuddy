@@ -161,19 +161,22 @@ class BehaviorController(QObject):
     def _on_enter_idle(self):
         """Enter idle state"""
         import time
-        self.animation_changed.emit("idle")
+        # Randomly choose an idle animation for variety
+        idle_animations = ["neutral", "happy", "worried"]
+        idle_anim = random.choice(idle_animations)
+        self.animation_changed.emit(idle_anim)
         self._stop_walking()
         self.idle_duration = random.randint(IDLE_DURATION_MIN, IDLE_DURATION_MAX)
         self.idle_start_time = time.time() * 1000  # Current time in milliseconds
         self.state_timer.start(self.idle_duration)
-        logger.debug("Entered IDLE state")
+        logger.debug(f"Entered IDLE state with animation: {idle_anim}")
         
         # Check for spontaneous chat trigger
         self.dialogue_engine.update(self.idle_start_time, is_idle=True)
     
     def _on_enter_walk_left(self):
         """Enter walk left state"""
-        self.animation_changed.emit("walk_left")
+        self.animation_changed.emit("run_left_side")
         self.walk_direction = "left"
         # Walk to random position on left side of screen, but leave margin
         self.walk_target_x = random.randint(100, max(100, self.window_width // 3))
@@ -185,7 +188,7 @@ class BehaviorController(QObject):
     
     def _on_enter_walk_right(self):
         """Enter walk right state"""
-        self.animation_changed.emit("walk_right")
+        self.animation_changed.emit("run_right_side")
         self.walk_direction = "right"
         # Walk to random position on right side of screen, but leave margin
         self.walk_target_x = random.randint(max(self.window_width // 2, 200), self.window_width - 200)
@@ -197,7 +200,10 @@ class BehaviorController(QObject):
     
     def _on_enter_interact(self):
         """Enter interact state"""
-        self.animation_changed.emit("interact")
+        # Use random emotion for interaction (sad or neglected for concern)
+        interact_animations = ["sad", "neglected"]
+        interact_anim = random.choice(interact_animations)
+        self.animation_changed.emit(interact_anim)
         logger.debug("Entered INTERACT state")
         self.state_timer.start(1000)  # 1 second interact
     

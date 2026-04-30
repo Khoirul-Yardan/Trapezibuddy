@@ -4,9 +4,10 @@ pyautogui==0.9.53
 Pillow==10.2.0
 requests==2.31.0
 PyInstaller==6.6.0
+pyperclip==1.8.2
 
-# Optional: For OpenAI integration
-# openai==1.13.0
+# Google Generative AI (Gemini) integration
+google-generativeai==0.3.0
 
 # Optional: For advanced sprite handling
 # numpy==1.24.3
