@@ -73,12 +73,33 @@
 
     <!-- ── Focus Session Card ────────────────────────────── -->
     <div class="focus-card">
-      <div class="focus-header">
-        <span class="focus-label">Focus Session</span>
-        <span class="focus-dot" id="focus-dot"></span>
+      <!-- Idle state -->
+      <div id="focus-idle">
+        <button class="focus-start-btn focus-pushable" id="btn-focus-start" type="button">
+          <span class="shadow"></span>
+          <span class="edge"></span>
+          <span class="front">
+            Start Focus Session?
+          </span>
+        </button>
+        <div class="focus-idle-sub">Its Now or Never! &gt;:D</div>
       </div>
-      <div class="focus-timer" id="focus-timer">25:00</div>
-      <div class="focus-sub">Deep Work in progress</div>
+
+      <!-- Running state -->
+      <div id="focus-running" style="display:none">
+        <button class="focus-stop-btn" id="btn-focus-stop" type="button" aria-label="Stop focus session">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round">
+            <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+          </svg>
+        </button>
+        <div class="focus-header">
+          <span class="focus-label" id="focus-label">Focus Session</span>
+          <span class="focus-dot" id="focus-dot"></span>
+        </div>
+        <div class="focus-timer" id="focus-timer">25:00</div>
+        <div class="focus-sub" id="focus-sub">Deep Work in progress</div>
+      </div>
     </div>
 
     <!-- ── Task Section ──────────────────────────────────── -->

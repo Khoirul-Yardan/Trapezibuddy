@@ -470,17 +470,52 @@ function initWindowControls() {
 let focusSeconds = 25 * 60
 let focusInterval = null
 
+function formatFocusTime(seconds) {
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0')
+  const s = String(seconds % 60).padStart(2, '0')
+  return `${m}:${s}`
+}
+
+function setFocusView(isRunning) {
+  const idle = document.getElementById('focus-idle')
+  const running = document.getElementById('focus-running')
+  if (idle) idle.style.display = isRunning ? 'none' : 'flex'
+  if (running) running.style.display = isRunning ? 'flex' : 'none'
+}
+
+function stopFocusTimer() {
+  if (focusInterval) {
+    clearInterval(focusInterval)
+    focusInterval = null
+  }
+  focusSeconds = 25 * 60
+
+  const timerEl = document.getElementById('focus-timer')
+  if (timerEl) timerEl.textContent = formatFocusTime(focusSeconds)
+
+  const dot = document.getElementById('focus-dot')
+  if (dot) dot.style.background = 'var(--c-urgent)'
+
+  setFocusView(false)
+}
+
 function startFocusTimer() {
+  if (focusInterval) return
+  setFocusView(true)
+
+  const timerEl = document.getElementById('focus-timer')
+  if (timerEl) timerEl.textContent = formatFocusTime(focusSeconds)
+
   focusInterval = setInterval(() => {
     if (focusSeconds <= 0) {
       clearInterval(focusInterval)
+      focusInterval = null
       document.getElementById('focus-dot').style.background = 'var(--c-done)'
       return
     }
     focusSeconds--
-    const m = String(Math.floor(focusSeconds / 60)).padStart(2, '0')
-    const s = String(focusSeconds % 60).padStart(2, '0')
-    document.getElementById('focus-timer').textContent = `${m}:${s}`
+    const t = document.getElementById('focus-timer')
+    if (t) t.textContent = formatFocusTime(focusSeconds)
   }, 1000)
 }
 
@@ -497,7 +532,12 @@ async function init() {
   initModal()
   initConfirmModal()
   initWindowControls()
-  startFocusTimer()
+  // Focus timer starts only on user action
+  setFocusView(false)
+  const startBtn = document.getElementById('btn-focus-start')
+  const stopBtn  = document.getElementById('btn-focus-stop')
+  startBtn?.addEventListener('click', () => startFocusTimer())
+  stopBtn?.addEventListener('click', () => stopFocusTimer())
 
   // Listen untuk refresh dari modal windows
   api.window.onRefreshTasks(async () => {
