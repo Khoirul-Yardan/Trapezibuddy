@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>TrapeziBuddy — Bubble</title>
+  <link rel="stylesheet" href="../assets/styles/bubble.css" />
+</head>
+<body>
+  <div id="bubble-container">
+    <div class="bubble-card" id="bubble-card">
+      <div class="bubble-accent"></div>
+      <div class="bubble-content">
+        <div class="bubble-header">
+          <div class="bubble-avatar">
+            <svg viewBox="0 0 22 16" fill="none" width="14" height="10">
+              <path d="M4 14L0 2H22L18 14H4Z" fill="rgba(255,255,255,0.9)"/>
+            </svg>
+          </div>
+          <span class="bubble-name">TrapeziBuddy</span>
+        </div>
+        <div class="bubble-text" id="bubble-text"></div>
+      </div>
+      <div class="bubble-tail"></div>
+    </div>
+  </div>
+  <script src="../components/bubble.js"></script>
+</body>
+</html>

@@ -12,6 +12,7 @@ from ai.ai_controller import AIController
 from ai.ai_worker import AIWorker
 from system.action_executor import ActionExecutor
 from utils.sprite_scanner import SpriteScanner
+from ipc_bridge import IPCBridge
 from config.config import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, DIALOG_BOX_DURATION, DRAG_BOUNDARY_ENABLED, DRAG_BOUNDARY_MARGIN, HOTKEYS_ENABLED, HOTKEY_SHOW_SETTINGS, HOTKEY_SIZE_INCREASE, HOTKEY_SIZE_DECREASE, HOTKEY_MOVE_UP, HOTKEY_MOVE_DOWN, HOTKEY_MOVE_LEFT, HOTKEY_MOVE_RIGHT, HOTKEY_TOGGLE_CHAT, ASSETS_DIR, SPRITES_DIR
 from utils.logger import setup_logger
 
@@ -44,6 +45,10 @@ class DesktopAssistantWindow(QMainWindow):
         # AI worker for background processing (prevents UI freeze)
         self.ai_worker = None
         
+        # IPC bridge for Electron communication
+        self.ipc_bridge = IPCBridge()
+        self._last_ipc_id = 0
+        
         # Connect chat panel signals
         self.chat_panel.message_sent.connect(self._on_chat_message)
         
@@ -73,6 +78,14 @@ class DesktopAssistantWindow(QMainWindow):
         
         # Auto-load sprites from assets folder
         self._auto_load_sprites()
+        
+        # Start IPC polling for Electron commands
+        self.ipc_poll_timer = QTimer()
+        self.ipc_poll_timer.timeout.connect(self._poll_ipc_commands)
+        self.ipc_poll_timer.start(400)  # Poll every 400ms
+        
+        # Write initial position state
+        self._write_position_state()
         
         logger.info("DesktopAssistantWindow initialized")
     
@@ -177,6 +190,9 @@ class DesktopAssistantWindow(QMainWindow):
         
         # Move the window to the new position
         self.move(clamped_x, clamped_y)
+        
+        # Write position for Electron bubble overlay
+        self._write_position_state()
         
         # Start timer to update dialog position
         if not self.position_update_timer.isActive():
@@ -580,6 +596,8 @@ class DesktopAssistantWindow(QMainWindow):
         """Cleanup resources"""
         self._stop_electron_chat()
         self.command_timer.stop()
+        self.ipc_poll_timer.stop()
+        self.ipc_bridge.cleanup()
         self.behavior_controller.cleanup()
         self.character_widget.cleanup()
         logger.info("Cleanup completed")
@@ -588,3 +606,51 @@ class DesktopAssistantWindow(QMainWindow):
         """Handle window close"""
         self.cleanup()
         event.accept()
+    
+    # ── IPC Bridge Methods ────────────────────────────────────
+    
+    def _write_position_state(self):
+        """Write current character position to IPC for Electron"""
+        try:
+            pos = self.pos()
+            self.ipc_bridge.write_state({
+                'x': pos.x(),
+                'y': pos.y(),
+                'width': WINDOW_WIDTH,
+                'height': WINDOW_HEIGHT,
+                'visible': self.isVisible()
+            })
+        except Exception as e:
+            logger.debug(f"Failed to write position state: {e}")
+    
+    def _poll_ipc_commands(self):
+        """Poll for commands from Electron (called by QTimer)"""
+        try:
+            data = self.ipc_bridge.read_commands()
+            if data:
+                self._handle_ipc_command(data)
+        except Exception as e:
+            logger.debug(f"IPC poll error: {e}")
+    
+    def _handle_ipc_command(self, data: dict):
+        """Handle a command from Electron"""
+        command = data.get('command', '')
+        logger.info(f"IPC command received: {command}")
+        
+        if command == 'hide_character':
+            self.hide()
+            self._write_position_state()
+            logger.info("Character hidden via IPC")
+        
+        elif command == 'show_character':
+            self.show()
+            self.raise_()
+            self._write_position_state()
+            logger.info("Character shown via IPC")
+        
+        elif command == 'show_bubble':
+            text = data.get('text', '')
+            duration = data.get('duration', 5000)
+            if text:
+                self.show_character_dialog(text, duration=duration)
+                logger.info(f"Bubble shown via IPC: {text[:40]}...")
