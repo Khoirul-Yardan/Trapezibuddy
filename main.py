@@ -12,6 +12,8 @@ Usage:
 import sys
 import os
 import argparse
+import chat_bridge
+
 
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -32,7 +34,34 @@ def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--skip-settings', action='store_true')
     parser.add_argument('--character-size', type=int, default=60)
+    parser.add_argument('--chat-bridge', action='store_true')
+    parser.add_argument('--message', type=str, help="User chat message")
+    parser.add_argument('--execute-actions', action='store_true')
     args, _ = parser.parse_known_args()
+
+    if args.chat_bridge:
+        import chat_bridge
+        import json
+        import io
+        from contextlib import redirect_stdout
+        
+        chat_bridge._configure_logging_silent()
+        swallowed = io.StringIO()
+        try:
+            with redirect_stdout(swallowed):
+                payload = chat_bridge._run(args.message, args.execute_actions)
+        except Exception as exc:
+            payload = {
+                "response": f"Python bridge error: {exc}",
+                "intent": "error",
+                "actions_executed": 0,
+            }
+            sys.stdout.buffer.write((json.dumps(payload, ensure_ascii=False) + '\n').encode('utf-8'))
+            sys.exit(1)
+
+        sys.stdout.buffer.write((json.dumps(payload, ensure_ascii=False) + '\n').encode('utf-8'))
+        sys.exit(0)
+
 
     logger.info("="*60)
     logger.info("Desktop Assistant 2D - Starting")
