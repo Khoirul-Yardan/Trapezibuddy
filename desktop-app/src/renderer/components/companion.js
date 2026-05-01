@@ -1,7 +1,14 @@
 // companion.js — TrapeziBuddy Renderer Logic
 // Handles: UI rendering, task management, IPC calls
 
-const api = window.trapezi
+// Get API safely - may not be available immediately on page load
+let api = null
+function getApi() {
+  if (!api) {
+    api = window.trapezi
+  }
+  return api
+}
 
 // ── State ────────────────────────────────────────────────────
 let state = {
@@ -332,7 +339,10 @@ function initConfirmModal() {
     confirmBtn.disabled = true
     confirmBtn.textContent = 'Menyimpan...'
 
-    await api.tasks.complete(_confirmTaskId)
+    const currentApi = getApi()
+    if (currentApi) {
+      await currentApi.tasks.complete(_confirmTaskId)
+    }
 
     closeConfirm()
 
@@ -356,13 +366,19 @@ function initConfirmModal() {
 
 // ── Load Tasks ───────────────────────────────────────────────
 async function loadTasks() {
-  state.tasks = await api.tasks.getAll()
+  const currentApi = getApi()
+  if (currentApi) {
+    state.tasks = await currentApi.tasks.getAll()
+  }
 }
 
 // ── Load Settings ────────────────────────────────────────────
 async function loadSettings() {
-  const settings = await api.settings.get()
-  state.streak   = settings.streak ?? 0
+  const currentApi = getApi()
+  if (currentApi) {
+    const settings = await currentApi.settings.get()
+    state.streak   = settings.streak ?? 0
+  }
 }
 
 // ── Tab Bar ──────────────────────────────────────────────────
@@ -470,6 +486,50 @@ function initWindowControls() {
 let focusSeconds = 25 * 60
 let focusInterval = null
 
+// ── Task Acknowledgment Messages ─────────────────────────────
+function showTaskAcknowledgment() {
+  const tasks = state.tasks
+  const activeTasks = tasks.filter(t => !t.is_done)
+  
+  if (activeTasks.length === 0) return
+  
+  const taskAckMessages = [
+    'Wah, banyak task nih! Kuat gak kamu? 💪',
+    'Task bertambah, semangat harus tetap! 🚀',
+    'Jangan malas yah, task menunggu! 😄',
+    'Mantap! Satu task lagi, ayo! 🎯',
+    'Sibuk-sibuk tapi kaya nih! ✨',
+  ]
+  
+  const msg = taskAckMessages[Math.floor(Math.random() * taskAckMessages.length)]
+  console.log('[Character Ack]:', msg)
+}
+
+// ── Deadline Reminders ───────────────────────────────────────
+function checkDeadlineReminders() {
+  const tasks = state.tasks
+  const now = new Date()
+  
+  const urgentTasks = tasks.filter(t => {
+    if (t.is_done) return false
+    const deadline = new Date(`${t.deadline_date}T${t.deadline_time}`)
+    const diffHrs = (deadline - now) / (1000 * 60 * 60)
+    return diffHrs < 1 && diffHrs > -1
+  })
+  
+  if (urgentTasks.length > 0) {
+    const reminderMessages = [
+      'Hei! Deadline task mu tinggal 1 jam! ⏰',
+      'Jangan lupa, task mu mau deadline! ⚠️',
+      'Cepat selesaiin, deadline mepet! 🔥',
+      'Setengah jam lagi deadline! 😅',
+    ]
+    
+    const msg = reminderMessages[Math.floor(Math.random() * reminderMessages.length)]
+    console.log('[Deadline Reminder]:', msg)
+  }
+}
+
 function formatFocusTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, '0')
   const s = String(seconds % 60).padStart(2, '0')
@@ -497,11 +557,23 @@ function stopFocusTimer() {
   if (dot) dot.style.background = 'var(--c-urgent)'
 
   setFocusView(false)
+  
+  // Show character again after focus ends
+  const currentApi = getApi()
+  if (currentApi && currentApi.window && currentApi.window.restore) {
+    currentApi.window.restore('active')
+  }
 }
 
 function startFocusTimer() {
   if (focusInterval) return
   setFocusView(true)
+  
+  // Hide character during focus session
+  const currentApi = getApi()
+  if (currentApi && currentApi.window && currentApi.window.hide) {
+    currentApi.window.hide()
+  }
 
   const timerEl = document.getElementById('focus-timer')
   if (timerEl) timerEl.textContent = formatFocusTime(focusSeconds)
@@ -511,6 +583,12 @@ function startFocusTimer() {
       clearInterval(focusInterval)
       focusInterval = null
       document.getElementById('focus-dot').style.background = 'var(--c-done)'
+      
+      // Show character when focus ends
+      const api2 = getApi()
+      if (api2 && api2.window && api2.window.restore) {
+        api2.window.restore('active')
+      }
       return
     }
     focusSeconds--
@@ -540,24 +618,39 @@ async function init() {
   stopBtn?.addEventListener('click', () => stopFocusTimer())
 
   // Listen untuk refresh dari modal windows
-  api.window.onRefreshTasks(async () => {
-    await loadTasks()
-    updateMoodCard()
-    renderTaskList()
-  })
+  const currentApi = getApi()
+  if (currentApi && currentApi.window && currentApi.window.onRefreshTasks) {
+    currentApi.window.onRefreshTasks(async () => {
+      await loadTasks()
+      updateMoodCard()
+      renderTaskList()
+      
+      // Show task acknowledgment message
+      showTaskAcknowledgment()
+    })
+  }
+
+  // Check deadline reminders every 5 minutes
+  checkDeadlineReminders()
+  setInterval(() => {
+    checkDeadlineReminders()
+  }, 5 * 60 * 1000)
 
   // Listen to navigation requests from main (e.g. restore with target page)
-  if (api.window.onNavigate) {
-    api.window.onNavigate((page) => {
+  const navApi = getApi()
+  if (navApi && navApi.window && navApi.window.onNavigate) {
+    navApi.window.onNavigate((page) => {
       if (!page) return
       if (page === 'active' || page === 'finished') {
         state.activeTab = page
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === page))
         renderTaskList()
       } else if (page === 'add-task') {
-        api.window.openAddTask()
+        const addApi = getApi()
+        if (addApi) addApi.window.openAddTask()
       } else if (page === 'chat') {
-        api.window.openChat()
+        const chatApi = getApi()
+        if (chatApi) chatApi.window.openChat()
       }
     })
   }

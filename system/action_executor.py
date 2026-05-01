@@ -93,22 +93,67 @@ class ActionExecutor:
             return False
     
     def open_chrome(self, **kwargs):
-        """Open Google Chrome"""
+        """Open Google Chrome - multiple fallback strategies"""
+        import time
+        
+        # Strategy 1: Common installation paths
         chrome_paths = [
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            r"C:\Users\%s\AppData\Local\Google\Chrome\Application\chrome.exe" % os.getenv('USERNAME', ''),
         ]
         
         for path in chrome_paths:
             if os.path.exists(path):
                 try:
-                    os.startfile(path)
-                    logger.info("Chrome opened")
+                    subprocess.Popen([path])
+                    logger.info(f"Chrome opened via: {path}")
+                    time.sleep(2)  # Wait for Chrome to start
                     return True
                 except Exception as e:
-                    logger.error(f"Failed to open Chrome: {e}")
+                    logger.warning(f"Failed to open Chrome from {path}: {e}")
         
-        logger.warning("Chrome not found in typical locations")
+        # Strategy 2: Try using 'where' command to find Chrome in PATH
+        try:
+            result = subprocess.run(
+                ["where", "chrome.exe"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                chrome_path = result.stdout.strip().split('\n')[0]
+                if chrome_path and os.path.exists(chrome_path):
+                    subprocess.Popen([chrome_path])
+                    logger.info(f"Chrome opened via PATH: {chrome_path}")
+                    time.sleep(2)
+                    return True
+        except Exception as e:
+            logger.warning(f"Failed to search Chrome in PATH: {e}")
+        
+        # Strategy 3: Try using 'start' command (Windows native)
+        try:
+            os.system("start chrome")
+            logger.info("Chrome opened via 'start chrome' command")
+            time.sleep(2)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to open Chrome via 'start' command: {e}")
+        
+        # Strategy 4: Try PowerShell
+        try:
+            subprocess.run(
+                ["powershell", "-Command", "Start-Process chrome"],
+                capture_output=True,
+                timeout=5
+            )
+            logger.info("Chrome opened via PowerShell")
+            time.sleep(2)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to open Chrome via PowerShell: {e}")
+        
+        logger.error("Chrome could not be opened - not found in any location")
         return False
     
     def open_notepad(self, **kwargs):

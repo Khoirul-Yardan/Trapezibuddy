@@ -17,6 +17,11 @@ contextBridge.exposeInMainWorld('trapezi', {
     set: (data)   => ipcRenderer.invoke('settings:set', data),
   },
 
+  // ── Chat ─────────────────────────────────────────────────
+  chat: {
+    sendMessage: (message) => ipcRenderer.invoke('chat:sendMessage', message),
+  },
+
   // ── Window ────────────────────────────────────────────────
   window: {
     // Companion

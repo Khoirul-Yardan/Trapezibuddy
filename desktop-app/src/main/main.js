@@ -7,6 +7,13 @@ const Store = require('electron-store')
 const { spawn } = require('child_process')
 const fs = require('fs')
 
+// ── Simple Logger ──────────────────────────────────────────────
+const logger = {
+  info: (msg) => console.log(`[INFO] ${new Date().toISOString()} ${msg}`),
+  error: (msg) => console.error(`[ERROR] ${new Date().toISOString()} ${msg}`),
+  warn: (msg) => console.warn(`[WARN] ${new Date().toISOString()} ${msg}`),
+}
+
 // ── Python companion process ──────────────────────────────────
 let pythonProcess = null
 
@@ -457,6 +464,124 @@ ipcMain.handle('tasks:delete', (_, taskId) => {
 
 ipcMain.handle('settings:get', () => store.get('settings'))
 ipcMain.handle('settings:set', (_, data) => { store.set('settings', data); return true })
+
+// ── IPC: Chat (Local Dialog) ──────────────────────────────────
+// Local dialog responses - no Python backend needed for now
+const localDialogResponses = {
+  'halo': 'Hai! Ada yang bisa aku bantu? 😊',
+  'halo aku': 'Selamat datang! Mau ngobrol atau butuh bantuan?',
+  'buka chrome': 'Baik, aku buka Chrome untuk kamu! 🌐',
+  'buka aplikasi': 'Aplikasi mana yang mau dibuka?',
+  'buat resume': 'Siap! Aku bantu kamu bikin resume di Word.',
+  'task': 'Ayo tambah task baru! Apa yang mau dikerjain?',
+  'fokus': 'Wah, mau fokus? Aku hilang dulu ya. Good luck! 💪',
+  'bantuan': 'Aku bisa membantu buka aplikasi, chat, atau manage tasks!',
+  'default': 'Hmm, aku bingung. Bisa dijelasin lagi? 🤔',
+}
+
+// ── Call Python Backend ──────────────────────────────────────
+async function callPythonBackend(userMessage) {
+  try {
+    const pythonScript = path.join(getProjectRoot(), 'chat_bridge.py')
+    const pythonExe = getPythonExecutable()
+    
+    logger.info(`[Python] Using executable: ${pythonExe}`)
+    logger.info(`[Python] Script: ${pythonScript}`)
+    
+    return new Promise((resolve, reject) => {
+      const python = spawn(pythonExe, [
+        pythonScript,
+        '--message', userMessage,
+        '--execute-actions'
+      ], {
+        cwd: getProjectRoot(),
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+
+      let output = ''
+      let error = ''
+
+      python.stdout.on('data', (data) => {
+        output += data.toString()
+      })
+
+      python.stderr.on('data', (data) => {
+        error += data.toString()
+      })
+
+      python.on('close', (code) => {
+        try {
+          if (code !== 0) {
+            logger.warn(`Python script exited with code ${code}: ${error}`)
+          }
+          
+          // Parse JSON response
+          const response = JSON.parse(output)
+          logger.info(`[AI] Response: ${response.response}`)
+          resolve(response)
+        } catch (parseErr) {
+          logger.error(`Failed to parse Python response: ${parseErr}`)
+          logger.error(`Output was: ${output}`)
+          logger.error(`Error was: ${error}`)
+          reject(parseErr)
+        }
+      })
+
+      python.on('error', (err) => {
+        logger.error(`Failed to spawn Python process: ${err.message}`)
+        reject(err)
+      })
+      
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        python.kill()
+        reject(new Error('Python backend timeout'))
+      }, 30000)
+    })
+  } catch (err) {
+    logger.error(`Python backend error: ${err.message}`)
+    throw err
+  }
+}
+
+// ── Chat Handler: Send Message to Python Backend ────────────
+ipcMain.handle('chat:sendMessage', async (_, userMessage) => {
+  try {
+    logger.info(`[Chat] User: ${userMessage}`)
+    
+    // Call Python backend via chat_bridge
+    const result = await callPythonBackend(userMessage)
+    const response = result.response || 'Hmm, aku belum paham. Coba ulangi ya.'
+    
+    // Log chat history
+    const chatHistory = store.get('chatHistory') || []
+    chatHistory.push({
+      timestamp: new Date().toISOString(),
+      user: userMessage,
+      assistant: response,
+      intent: result.intent,
+      actions: result.actions_executed,
+    })
+    store.set('chatHistory', chatHistory)
+    
+    return {
+      ok: true,
+      response: response,
+      intent: result.intent,
+      actions: result.actions_executed,
+    }
+  } catch (err) {
+    console.error('Chat error:', err)
+    logger.error(`[Chat] Error: ${err.message}`)
+    
+    return {
+      ok: false,
+      response: 'Maaf, ada error. Coba lagi ya! 🔄',
+      intent: 'error',
+      actions: 0,
+    }
+  }
+})
 
 // ── IPC: Window ──────────────────────────────────────────────
 // Track which page was active before minimize so restore() can re-open it
