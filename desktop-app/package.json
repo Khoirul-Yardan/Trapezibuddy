@@ -33,6 +33,13 @@
       "target": "nsis",
       "icon": "assets/icon.ico"
     },
+    "extraResources": [
+      {
+        "from": "../dist/main",
+        "to": "backend",
+        "filter": ["**/*"]
+      }
+    ],
     "directories": {
       "output": "dist"
     }

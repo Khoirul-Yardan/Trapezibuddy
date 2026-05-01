@@ -357,6 +357,12 @@ function initConfirmModal() {
       await currentApi.tasks.complete(_confirmTaskId)
     }
 
+    // Show congratulatory bubble on Python character
+    const bubbleApi = getApi()
+    if (bubbleApi && bubbleApi.bubble) {
+      bubbleApi.bubble.taskCompleted({ name: _confirmTaskName })
+    }
+
     closeConfirm()
 
     // Refresh UI
@@ -478,6 +484,18 @@ function initModal() {
       reminder,
     })
 
+    // Show bubble notification on Python character
+    const bubbleApi = getApi()
+    if (bubbleApi && bubbleApi.bubble) {
+      bubbleApi.bubble.taskAdded({
+        name,
+        deadline_date: date || new Date().toISOString().split('T')[0],
+        deadline_time: time || '23:59',
+        categories: cats,
+        priority: prio,
+      })
+    }
+
     closeModal()
     await loadTasks()
     updateMoodCard()
@@ -570,11 +588,30 @@ function stopFocusTimer() {
   if (dot) dot.style.background = 'var(--c-urgent)'
 
   setFocusView(false)
+  
+  // Show Python character again after focus ends
+  const currentApi = getApi()
+  if (currentApi && currentApi.python) {
+    currentApi.python.showCharacter()
+  }
 }
 
 function startFocusTimer() {
   if (focusInterval) return
   setFocusView(true)
+  
+  // Hide Python character during focus session
+  const currentApi = getApi()
+  if (currentApi && currentApi.python) {
+    // Show bubble first
+    currentApi.python.showBubble('Oke, aku sembunyi dulu ya! Semangat fokusnya! \uD83D\uDCAA\uD83D\uDD25', 3000)
+    // Hide character after bubble finishes (so user can read it)
+    setTimeout(() => {
+      if (focusInterval) { // Only hide if focus is still running
+        currentApi.python.hideCharacter()
+      }
+    }, 3500)
+  }
 
   const timerEl = document.getElementById('focus-timer')
   if (timerEl) timerEl.textContent = formatFocusTime(focusSeconds)
@@ -584,6 +621,13 @@ function startFocusTimer() {
       clearInterval(focusInterval)
       focusInterval = null
       document.getElementById('focus-dot').style.background = 'var(--c-done)'
+      
+      // Show Python character when focus ends
+      const api2 = getApi()
+      if (api2 && api2.python) {
+        api2.python.showCharacter()
+        api2.python.showBubble('Focus selesai! Istirahat dulu ya, kamu keren! 🎉', 5000)
+      }
       return
     }
     focusSeconds--

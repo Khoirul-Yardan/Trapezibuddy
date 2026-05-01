@@ -60,6 +60,31 @@ function stopPythonCompanion() {
   }
 }
 
+// ── IPC Bridge to Python (file-based) ─────────────────────────
+const IPC_DIR = path.join(getProjectRoot(), '.ipc')
+const IPC_COMMANDS_FILE = path.join(IPC_DIR, 'electron_commands.json')
+const IPC_STATE_FILE = path.join(IPC_DIR, 'python_state.json')
+
+function sendCommandToPython(command, params = {}) {
+  try {
+    fs.mkdirSync(IPC_DIR, { recursive: true })
+    const data = { command, id: Date.now(), ...params }
+    fs.writeFileSync(IPC_COMMANDS_FILE, JSON.stringify(data))
+    logger.info(`[IPC] Sent: ${command}`)
+  } catch (err) {
+    logger.error(`[IPC] Send error: ${err.message}`)
+  }
+}
+
+function readPythonState() {
+  try {
+    if (fs.existsSync(IPC_STATE_FILE)) {
+      return JSON.parse(fs.readFileSync(IPC_STATE_FILE, 'utf-8'))
+    }
+  } catch (e) { /* ignore */ }
+  return null
+}
+
 const store = new Store({
   defaults: {
     tasks: [],
@@ -86,11 +111,13 @@ let minimizedWindow   = null
 let addTaskWindow     = null
 let confirmTaskWindow = null
 let chatWindow        = null
+let bubbleWindow      = null
 let tray              = null
 const isDev           = process.argv.includes('--dev')
 
 const COMPANION_SIZE = { width: 300, height: 700 }
 const CHAT_SIZE = { width: 300, height: 680 }
+const BUBBLE_SIZE = { width: 320, height: 140 }
 const MINIMIZED_SIZE = { width: 382, height: 44 }
 const WINDOW_GAP = 15
 
@@ -214,8 +241,68 @@ function createStandalonePageWindow(pageName) {
   })
 
   win.loadFile(path.join(__dirname, target.file))
-  if (isDev) win.webContents.openDevTools({ mode: 'detach' })
+  // DevTools removed for cleaner experience
   return true
+}
+
+// ── Bubble Window (Above Python Character) ───────────────────
+function createBubbleWindow() {
+  if (bubbleWindow) return
+
+  bubbleWindow = new BrowserWindow({
+    width: BUBBLE_SIZE.width,
+    height: BUBBLE_SIZE.height,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    focusable: false,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  })
+
+  bubbleWindow.setPosition(-2000, -2000)
+  bubbleWindow.loadFile(path.join(__dirname, '../renderer/pages/bubble.html'))
+  
+  let lastBubbleText = ''
+  
+  // Keep bubble above Python character
+  setInterval(() => {
+    if (!bubbleWindow) return
+    const state = readPythonState()
+    
+    if (state && state.visible) {
+      const charWidth = state.width || 512
+      const charHeight = state.height || 512
+      
+      const x = Math.floor(state.x + (charWidth / 2) - (BUBBLE_SIZE.width / 2))
+      // Adjust y offset by +230px to account for the transparent space inside the 512x512 window
+      // Character is 60% of 512px (bottom aligned), so its head starts around +200px
+      const y = Math.floor(state.y - BUBBLE_SIZE.height + 230)
+      
+      bubbleWindow.setBounds({ x, y, width: BUBBLE_SIZE.width, height: BUBBLE_SIZE.height })
+      if (!bubbleWindow.isVisible()) bubbleWindow.showInactive()
+      
+      // Trigger spontaneous bubble if Python passed it
+      if (state.bubble_text && state.bubble_text !== lastBubbleText) {
+        lastBubbleText = state.bubble_text
+        bubbleWindow.webContents.send('bubble:show', { text: state.bubble_text })
+        
+        // Reset lastBubbleText after duration so same message can be shown again later
+        setTimeout(() => {
+          if (lastBubbleText === state.bubble_text) lastBubbleText = ''
+        }, state.bubble_duration || 5000)
+      }
+    } else {
+      if (bubbleWindow.isVisible()) bubbleWindow.hide()
+    }
+  }, 30)
+  
+  bubbleWindow.on('closed', () => { bubbleWindow = null })
 }
 
 // ── Settings Window ──────────────────────────────────────────
@@ -249,7 +336,6 @@ function createSettingsWindow() {
     path.join(__dirname, '../renderer/pages/settings.html')
   )
 
-  if (isDev) settingsWindow.webContents.openDevTools({ mode: 'detach' })
   wireBoundsPersistence(settingsWindow, 'settings')
   settingsWindow.on('closed', () => { settingsWindow = null })
 }
@@ -281,7 +367,6 @@ function createCompanionWindow(characterSize = 60) {
     const [x, y] = companionWindow.getPosition()
     store.set('windowPosition', { x, y })
   })
-  if (isDev) companionWindow.webContents.openDevTools({ mode: 'detach' })
   companionWindow.on('closed', () => { companionWindow = null })
 }
 
@@ -352,7 +437,6 @@ function createMinimizedWindow(activePage = 'active') {
     { query: { activePage } }
   )
 
-  if (isDev) minimizedWindow.webContents.openDevTools({ mode: 'detach' })
   wireBoundsPersistence(minimizedWindow, 'minimized')
 
   // When user drags minimized bar, we want restore to open companion at matching place.
@@ -563,6 +647,10 @@ ipcMain.handle('chat:sendMessage', async (_, userMessage) => {
       actions: result.actions_executed,
     })
     store.set('chatHistory', chatHistory)
+    // Also show AI response in Electron bubble
+    if (bubbleWindow) {
+      bubbleWindow.webContents.send('bubble:show', { text: response })
+    }
     
     return {
       ok: true,
@@ -576,7 +664,7 @@ ipcMain.handle('chat:sendMessage', async (_, userMessage) => {
     
     return {
       ok: false,
-      response: 'Maaf, ada error. Coba lagi ya! 🔄',
+      response: 'Maaf, ada error. Coba lagi ya! \uD83D\uDD04',
       intent: 'error',
       actions: 0,
     }
@@ -683,7 +771,6 @@ ipcMain.on('window:restore', (_, page) => {
         webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
       })
       chatWindow.loadFile(path.join(__dirname, '../renderer/pages/chat.html'))
-      if (isDev) chatWindow.webContents.openDevTools({ mode: 'detach' })
       wireBoundsPersistence(chatWindow, 'chat')
       chatWindow.on('closed', () => { chatWindow = null })
     }
@@ -780,11 +867,60 @@ ipcMain.handle('window:openChat', () => {
     webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
   })
   chatWindow.loadFile(path.join(__dirname, '../renderer/pages/chat.html'))
-  if (isDev) chatWindow.webContents.openDevTools({ mode: 'detach' })
   wireBoundsPersistence(chatWindow, 'chat')
   chatWindow.on('closed', () => { chatWindow = null })
 })
 ipcMain.on('window:closeChat', () => chatWindow?.close())
+
+// ── IPC: Bubble above Python character ───────────────────────
+ipcMain.on('python:showBubble', (_, data) => {
+  const text = data?.text || ''
+  if (text && bubbleWindow) {
+    bubbleWindow.webContents.send('bubble:show', { text })
+  }
+})
+
+// ── IPC: Focus session → hide/show Python character ──────────
+ipcMain.on('python:hideCharacter', () => {
+  sendCommandToPython('hide_character')
+})
+
+ipcMain.on('python:showCharacter', () => {
+  sendCommandToPython('show_character')
+})
+
+// ── IPC: Task notifications → Bubble above character ─────────
+ipcMain.on('bubble:taskAdded', (_, data) => {
+  const name = data?.name || 'Task baru'
+  const deadline = data?.deadline_date || ''
+  const time = data?.deadline_time || ''
+  const priority = data?.priority || 'Sedang'
+  const cats = (data?.categories || []).join(', ') || '-'
+  
+  let bubbleText = `\uD83D\uDCCB Task baru: "${name}"\n`
+  if (deadline) bubbleText += `\u23F0 Deadline: ${deadline} ${time}\n`
+  bubbleText += `\u26A1 Prioritas: ${priority}`
+  if (cats !== '-') bubbleText += ` | \uD83C\uDFF7 ${cats}`
+  bubbleText += `\n\uD83D\uDCAA Semangat kerjakan ya!`
+  
+  if (bubbleWindow) {
+    bubbleWindow.webContents.send('bubble:show', { text: bubbleText })
+  }
+})
+
+ipcMain.on('bubble:taskCompleted', (_, data) => {
+  const name = data?.name || 'Task'
+  const msgs = [
+    `\uD83C\uDF89 Yeey! "${name}" sudah selesai! Keren banget!`,
+    `\u2728 Mantap! "${name}" done! Kamu hebat!`,
+    `\uD83C\uDF1F Selamat! "${name}" completed! Lanjutkan!`,
+    `\uD83D\uDCAA "${name}" beres! Satu lagi selesai!`,
+  ]
+  const bubbleText = msgs[Math.floor(Math.random() * msgs.length)]
+  if (bubbleWindow) {
+    bubbleWindow.webContents.send('bubble:show', { text: bubbleText })
+  }
+})
 
 // ── App lifecycle ────────────────────────────────────────────
 app.whenReady().then(() => {
@@ -793,6 +929,7 @@ app.whenReady().then(() => {
     return
   }
   createSettingsWindow()
+  createBubbleWindow()
 })
 
 app.on('window-all-closed', () => {
