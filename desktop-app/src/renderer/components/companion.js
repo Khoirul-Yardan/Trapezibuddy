@@ -271,21 +271,34 @@ function openConfirmModal(taskId, taskName) {
   _confirmTaskId   = taskId
   _confirmTaskName = taskName
 
+  const nameEl = document.getElementById('confirm-task-name')
+  const hintEl = document.getElementById('confirm-task-hint')
+  const instrEl = document.getElementById('confirm-instruction')
+  const input = document.getElementById('confirm-input')
+  const errorEl = document.getElementById('confirm-error')
+  const confirmBtn = document.getElementById('btn-confirm-task')
+  const overlay = document.getElementById('confirm-overlay')
+
+  // If the confirm modal isn't present in DOM for some reason, don't crash.
+  // (This can happen if the HTML changes or the modal was removed.)
+  if (!nameEl || !hintEl || !instrEl || !input || !errorEl || !confirmBtn || !overlay) {
+    console.error('Confirm modal elements missing; cannot open confirm modal.')
+    return
+  }
+
   // Set teks
-  document.getElementById('confirm-task-name').textContent = taskName
-  document.getElementById('confirm-task-hint').textContent = taskName
-  document.getElementById('confirm-instruction').innerHTML =
-    `To confirm, type "<strong>${taskName}</strong>" below`
+  nameEl.textContent = taskName
+  hintEl.textContent = taskName
+  hintEl.style.fontWeight = 'bold' // ensure it's bold as originally intended by the innerHTML overwrite
 
   // Reset state
-  const input = document.getElementById('confirm-input')
   input.value = ''
   input.classList.remove('error')
-  document.getElementById('confirm-error').style.display = 'none'
-  document.getElementById('btn-confirm-task').disabled = true
+  errorEl.style.display = 'none'
+  confirmBtn.disabled = true
 
   // Tampilkan modal
-  document.getElementById('confirm-overlay').style.display = 'flex'
+  overlay.style.display = 'flex'
 
   // Focus input setelah animasi
   setTimeout(() => input.focus(), 50)

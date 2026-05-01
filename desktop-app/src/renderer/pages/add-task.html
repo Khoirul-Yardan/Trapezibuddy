@@ -547,6 +547,7 @@
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
           </div>
+          <div class="error-text" id="error-date">Deadline tidak boleh sebelum hari ini</div>
         </div>
         <div class="field-group">
           <label class="field-label">Jam</label>
@@ -582,6 +583,7 @@
           </button>
           <button class="cat-add" id="btn-add-cat">+</button>
         </div>
+        <div class="error-text" id="error-cats">Pilih minimal 1 kategori</div>
       </div>
 
       <!-- Prioritas -->
@@ -676,6 +678,8 @@
     document.getElementById('btn-save').addEventListener('click', async () => {
       const name = document.getElementById('task-name').value.trim()
       const errorEl = document.getElementById('error-name')
+      const errorDateEl = document.getElementById('error-date')
+      const errorCatsEl = document.getElementById('error-cats')
 
       if (!name) {
         document.getElementById('task-name').classList.add('error')
@@ -687,6 +691,21 @@
       document.getElementById('task-name').classList.remove('error')
       errorEl.style.display = 'none'
 
+      const selectedDate = document.getElementById('task-date').value
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const chosen = selectedDate ? new Date(`${selectedDate}T00:00:00`) : null
+      const dateInvalid = !chosen || Number.isNaN(chosen.getTime()) || chosen < today
+
+      if (dateInvalid) {
+        document.getElementById('task-date').classList.add('error')
+        errorDateEl.style.display = 'block'
+        document.getElementById('task-date').focus()
+        return
+      }
+      document.getElementById('task-date').classList.remove('error')
+      errorDateEl.style.display = 'none'
+
       const saveBtn = document.getElementById('btn-save')
       saveBtn.disabled = true
       saveBtn.textContent = 'Menyimpan...'
@@ -694,6 +713,14 @@
       const cats = [...document.querySelectorAll('.cat-tag.active')]
         .map(b => b.dataset.cat)
       const prio = document.querySelector('.pushable.active')?.dataset.prio ?? 'Sedang'
+
+      if (!cats.length) {
+        saveBtn.disabled = false
+        saveBtn.textContent = 'Simpan Tugas'
+        errorCatsEl.style.display = 'block'
+        return
+      }
+      errorCatsEl.style.display = 'none'
 
       try {
         await api.tasks.add({
