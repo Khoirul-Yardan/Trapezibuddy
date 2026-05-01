@@ -245,6 +245,66 @@ function createStandalonePageWindow(pageName) {
   return true
 }
 
+// ── Bubble Window (Above Python Character) ───────────────────
+function createBubbleWindow() {
+  if (bubbleWindow) return
+
+  bubbleWindow = new BrowserWindow({
+    width: BUBBLE_SIZE.width,
+    height: BUBBLE_SIZE.height,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    focusable: false,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  })
+
+  bubbleWindow.setPosition(-2000, -2000)
+  bubbleWindow.loadFile(path.join(__dirname, '../renderer/pages/bubble.html'))
+  
+  let lastBubbleText = ''
+  
+  // Keep bubble above Python character
+  setInterval(() => {
+    if (!bubbleWindow) return
+    const state = readPythonState()
+    
+    if (state && state.visible) {
+      const charWidth = state.width || 512
+      const charHeight = state.height || 512
+      
+      const x = Math.floor(state.x + (charWidth / 2) - (BUBBLE_SIZE.width / 2))
+      // Adjust y offset by +230px to account for the transparent space inside the 512x512 window
+      // Character is 60% of 512px (bottom aligned), so its head starts around +200px
+      const y = Math.floor(state.y - BUBBLE_SIZE.height + 230)
+      
+      bubbleWindow.setBounds({ x, y, width: BUBBLE_SIZE.width, height: BUBBLE_SIZE.height })
+      if (!bubbleWindow.isVisible()) bubbleWindow.showInactive()
+      
+      // Trigger spontaneous bubble if Python passed it
+      if (state.bubble_text && state.bubble_text !== lastBubbleText) {
+        lastBubbleText = state.bubble_text
+        bubbleWindow.webContents.send('bubble:show', { text: state.bubble_text })
+        
+        // Reset lastBubbleText after duration so same message can be shown again later
+        setTimeout(() => {
+          if (lastBubbleText === state.bubble_text) lastBubbleText = ''
+        }, state.bubble_duration || 5000)
+      }
+    } else {
+      if (bubbleWindow.isVisible()) bubbleWindow.hide()
+    }
+  }, 30)
+  
+  bubbleWindow.on('closed', () => { bubbleWindow = null })
+}
+
 // ── Settings Window ──────────────────────────────────────────
 function createSettingsWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
@@ -587,8 +647,10 @@ ipcMain.handle('chat:sendMessage', async (_, userMessage) => {
       actions: result.actions_executed,
     })
     store.set('chatHistory', chatHistory)
-    // Also show AI response in bubble above Python character
-    sendCommandToPython('show_bubble', { text: response, duration: 6000 })
+    // Also show AI response in Electron bubble
+    if (bubbleWindow) {
+      bubbleWindow.webContents.send('bubble:show', { text: response })
+    }
     
     return {
       ok: true,
@@ -709,7 +771,6 @@ ipcMain.on('window:restore', (_, page) => {
         webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
       })
       chatWindow.loadFile(path.join(__dirname, '../renderer/pages/chat.html'))
-      if (isDev) chatWindow.webContents.openDevTools({ mode: 'detach' })
       wireBoundsPersistence(chatWindow, 'chat')
       chatWindow.on('closed', () => { chatWindow = null })
     }
@@ -814,9 +875,8 @@ ipcMain.on('window:closeChat', () => chatWindow?.close())
 // ── IPC: Bubble above Python character ───────────────────────
 ipcMain.on('python:showBubble', (_, data) => {
   const text = data?.text || ''
-  const duration = data?.duration || 5000
-  if (text) {
-    sendCommandToPython('show_bubble', { text, duration })
+  if (text && bubbleWindow) {
+    bubbleWindow.webContents.send('bubble:show', { text })
   }
 })
 
@@ -843,7 +903,9 @@ ipcMain.on('bubble:taskAdded', (_, data) => {
   if (cats !== '-') bubbleText += ` | \uD83C\uDFF7 ${cats}`
   bubbleText += `\n\uD83D\uDCAA Semangat kerjakan ya!`
   
-  sendCommandToPython('show_bubble', { text: bubbleText, duration: 7000 })
+  if (bubbleWindow) {
+    bubbleWindow.webContents.send('bubble:show', { text: bubbleText })
+  }
 })
 
 ipcMain.on('bubble:taskCompleted', (_, data) => {
@@ -855,7 +917,9 @@ ipcMain.on('bubble:taskCompleted', (_, data) => {
     `\uD83D\uDCAA "${name}" beres! Satu lagi selesai!`,
   ]
   const bubbleText = msgs[Math.floor(Math.random() * msgs.length)]
-  sendCommandToPython('show_bubble', { text: bubbleText, duration: 6000 })
+  if (bubbleWindow) {
+    bubbleWindow.webContents.send('bubble:show', { text: bubbleText })
+  }
 })
 
 // ── App lifecycle ────────────────────────────────────────────
@@ -865,6 +929,7 @@ app.whenReady().then(() => {
     return
   }
   createSettingsWindow()
+  createBubbleWindow()
 })
 
 app.on('window-all-closed', () => {

@@ -304,8 +304,8 @@ class DesktopAssistantWindow(QMainWindow):
         window_center_x = window_pos.x() + WINDOW_WIDTH // 2
         window_top_y = window_pos.y()
         
-        self.bubble_dialog.set_character_colors("assistant")
-        self.bubble_dialog.show_text(text, duration, window_center_x, window_top_y)
+        # Trigger Electron bubble via IPC state
+        self._write_position_state(bubble_text=text, bubble_duration=duration)
     
     def show_user_dialog(self, text: str, duration: int = DIALOG_BOX_DURATION):
         """
@@ -323,8 +323,8 @@ class DesktopAssistantWindow(QMainWindow):
         window_center_x = window_pos.x() + WINDOW_WIDTH // 2
         window_top_y = window_pos.y()
         
-        self.bubble_dialog.set_character_colors("user")
-        self.bubble_dialog.show_text(text, duration, window_center_x, window_top_y)
+        # self.bubble_dialog.set_character_colors("user")
+        # self.bubble_dialog.show_text(text, duration, window_center_x, window_top_y)
         logger.info(f"User dialog: {text[:50]}...")
     
     def _on_chat_message(self, message: str):
@@ -609,17 +609,22 @@ class DesktopAssistantWindow(QMainWindow):
     
     # ── IPC Bridge Methods ────────────────────────────────────
     
-    def _write_position_state(self):
+    def _write_position_state(self, bubble_text: str = None, bubble_duration: int = 5000):
         """Write current character position to IPC for Electron"""
         try:
             pos = self.pos()
-            self.ipc_bridge.write_state({
+            state = {
                 'x': pos.x(),
                 'y': pos.y(),
                 'width': WINDOW_WIDTH,
                 'height': WINDOW_HEIGHT,
                 'visible': self.isVisible()
-            })
+            }
+            if bubble_text:
+                state['bubble_text'] = bubble_text
+                state['bubble_duration'] = bubble_duration
+                
+            self.ipc_bridge.write_state(state)
         except Exception as e:
             logger.debug(f"Failed to write position state: {e}")
     

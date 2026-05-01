@@ -4,6 +4,7 @@
 const { ipcRenderer } = require('electron')
 
 let typeTimer = null
+let autoHideTimer = null
 
 // ── Show bubble text with typewriter effect ──────────────────
 function showBubble(text, emoji) {
@@ -11,10 +12,13 @@ function showBubble(text, emoji) {
   const card = document.getElementById('bubble-card')
   if (!textEl || !card) return
 
-  // Clear previous
+  // Clear previous timers
   if (typeTimer) clearInterval(typeTimer)
+  if (autoHideTimer) clearTimeout(autoHideTimer)
+  
   textEl.innerHTML = ''
   card.classList.remove('hiding')
+  card.classList.add('active')
 
   // Add emoji badge if provided
   const existingEmoji = card.querySelector('.bubble-emoji')
@@ -41,6 +45,15 @@ function showBubble(text, emoji) {
   }
 
   typeTimer = setInterval(typeChar, speed)
+  
+  // Auto-hide the bubble after typing finishes + reading time
+  const typingDuration = text.length * speed
+  const readingTimeMs = 3500 // Extra 3.5 seconds to read
+  
+  autoHideTimer = setTimeout(() => {
+    hideBubble()
+    autoHideTimer = null
+  }, typingDuration + readingTimeMs)
 }
 
 // ── Hide bubble with animation ───────────────────────────────
@@ -48,6 +61,10 @@ function hideBubble() {
   const card = document.getElementById('bubble-card')
   if (card) {
     card.classList.add('hiding')
+    setTimeout(() => {
+      card.classList.remove('active')
+      card.classList.remove('hiding')
+    }, 300) // match CSS transition duration
   }
 }
 

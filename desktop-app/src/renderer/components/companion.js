@@ -590,8 +590,14 @@ function startFocusTimer() {
   // Hide Python character during focus session
   const currentApi = getApi()
   if (currentApi && currentApi.python) {
-    currentApi.python.hideCharacter()
-    currentApi.python.showBubble('Oke, aku sembunyi dulu ya! Semangat fokusnya! 💪🔥', 4000)
+    // Show bubble first
+    currentApi.python.showBubble('Oke, aku sembunyi dulu ya! Semangat fokusnya! \uD83D\uDCAA\uD83D\uDD25', 3000)
+    // Hide character after bubble finishes (so user can read it)
+    setTimeout(() => {
+      if (focusInterval) { // Only hide if focus is still running
+        currentApi.python.hideCharacter()
+      }
+    }, 3500)
   }
 
   const timerEl = document.getElementById('focus-timer')
