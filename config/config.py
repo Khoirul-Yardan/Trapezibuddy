@@ -96,9 +96,29 @@ GEMINI_SAFETY_SETTINGS = [
 OLLAMA_URL = "http://localhost:11434"  # For local Ollama (legacy)
 OLLAMA_MODEL = "llama2"  # For local Ollama (legacy)
 
-# Asset Paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+OLLAMA_URL = "http://localhost:11434"  # For local Ollama (legacy)
+OLLAMA_MODEL = "llama2"  # For local Ollama (legacy)
+
+# Asset Paths - Support both dev mode and PyInstaller production mode
+import sys
+if hasattr(sys, 'frozen'):  # Running as compiled exe (PyInstaller)
+    BASE_DIR = os.path.dirname(sys.executable)
+    # PyInstaller usually puts it in _internal or same directory for folder builds
+    _internal_assets = os.path.join(BASE_DIR, '_internal', 'assets')
+    _same_dir_assets = os.path.join(BASE_DIR, 'assets')
+    
+    if os.path.exists(_internal_assets):
+        ASSETS_DIR = _internal_assets
+    elif os.path.exists(_same_dir_assets):
+        ASSETS_DIR = _same_dir_assets
+    else:
+        # Try parent directory as fallback
+        ASSETS_DIR = os.path.join(os.path.dirname(BASE_DIR), 'assets')
+else:
+    # Development mode - use __file__ path
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+
 SPRITES_DIR = os.path.join(ASSETS_DIR, "sprites")
 GUGU_CHARACTER_DIR = os.path.join(SPRITES_DIR, "gugu")  # Path to gugu character sprites
 

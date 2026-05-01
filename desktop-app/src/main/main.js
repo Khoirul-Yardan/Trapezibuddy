@@ -18,6 +18,10 @@ const logger = {
 let pythonProcess = null
 
 function getProjectRoot() {
+  if (app.isPackaged) {
+    // In production, the backend folder is copied to resources/backend
+    return process.resourcesPath
+  }
   return path.join(__dirname, '..', '..', '..')
 }
 
@@ -34,21 +38,43 @@ function getPythonExecutable() {
 function startPythonCompanion(characterSize = 60) {
   if (pythonProcess) return
 
-  const pythonScript = path.join(getProjectRoot(), 'main.py')
-  const pythonExec = getPythonExecutable()
   const safeSize = Number.isFinite(characterSize) ? characterSize : 60
-
-  pythonProcess = spawn(pythonExec, [pythonScript, '--skip-settings', '--character-size', String(safeSize)], {
-    detached: false,
-    stdio:    'ignore',
-  })
+  const projectRoot = getProjectRoot()
+  
+  if (app.isPackaged) {
+    // In production, backend exe is in app.asar.unpacked/backend/
+    const backendExe = path.join(projectRoot, 'backend', 'main.exe')
+    logger.info(`Starting production python backend at: ${backendExe}`)
+    
+    if (!fs.existsSync(backendExe)) {
+      logger.error(`ERROR: Backend executable not found at ${backendExe}`)
+      logger.error(`Please ensure main.exe was built and included in the installer.`)
+      return
+    }
+    
+    pythonProcess = spawn(backendExe, ['--skip-settings', '--character-size', String(safeSize)], {
+      cwd: path.dirname(backendExe),
+      detached: false,
+      stdio: 'ignore',
+    })
+  } else {
+    const pythonScript = path.join(projectRoot, 'main.py')
+    const pythonExec = getPythonExecutable()
+    logger.info(`Starting dev python backend: ${pythonExec} ${pythonScript}`)
+    pythonProcess = spawn(pythonExec, [pythonScript, '--skip-settings', '--character-size', String(safeSize)], {
+      detached: false,
+      stdio: 'ignore',
+    })
+  }
 
   pythonProcess.on('error', (err) => {
     console.error('Failed to start Python companion:', err)
+    logger.error(`Python companion spawn error: ${err.message}`)
   })
 
   pythonProcess.on('close', (code) => {
     console.log(`Python companion exited with code ${code}`)
+    logger.info(`Python companion exited with code ${code}`)
     pythonProcess = null
   })
 }
@@ -61,7 +87,9 @@ function stopPythonCompanion() {
 }
 
 // ── IPC Bridge to Python (file-based) ─────────────────────────
-const IPC_DIR = path.join(getProjectRoot(), '.ipc')
+const IPC_DIR = app.isPackaged 
+  ? path.join(getProjectRoot(), 'backend', '.ipc')
+  : path.join(getProjectRoot(), '.ipc')
 const IPC_COMMANDS_FILE = path.join(IPC_DIR, 'electron_commands.json')
 const IPC_STATE_FILE = path.join(IPC_DIR, 'python_state.json')
 
@@ -115,11 +143,22 @@ let bubbleWindow      = null
 let tray              = null
 const isDev           = process.argv.includes('--dev')
 
-const COMPANION_SIZE = { width: 300, height: 700 }
-const CHAT_SIZE = { width: 300, height: 680 }
-const BUBBLE_SIZE = { width: 320, height: 140 }
-const MINIMIZED_SIZE = { width: 382, height: 44 }
-const WINDOW_GAP = 15
+// ═══════════════════════════════════════════════════════════════
+// WINDOW SIZE CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
+// Customize window sizes here. All dimensions in pixels (px)
+// Companion: character display window
+// Chat: chat interface window
+// Bubble: speech bubble above character
+// Minimized: collapsed header bar
+// AddTask: task creation modal
+// ConfirmTask: task completion modal
+// ═══════════════════════════════════════════════════════════════
+const COMPANION_SIZE = { width: 300, height: 700 }    // Character window
+const CHAT_SIZE = { width: 300, height: 680 }         // Chat panel
+const BUBBLE_SIZE = { width: 320, height: 140 }       // Speech bubble
+const MINIMIZED_SIZE = { width: 382, height: 44 }     // Minimized bar
+const WINDOW_GAP = 15                                  // Space between windows
 
 function clampBoundsToWorkArea(bounds) {
   if (!bounds) return null
@@ -192,17 +231,17 @@ function createStandalonePageWindow(pageName) {
   const pageMap = {
     chat: {
       file: '../renderer/pages/chat.html',
-      width: 300,
-      height: 680,
-      x: Math.floor(width / 2 - 150),
-      y: Math.floor(height / 2 - 340),
+      width: CHAT_SIZE.width,
+      height: CHAT_SIZE.height,
+      x: Math.floor(width / 2 - CHAT_SIZE.width / 2),
+      y: Math.floor(height / 2 - CHAT_SIZE.height / 2),
     },
     companion: {
       file: '../renderer/pages/companion.html',
-      width: 300,
-      height: 700,
-      x: Math.floor(width / 2 - 150),
-      y: Math.floor(height / 2 - 350),
+      width: COMPANION_SIZE.width,
+      height: COMPANION_SIZE.height,
+      x: Math.floor(width / 2 - COMPANION_SIZE.width / 2),
+      y: Math.floor(height / 2 - COMPANION_SIZE.height / 2),
     },
     'add-task': {
       file: '../renderer/pages/add-task.html',
@@ -280,9 +319,9 @@ function createBubbleWindow() {
       const charHeight = state.height || 512
       
       const x = Math.floor(state.x + (charWidth / 2) - (BUBBLE_SIZE.width / 2))
-      // Adjust y offset by +230px to account for the transparent space inside the 512x512 window
+      // Adjust y offset by +130px to account for the transparent space inside the 512x512 window
       // Character is 60% of 512px (bottom aligned), so its head starts around +200px
-      const y = Math.floor(state.y - BUBBLE_SIZE.height + 230)
+      const y = Math.floor(state.y - BUBBLE_SIZE.height + 130)
       
       bubbleWindow.setBounds({ x, y, width: BUBBLE_SIZE.width, height: BUBBLE_SIZE.height })
       if (!bubbleWindow.isVisible()) bubbleWindow.showInactive()
@@ -566,21 +605,43 @@ const localDialogResponses = {
 // ── Call Python Backend ──────────────────────────────────────
 async function callPythonBackend(userMessage) {
   try {
-    const pythonScript = path.join(getProjectRoot(), 'chat_bridge.py')
-    const pythonExe = getPythonExecutable()
-    
-    logger.info(`[Python] Using executable: ${pythonExe}`)
-    logger.info(`[Python] Script: ${pythonScript}`)
-    
     return new Promise((resolve, reject) => {
-      const python = spawn(pythonExe, [
-        pythonScript,
-        '--message', userMessage,
-        '--execute-actions'
-      ], {
-        cwd: getProjectRoot(),
-        stdio: ['pipe', 'pipe', 'pipe'],
-      })
+      const projectRoot = getProjectRoot()
+      let python;
+      
+      if (app.isPackaged) {
+        const backendExe = path.join(projectRoot, 'backend', 'main.exe')
+        logger.info(`Spawning backend exe: ${backendExe}`)
+        
+        if (!fs.existsSync(backendExe)) {
+          logger.error(`Backend exe not found: ${backendExe}`)
+          reject(new Error(`Backend executable not found at ${backendExe}`))
+          return
+        }
+        
+        python = spawn(backendExe, [
+          '--chat-bridge',
+          '--message', userMessage,
+          '--execute-actions'
+        ], {
+          cwd: path.dirname(backendExe),
+          stdio: ['pipe', 'pipe', 'pipe'],
+        })
+      } else {
+        const pythonScript = path.join(projectRoot, 'main.py')
+        const pythonExe = getPythonExecutable()
+        logger.info(`Spawning python script: ${pythonScript}`)
+        
+        python = spawn(pythonExe, [
+          pythonScript,
+          '--chat-bridge',
+          '--message', userMessage,
+          '--execute-actions'
+        ], {
+          cwd: projectRoot,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        })
+      }
 
       let output = ''
       let error = ''
@@ -600,7 +661,13 @@ async function callPythonBackend(userMessage) {
           }
           
           // Parse JSON response
-          const response = JSON.parse(output)
+          let jsonStr = output.trim();
+          const startIdx = jsonStr.indexOf('{');
+          const endIdx = jsonStr.lastIndexOf('}');
+          if (startIdx !== -1 && endIdx !== -1) {
+            jsonStr = jsonStr.substring(startIdx, endIdx + 1);
+          }
+          const response = JSON.parse(jsonStr)
           logger.info(`[AI] Response: ${response.response}`)
           resolve(response)
         } catch (parseErr) {
