@@ -21,6 +21,11 @@ class CharacterWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         
+        # Ensure widget background is transparent (avoid gray border artifacts)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setStyleSheet("background: transparent; border: none; margin: 0px; padding: 0px;")
+
         # Set widget size to match window
         self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         
@@ -57,7 +62,7 @@ class CharacterWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
         
-        # Clear background (transparent)
+        # Clear background completely (fully transparent)
         painter.fillRect(event.rect(), QColor(0, 0, 0, 0))
         
         # Get current frame

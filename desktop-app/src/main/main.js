@@ -25,6 +25,22 @@ function getProjectRoot() {
   return path.join(__dirname, '..', '..', '..')
 }
 
+function getAppIcon() {
+  const devIcon = path.join(getProjectRoot(), 'desktop-app', 'build', 'icons', 'gugugaga.ico')
+  const pkgIcon = path.join(process.resourcesPath || '', 'build', 'icons', 'gugugaga.ico')
+  const iconPath = fs.existsSync(pkgIcon) ? pkgIcon : devIcon
+  return nativeImage.createFromPath(iconPath)
+}
+
+// Set AppUserModelID for Windows so tray/icon behaves correctly
+try {
+  if (process.platform === 'win32' && app && app.setAppUserModelId) {
+    app.setAppUserModelId('com.trapezibuddy.app')
+  }
+} catch (err) {
+  logger.warn('Failed to set AppUserModelId: ' + err)
+}
+
 function getPythonExecutable() {
   const projectRoot = getProjectRoot()
   const venvPython = process.platform === 'win32'
@@ -272,6 +288,7 @@ function createStandalonePageWindow(pageName) {
     alwaysOnTop: true,
     resizable: false,
     hasShadow: true,
+    icon: getAppIcon(),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -298,6 +315,7 @@ function createBubbleWindow() {
     resizable: false,
     focusable: false,
     hasShadow: false,
+    icon: getAppIcon(),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -364,6 +382,7 @@ function createSettingsWindow() {
     frame:       false,
     resizable:   false,
     hasShadow:   true,
+    icon:        getAppIcon(),
     webPreferences: {
       nodeIntegration:  false,
       contextIsolation: true,
@@ -393,6 +412,7 @@ function createCompanionWindow(characterSize = 60) {
     width: b.width, height: b.height, x: b.x, y: b.y,
     frame: false, transparent: true, alwaysOnTop: true,
     skipTaskbar: false, resizable: false, hasShadow: true,
+    icon: getAppIcon(),
     webPreferences: {
       nodeIntegration: false, contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
@@ -464,6 +484,7 @@ function createMinimizedWindow(activePage = 'active') {
     skipTaskbar: true,
     resizable:   false,
     hasShadow:   false,
+    icon:        getAppIcon(),
     webPreferences: {
       nodeIntegration:  false,
       contextIsolation: true,
@@ -521,8 +542,7 @@ function createMinimizedWindow(activePage = 'active') {
 
 // ── Tray ─────────────────────────────────────────────────────
 function createTray() {
-  const icon = nativeImage.createEmpty()
-  tray = new Tray(icon)
+  tray = new Tray(getAppIcon())
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Buka',   click: () => companionWindow?.show() },
     { type: 'separator' },

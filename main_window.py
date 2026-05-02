@@ -105,9 +105,18 @@ class DesktopAssistantWindow(QMainWindow):
         
         # Make background transparent
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setAttribute(Qt.WA_DeleteOnClose, False)
         
-        # Set widget as central widget
+        # Ensure the window itself has no styled background
+        self.setStyleSheet("background: transparent; border: none; outline: none;")
+        
+        # Set widget as central widget with zero margins (no border/padding)
         self.setCentralWidget(self.character_widget)
+        
+        # Remove any default margins or spacing from QMainWindow
+        # This ensures the character_widget fills the entire window with no border
+        self.setContentsMargins(0, 0, 0, 0)
         
         # Position on screen (center area - should be visible)
         desktop_size = self.screen().availableGeometry()
@@ -116,6 +125,56 @@ class DesktopAssistantWindow(QMainWindow):
         self.move(max(0, x), max(0, y))
         
         logger.info("Window setup completed")
+    
+    def showEvent(self, event):
+        """Handle show event - apply aggressive Windows frame removal"""
+        super().showEvent(event)
+        
+        # Remove Windows 11 border artifacts on Windows platform
+        import platform
+        if platform.system() == 'Windows':
+            try:
+                import ctypes
+                hwnd = int(self.winId())
+                
+                # Define DWM constants
+                DWMWA_WINDOW_CORNER_PREFERENCE = 33
+                DWMWCP_DONOTROUND = 1
+                DWMWA_NCRENDERING_POLICY = 2
+                DWMNCRP_DISABLED = 1
+                
+                # Apply DWM attributes to remove frame
+                class MARGINS(ctypes.Structure):
+                    _fields_ = [
+                        ("cxLeftWidth", ctypes.c_int),
+                        ("cxRightWidth", ctypes.c_int),
+                        ("cyTopHeight", ctypes.c_int),
+                        ("cyBottomHeight", ctypes.c_int)
+                    ]
+                
+                # Extend frame into entire window (removes 1px border)
+                margins = MARGINS(-1, -1, -1, -1)
+                ctypes.windll.dwmapi.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
+                
+                # Disable window corner rounding
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, 
+                    DWMWA_WINDOW_CORNER_PREFERENCE, 
+                    ctypes.byref(ctypes.c_int(DWMWCP_DONOTROUND)), 
+                    4
+                )
+                
+                # Disable non-client rendering
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, 
+                    DWMWA_NCRENDERING_POLICY, 
+                    ctypes.byref(ctypes.c_int(DWMNCRP_DISABLED)), 
+                    4
+                )
+                
+                logger.info("DWM frame removal applied successfully")
+            except Exception as e:
+                logger.warning(f"Failed to apply DWM settings: {e}")
     
     def _setup_chat_panel_position(self):
         """Setup initial chat panel position"""
