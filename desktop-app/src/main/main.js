@@ -1,3 +1,4 @@
+
 // src/main/main.js
 // TrapeziBuddy — Electron Main Process
 
@@ -287,7 +288,7 @@ function createStandalonePageWindow(pageName) {
     transparent: true,
     alwaysOnTop: true,
     resizable: false,
-    hasShadow: true,
+    hasShadow: false,
     icon: getAppIcon(),
     webPreferences: {
       nodeIntegration: false,
@@ -368,15 +369,15 @@ function createSettingsWindow() {
 
   const fallback = {
     width: 520,
-    height: 440,
+    height: 680,
     x: Math.floor(width / 2 - 260),
-    y: Math.floor(height / 2 - 230),
+    y: Math.floor(height / 2 - 340),
   }
   const b = getSavedBounds('settings', fallback)
 
   settingsWindow = new BrowserWindow({
     width:       b.width,
-    height:      b.height,
+    height:      Math.max(b.height, 680),
     x:           b.x,
     y:           b.y,
     frame:       false,
@@ -411,7 +412,7 @@ function createCompanionWindow(characterSize = 60) {
   companionWindow = new BrowserWindow({
     width: b.width, height: b.height, x: b.x, y: b.y,
     frame: false, transparent: true, alwaysOnTop: true,
-    skipTaskbar: false, resizable: false, hasShadow: true,
+    skipTaskbar: false, resizable: false, hasShadow: false,
     icon: getAppIcon(),
     webPreferences: {
       nodeIntegration: false, contextIsolation: true,
@@ -559,6 +560,11 @@ ipcMain.on('window:closeSettings', () => {
   settingsWindow?.close()
   if (!companionWindow) app.quit()
 })
+
+// IPC: Benar-benar keluar aplikasi dari renderer
+ipcMain.on('window:forceQuit', () => {
+  app.quit();
+});
 
 ipcMain.on('window:startApp', (_, data) => {
   const size = data?.characterSize ?? 60
@@ -854,7 +860,7 @@ ipcMain.on('window:restore', (_, page) => {
       chatWindow = new BrowserWindow({
         width: b.width, height: b.height, x: b.x, y: b.y,
         frame: false, transparent: true, alwaysOnTop: true,
-        skipTaskbar: false, resizable: false, hasShadow: true,
+        skipTaskbar: false, resizable: false, hasShadow: false,
         webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
       })
       chatWindow.loadFile(path.join(__dirname, '../renderer/pages/chat.html'))
@@ -891,7 +897,7 @@ ipcMain.handle('modal:openAddTask', () => {
   addTaskWindow = new BrowserWindow({
     width: 300, height: 580, x: px - 10, y: py + 60,
     frame: false, transparent: true, alwaysOnTop: true,
-    skipTaskbar: true, resizable: false, hasShadow: true,
+    skipTaskbar: true, resizable: false, hasShadow: false,
     parent: companionWindow,
     webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
   })
@@ -911,7 +917,7 @@ ipcMain.handle('modal:openConfirmTask', (_, { taskId, taskName }) => {
   confirmTaskWindow = new BrowserWindow({
     width: 280, height: 380, x: px + 10, y: py + 200,
     frame: false, transparent: true, alwaysOnTop: true,
-    skipTaskbar: true, resizable: false, hasShadow: true,
+    skipTaskbar: true, resizable: false, hasShadow: false,
     parent: companionWindow,
     webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
   })
@@ -950,7 +956,7 @@ ipcMain.handle('window:openChat', () => {
   chatWindow = new BrowserWindow({
     width: b.width, height: b.height, x: b.x, y: b.y,
     frame: false, transparent: true, alwaysOnTop: true,
-    skipTaskbar: false, resizable: false, hasShadow: true,
+    skipTaskbar: false, resizable: false, hasShadow: false,
     webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
   })
   chatWindow.loadFile(path.join(__dirname, '../renderer/pages/chat.html'))

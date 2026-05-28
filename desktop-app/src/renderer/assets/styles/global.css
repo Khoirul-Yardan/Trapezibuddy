@@ -51,6 +51,11 @@ button {
   cursor: pointer;
   border: none;
   outline: none;
+  -webkit-app-region: no-drag !important;
+}
+
+button * {
+  -webkit-app-region: no-drag !important;
 }
 
 input {

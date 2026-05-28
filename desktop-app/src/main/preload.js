@@ -64,6 +64,9 @@ contextBridge.exposeInMainWorld('trapezi', {
     // Settings window
     closeSettings:    ()             => ipcRenderer.send('window:closeSettings'),
     startApp:         (data)         => ipcRenderer.send('window:startApp', data),
+
+    // Benar-benar keluar aplikasi
+    close:            ()             => ipcRenderer.send('window:forceQuit'),
   },
 
 })

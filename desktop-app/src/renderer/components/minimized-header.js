@@ -1,17 +1,15 @@
+import { showConfirmModal } from "./confirm-modal.js";
+// Exit button with confirm dialog
+document.getElementById('btn-exit')?.addEventListener('click', () => {
+  showConfirmModal("Apakah anda yakin untuk keluar dari TrapeziBuddy?", () => {
+    api.window.close();
+  });
+});
 // minimized-header.js — externalized from minimized-header.html to satisfy CSP
 const api = window.trapezi
 const params = new URLSearchParams(window.location.search)
 let activePage = params.get('activePage') || 'active'
 
-function syncActiveIcon(page) {
-  activePage = page === 'chat' ? 'chat' : 'active'
-  const chatBtn = document.getElementById('btn-chat')
-  const homeBtn = document.getElementById('btn-home')
-  chatBtn?.classList.toggle('active', activePage === 'chat')
-  homeBtn?.classList.toggle('active', activePage === 'active')
-}
-
-syncActiveIcon(activePage)
 
 /* ── Live clock */
 function updateClock() {
@@ -50,14 +48,8 @@ async function loadData() {
 
 loadData()
 
-/* ── Button actions (restore now accepts optional page) */
-document.getElementById('btn-chat')?.addEventListener('click', () => {
-  syncActiveIcon('chat')
-  api.window.restore('chat')
-})
-
+/* ── Button actions */
 document.getElementById('btn-home')?.addEventListener('click', () => {
-  syncActiveIcon('active')
   api.window.restore('active')
 })
 
