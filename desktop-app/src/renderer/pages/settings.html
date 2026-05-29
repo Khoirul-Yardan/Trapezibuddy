@@ -259,6 +259,67 @@
     .btn-start:hover { filter: brightness(1.08); }
     .btn-start:active { transform: scale(0.98); }
     .btn-start svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* ── GoldShip theme overrides ── */
+    body.theme-goldship,
+    body.theme-goldship .content-area {
+      background: #E8E2D8;
+    }
+    body.theme-goldship .header {
+      background: #C4B8E3;
+    }
+    body.theme-goldship .header-title {
+      color: #1A1714;
+    }
+    body.theme-goldship .btn-close {
+      color: #1A1714;
+    }
+    body.theme-goldship .btn-close:hover {
+      background: rgba(26, 23, 20, 0.1);
+      color: #1A1714;
+    }
+    body.theme-goldship .branding-avatar {
+      background: #9E8EC6;
+    }
+    body.theme-goldship .branding-text {
+      color: #1A1714;
+    }
+    body.theme-goldship .section-card {
+      background: #F3EFE9;
+    }
+    body.theme-goldship .section-header {
+      color: #1A1714;
+    }
+    body.theme-goldship .char-card {
+      background: #F3EFE9;
+      border-color: #D0C8D8;
+    }
+    body.theme-goldship .char-card.active {
+      background: rgba(198, 184, 227, 0.3);
+      border: 2px solid #9E8EC6;
+    }
+    body.theme-goldship .char-card:hover {
+      background: rgba(198, 184, 227, 0.2);
+      border: 2px solid #9E8EC6;
+    }
+    body.theme-goldship .char-name,
+    body.theme-goldship .slider-label,
+    body.theme-goldship .slider-val,
+    body.theme-goldship .lang-label {
+      color: #1A1714;
+    }
+    body.theme-goldship input[type="range"]::-webkit-slider-thumb {
+      background: #9E8EC6;
+    }
+    body.theme-goldship .lang-btn.active[data-lang="en"] {
+      border: 2px solid #9E8EC6;
+    }
+    body.theme-goldship .footer {
+      background: #C4B8E3;
+    }
+    body.theme-goldship .btn-start {
+      background: #9E8EC6;
+    }
   </style>
 </head>
 <body>
@@ -280,7 +341,7 @@
     <!-- Branding -->
     <div class="branding">
       <div class="branding-avatar">
-        <img src="../assets/styles/images/guguGaga/gugugaga.png" onerror="this.style.display='none'">
+        <img src="../assets/styles/images/agnesTachyon/agnesTahcyon.png" onerror="this.style.display='none'">
       </div>
       <div class="branding-text">TrapeziBuddy</div>
     </div>
@@ -297,13 +358,13 @@
       <div class="char-options">
         <div class="char-card active" data-char="gugugaga">
           <div class="char-img-wrap">
-            <img src="../assets/styles/images/guguGaga/gugugaga.png" onerror="this.style.display='none'">
+            <img src="../assets/styles/images/agnesTachyon/agnesTahcyon.png" onerror="this.style.display='none'">
           </div>
           <div class="char-name">Gugu Gaga</div>
         </div>
         <div class="char-card" data-char="goldship">
           <div class="char-img-wrap">
-            <img src="../assets/styles/images/goldship.png" onerror="this.style.display='none'">
+            <img src="../assets/styles/images/goldShip/goldship.png" onerror="this.style.display='none'">
           </div>
           <div class="char-name">GoldShip</div>
         </div>
@@ -376,7 +437,23 @@
     function updateSliderTrack(val) {
       const slider = document.getElementById('size-slider');
       const pct = ((val - 30) / (200 - 30)) * 100;
-      slider.style.background = `linear-gradient(to right, #A2B29F ${pct}%, #D2C6B9 ${pct}%)`;
+      const gs = document.body.classList.contains('theme-goldship');
+      const active = gs ? '#9E8EC6' : '#A2B29F';
+      const track  = gs ? '#D8D0E8' : '#D2C6B9';
+      slider.style.background = `linear-gradient(to right, ${active} ${pct}%, ${track} ${pct}%)`;
+    }
+
+    const BRANDING_IMGS = {
+      gugugaga: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+      goldship:  '../assets/styles/images/goldShip/goldship.png',
+    };
+
+    function applyThemePreview(character) {
+      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.add('theme-' + character);
+      const avatar = document.querySelector('.branding-avatar img');
+      if (avatar) avatar.src = BRANDING_IMGS[character] ?? BRANDING_IMGS.gugugaga;
+      updateSliderTrack(state.characterSize);
     }
 
     function updateLanguageText() {
@@ -411,6 +488,7 @@
           if (stored.language)      state.language      = stored.language;
         }
       }
+      applyThemePreview(state.character);
       updateUI();
     }
 
@@ -418,6 +496,7 @@
     document.querySelectorAll('.char-card').forEach(card => {
       card.addEventListener('click', () => {
         state.character = card.dataset.char;
+        applyThemePreview(state.character);
         updateUI();
         window.trapezi?.theme?.apply(state.character);
       });
@@ -448,6 +527,7 @@
       if (api && api.settings && api.window) {
         const existing = await api.settings.get() || {};
         await api.settings.set({ ...existing, ...state });
+        window.trapezi?.theme?.apply(state.character);
         api.window.startApp(state);
       }
     });

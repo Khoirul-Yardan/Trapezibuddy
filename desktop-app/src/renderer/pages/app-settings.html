@@ -268,6 +268,69 @@
       text-align: center;
       color: #3B3B3A;
     }
+
+    /* ── Keybind reference ── */
+    .kb-group-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #3B3B3A;
+      margin-bottom: 6px;
+      letter-spacing: 0.1px;
+    }
+    .kb-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 0;
+      min-height: 26px;
+      flex-wrap: nowrap;
+    }
+    .kb-key {
+      font-size: 11px;
+      font-weight: 700;
+      background: #E8EDE8;
+      color: #3B3B3A;
+      border-radius: 5px;
+      padding: 2px 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      letter-spacing: 0.3px;
+      line-height: 1.5;
+    }
+    .kb-sep {
+      font-size: 11px;
+      color: #9A9A9A;
+      flex-shrink: 0;
+    }
+    .kb-arrow {
+      font-size: 11px;
+      color: #AAAAAA;
+      flex-shrink: 0;
+      margin: 0 2px;
+    }
+    .kb-action {
+      font-size: 12px;
+      color: #3B3B3A;
+      font-weight: 400;
+      flex: 1;
+    }
+
+    /* ── GoldShip overrides ── */
+    body.theme-goldship .section-box {
+      background: rgba(170, 170, 170, 0.2);
+    }
+    body.theme-goldship .kb-key {
+      background: #E8E2D8;
+      color: #1A1714;
+    }
+    body.theme-goldship .kb-group-title,
+    body.theme-goldship .kb-action {
+      color: #1A1714;
+    }
+    body.theme-goldship .kb-arrow,
+    body.theme-goldship .kb-sep {
+      color: rgba(26, 23, 20, 0.45);
+    }
   </style>
 </head>
 <body>
@@ -306,7 +369,7 @@
         <div class="char-options">
           <div class="char-card active" data-char="gugugaga">
             <div class="char-img-wrap">
-              <img src="../assets/styles/images/guguGaga/gugugaga.png" onerror="this.style.display='none'">
+              <img src="../assets/styles/images/agnesTachyon/agnesTahcyon.png" onerror="this.style.display='none'">
             </div>
             <div class="char-name">Gugu Gaga</div>
           </div>
@@ -327,49 +390,44 @@
       </div>
     </div>
 
-    <!-- Section 2: Character Behavior -->
+    <!-- Section 2: Companion Controls -->
     <div class="section">
       <div class="section-heading">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21.5 2v6h-6"/>
-          <path d="M2.5 22v-6h6"/>
-          <path d="M2 11.5a10 10 0 0 1 18.8-4.3"/>
-          <path d="M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          <rect x="2" y="7" width="20" height="12" rx="3"/>
+          <path d="M6 13h4M8 11v4"/>
+          <circle cx="16" cy="11" r="1" fill="currentColor" stroke="none"/>
+          <circle cx="18" cy="13" r="1" fill="currentColor" stroke="none"/>
         </svg>
-        <span>Character Behavior</span>
+        <span>Companion Controls</span>
       </div>
+
+      <!-- Movement -->
       <div class="section-box">
-        <div class="toggle-row">
-          <span class="toggle-label">Gravity</span>
-          <label class="toggle-wrap">
-            <input type="checkbox" class="toggle-input" id="toggle-gravity" checked>
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          </label>
-        </div>
-        <div class="box-divider"></div>
-        <div class="toggle-row">
-          <span class="toggle-label">Draggable</span>
-          <label class="toggle-wrap">
-            <input type="checkbox" class="toggle-input" id="toggle-draggable">
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          </label>
-        </div>
-        <div class="box-divider"></div>
-        <div class="toggle-row">
-          <span class="toggle-label">Sound</span>
-          <label class="toggle-wrap">
-            <input type="checkbox" class="toggle-input" id="toggle-sound">
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          </label>
-        </div>
-        <div class="box-divider"></div>
-        <div class="toggle-row">
-          <span class="toggle-label">Auto Movement</span>
-          <label class="toggle-wrap">
-            <input type="checkbox" class="toggle-input" id="toggle-auto-movement">
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          </label>
-        </div>
+        <div class="kb-group-title">🎮 Movement</div>
+        <div class="kb-row"><span class="kb-key">W A S D</span><span class="kb-sep">/</span><span class="kb-key">↑ ↓ ← →</span><span class="kb-arrow">→</span><span class="kb-action">Move character</span></div>
+        <div class="kb-row"><span class="kb-key">E</span><span class="kb-arrow">→</span><span class="kb-action">Toggle cursor following</span></div>
+        <div class="kb-row"><span class="kb-key">R</span><span class="kb-arrow">→</span><span class="kb-action">Random movement</span></div>
+        <div class="kb-row"><span class="kb-key">ESC</span><span class="kb-arrow">→</span><span class="kb-action">Stop all movement</span></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="section-box">
+        <div class="kb-group-title">⚡ Actions</div>
+        <div class="kb-row"><span class="kb-key">SPACE</span><span class="kb-arrow">→</span><span class="kb-action">Click animation</span></div>
+        <div class="kb-row"><span class="kb-key">T</span><span class="kb-arrow">→</span><span class="kb-action">Toggle sleep / wake</span></div>
+        <div class="kb-row"><span class="kb-key">C</span><span class="kb-arrow">→</span><span class="kb-action">Toggle Gravity</span></div>
+        <div class="kb-row"><span class="kb-key">Q</span><span class="kb-arrow">→</span><span class="kb-action">Spawn Food</span></div>
+        <div class="kb-row"><span class="kb-key">1</span><span class="kb-arrow">→</span><span class="kb-action">Emote 1</span></div>
+        <div class="kb-row"><span class="kb-key">2</span><span class="kb-arrow">→</span><span class="kb-action">Emote 2</span></div>
+        <div class="kb-row"><span class="kb-key">3</span><span class="kb-arrow">→</span><span class="kb-action">Emote 3</span></div>
+        <div class="kb-row"><span class="kb-key">4</span><span class="kb-arrow">→</span><span class="kb-action">Emote 4</span></div>
+      </div>
+
+      <!-- Help -->
+      <div class="section-box">
+        <div class="kb-group-title">❓ Help</div>
+        <div class="kb-row"><span class="kb-key">0</span><span class="kb-arrow">→</span><span class="kb-action">Disable Hitbox</span></div>
       </div>
     </div>
 
@@ -411,10 +469,6 @@
     let state = {
       character:      'gugugaga',
       characterSize:  60,
-      gravity:        true,
-      draggable:      false,
-      sound:          false,
-      autoMovement:   false,
       focusTimer:     25,
       doNotDisturb:   true,
     };
@@ -440,11 +494,7 @@
       document.getElementById('size-val').textContent = state.characterSize + '%';
       updateSliderTrack(state.characterSize);
 
-      document.getElementById('toggle-gravity').checked       = state.gravity;
-      document.getElementById('toggle-draggable').checked     = state.draggable;
-      document.getElementById('toggle-sound').checked         = state.sound;
-      document.getElementById('toggle-auto-movement').checked = state.autoMovement;
-      document.getElementById('toggle-dnd').checked           = state.doNotDisturb;
+      document.getElementById('toggle-dnd').checked = state.doNotDisturb;
 
       document.getElementById('timer-val').textContent = state.focusTimer + ' min';
       updateStepperButtons();
@@ -456,10 +506,6 @@
         if (stored) {
           if (stored.character      !== undefined) state.character     = stored.character;
           if (stored.characterSize  !== undefined) state.characterSize = stored.characterSize;
-          if (stored.gravity        !== undefined) state.gravity       = stored.gravity;
-          if (stored.draggable      !== undefined) state.draggable     = stored.draggable;
-          if (stored.sound          !== undefined) state.sound         = stored.sound;
-          if (stored.autoMovement   !== undefined) state.autoMovement  = stored.autoMovement;
           if (stored.focusTimer     !== undefined) state.focusTimer    = stored.focusTimer;
           if (stored.doNotDisturb   !== undefined) state.doNotDisturb  = stored.doNotDisturb;
         }
@@ -470,14 +516,10 @@
     async function save() {
       if (api && api.settings) {
         await api.settings.set({
-          character:    state.character,
+          character:     state.character,
           characterSize: state.characterSize,
-          gravity:      state.gravity,
-          draggable:    state.draggable,
-          sound:        state.sound,
-          autoMovement: state.autoMovement,
-          focusTimer:   state.focusTimer,
-          doNotDisturb: state.doNotDisturb,
+          focusTimer:    state.focusTimer,
+          doNotDisturb:  state.doNotDisturb,
         });
       }
       if (api && api.window) api.window.closeSettings();
@@ -500,18 +542,6 @@
     });
 
     // Toggles
-    document.getElementById('toggle-gravity').addEventListener('change', e => {
-      state.gravity = e.target.checked;
-    });
-    document.getElementById('toggle-draggable').addEventListener('change', e => {
-      state.draggable = e.target.checked;
-    });
-    document.getElementById('toggle-sound').addEventListener('change', e => {
-      state.sound = e.target.checked;
-    });
-    document.getElementById('toggle-auto-movement').addEventListener('change', e => {
-      state.autoMovement = e.target.checked;
-    });
     document.getElementById('toggle-dnd').addEventListener('change', e => {
       state.doNotDisturb = e.target.checked;
     });

@@ -964,10 +964,12 @@ ipcMain.on('modal:taskAdded', () => {
 ipcMain.handle('modal:openConfirmTask', (_, { taskId, taskName }) => {
   if (confirmTaskWindow) { confirmTaskWindow.focus(); return }
   const [px, py] = companionWindow.getPosition()
+  const confirmTheme = store.get('settings.theme') || store.get('settings.character') || 'gugugaga'
   confirmTaskWindow = new BrowserWindow({
     width: 280, height: 380, x: px + 10, y: py + 200,
-    frame: false, transparent: true, alwaysOnTop: true,
-    skipTaskbar: true, resizable: false, hasShadow: false,
+    frame: false, transparent: false, alwaysOnTop: true,
+    skipTaskbar: true, resizable: false, hasShadow: true,
+    backgroundColor: confirmTheme === 'goldship' ? '#E8E2D8' : '#FBF9F8',
     parent: companionWindow,
     webPreferences: { nodeIntegration: false, contextIsolation: true, preload: path.join(__dirname, 'preload.js') }
   })

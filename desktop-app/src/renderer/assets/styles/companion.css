@@ -906,6 +906,22 @@ body.theme-goldship .tab-bar {
   background: rgba(232, 226, 216, 0.7);
 }
 
+/* Modal harus solid — --c-white goldship adalah rgba transparent */
+body.theme-goldship .modal {
+  background: #E8E2D8;
+}
+
+body.theme-goldship .modal-overlay {
+  background: rgba(26, 23, 20, 0.5);
+}
+
+/* Document icon — GoldShip: lavender/purple */
+body.theme-goldship .icon-paper  { fill: #DDD6F0; stroke: #9E8EC6; }
+body.theme-goldship .icon-header { fill: #9E8EC6; }
+body.theme-goldship .icon-corner-line { stroke: #9E8EC6; }
+body.theme-goldship .icon-corner { fill: #F0EBF8; stroke: #9E8EC6; }
+body.theme-goldship .icon-line   { stroke: #9E8EC6; }
+
 body.theme-goldship #btn-minimize {
   background: #9E8EC6;
   color: #FFFFFF;

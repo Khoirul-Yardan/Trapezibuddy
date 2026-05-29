@@ -29,6 +29,12 @@ function updateClock() {
 updateClock()
 setInterval(updateClock, 30_000)
 
+/* ── Theme */
+function applyTheme(theme) {
+  document.body.classList.remove('theme-gugugaga', 'theme-goldship')
+  document.body.classList.add('theme-' + theme)
+}
+
 /* ── Load streak & task counts */
 async function loadData() {
   try {
@@ -41,12 +47,15 @@ async function loadData() {
     const total  = tasks.length
     document.getElementById('task-progress').textContent = `${done}/${total}`
     document.getElementById('streak-count').textContent  = settings.streak ?? 0
+    applyTheme(settings?.character || 'gugugaga')
   } catch (err) {
     console.error('Failed to load data:', err)
   }
 }
 
 loadData()
+
+api?.onThemeApply?.((theme) => applyTheme(theme))
 
 /* ── Button actions */
 document.getElementById('btn-home')?.addEventListener('click', () => {
