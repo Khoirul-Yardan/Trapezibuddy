@@ -424,7 +424,10 @@ function createAppSettingsWindow() {
   appSettingsWindow.loadFile(
     path.join(__dirname, '../renderer/pages/app-settings.html')
   )
-  appSettingsWindow.on('closed', () => { appSettingsWindow = null })
+  appSettingsWindow.on('closed', () => {
+    appSettingsWindow = null
+    minimizedWindow?.show()
+  })
 }
 
 // ── Companion Window ─────────────────────────────────────────
@@ -643,6 +646,17 @@ ipcMain.handle('tasks:delete', (_, taskId) => {
 ipcMain.handle('settings:get', () => store.get('settings'))
 ipcMain.handle('settings:set', (_, data) => { store.set('settings', data); return true })
 
+// ── IPC: Theme ───────────────────────────────────────────────
+ipcMain.on('theme:apply', (_, theme) => {
+  store.set('settings.theme', theme)
+  const targets = [companionWindow, chatWindow, minimizedWindow, addTaskWindow, confirmTaskWindow, appSettingsWindow]
+  targets.forEach(win => {
+    try {
+      if (win && !win.isDestroyed()) win.webContents.send('theme:apply', theme)
+    } catch (_err) { /* window may be closing */ }
+  })
+})
+
 // ── IPC: Chat (Local Dialog) ──────────────────────────────────
 // Local dialog responses - no Python backend needed for now
 const localDialogResponses = {
@@ -817,7 +831,7 @@ ipcMain.on('window:restore', (_, page) => {
 
   // Gear icon in minimized header → open app-settings window
   if (target === 'settings') {
-    minimizedWindow?.close()
+    minimizedWindow?.hide()
     createAppSettingsWindow()
     return
   }
@@ -1052,6 +1066,17 @@ ipcMain.on('bubble:taskCompleted', (_, data) => {
 })
 
 // ── App lifecycle ────────────────────────────────────────────
+
+// Send stored theme to every window once it finishes loading
+app.on('browser-window-created', (_, win) => {
+  win.webContents.on('did-finish-load', () => {
+    try {
+      const theme = store.get('settings.theme') || 'gugugaga'
+      win.webContents.send('theme:apply', theme)
+    } catch (_err) { /* window may be closing */ }
+  })
+})
+
 app.whenReady().then(() => {
   const page = getDevPage()
   if (page && createStandalonePageWindow(page)) {

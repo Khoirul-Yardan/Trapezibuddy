@@ -123,16 +123,16 @@
       border-color: #A2B29F;
     }
     .char-img-wrap {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
       background: #f0f0f0;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .char-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .char-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
     .char-name {
       font-size: 12px;
       font-weight: 600;
@@ -306,13 +306,13 @@
         <div class="char-options">
           <div class="char-card active" data-char="gugugaga">
             <div class="char-img-wrap">
-              <img src="../assets/icons/gugugaga.png" onerror="this.style.display='none'">
+              <img src="../assets/styles/images/guguGaga/gugugaga.png" onerror="this.style.display='none'">
             </div>
             <div class="char-name">Gugu Gaga</div>
           </div>
           <div class="char-card" data-char="goldship">
             <div class="char-img-wrap">
-              <img src="../assets/icons/goldship.png" onerror="this.style.display='none'">
+              <img src="../assets/styles/images/goldShip/goldship.png" onerror="this.style.display='none'">
             </div>
             <div class="char-name">GoldShip</div>
           </div>
@@ -488,6 +488,7 @@
       card.addEventListener('click', () => {
         state.character = card.dataset.char;
         updateUI();
+        window.trapezi?.theme?.apply(state.character);
       });
     });
 
@@ -538,6 +539,18 @@
     document.getElementById('btn-save').addEventListener('click', save);
 
     loadSettings();
+  </script>
+  <script>
+    (async () => {
+      try {
+        const s = await window.trapezi?.settings?.get();
+        document.body.classList.add('theme-' + (s?.character || 'gugugaga'));
+      } catch (_) { document.body.classList.add('theme-gugugaga'); }
+    })();
+    window.trapezi?.onThemeApply?.((theme) => {
+      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.add('theme-' + theme);
+    });
   </script>
 </body>
 </html>

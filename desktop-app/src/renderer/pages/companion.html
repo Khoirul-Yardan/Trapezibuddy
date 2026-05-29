@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'" />
   <title>TrapeziBuddy</title>
   <link rel="stylesheet" href="../assets/styles/global.css" />
   <link rel="stylesheet" href="../assets/styles/companion.css" />
@@ -278,5 +278,34 @@
 </div>
 
   <script src="../components/companion.js"></script>
+  <script>
+    const CHAR_SPRITES = {
+      gugugaga: '../assets/styles/images/guguGaga/gugugaga.png',
+      goldship:  '../assets/styles/images/goldShip/goldship.png',
+    };
+
+    const CHAR_LOGOS = {
+      gugugaga: '../assets/styles/images/guguGaga/logo.svg',
+      goldship:  '../assets/styles/images/goldShip/logo.svg',
+    };
+
+    function applyTheme(theme) {
+      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.add('theme-' + theme);
+      const sprite = document.getElementById('companion-sprite');
+      if (sprite) sprite.src = CHAR_SPRITES[theme] ?? CHAR_SPRITES.gugugaga;
+      const logo = document.querySelector('.panel-title');
+      if (logo) logo.src = CHAR_LOGOS[theme] ?? CHAR_LOGOS.gugugaga;
+    }
+
+    (async () => {
+      try {
+        const s = await window.trapezi?.settings?.get();
+        applyTheme(s?.character || 'gugugaga');
+      } catch (_) { applyTheme('gugugaga'); }
+    })();
+
+    window.trapezi?.onThemeApply?.((theme) => applyTheme(theme));
+  </script>
 </body>
 </html>

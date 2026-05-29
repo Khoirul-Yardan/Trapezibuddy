@@ -69,4 +69,11 @@ contextBridge.exposeInMainWorld('trapezi', {
     close:            ()             => ipcRenderer.send('window:forceQuit'),
   },
 
+  // ── Theme ─────────────────────────────────────────────────
+  theme: {
+    apply: (theme) => ipcRenderer.send('theme:apply', theme),
+  },
+
+  onThemeApply: (cb) => ipcRenderer.on('theme:apply', (_, theme) => cb(theme)),
+
 })
