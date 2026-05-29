@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrapeziBuddy — Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #FBF9F8;
+      color: #3B3B3A;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: #FBF9F8;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+    }
+    .header-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      color: #3B3B3A;
+      -webkit-app-region: no-drag;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .header-btn:hover { background: rgba(0, 0, 0, 0.07); }
+    .header-btn svg { width: 18px; height: 18px; }
+    .header-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #3B3B3A;
+      letter-spacing: -0.2px;
+    }
+
+    /* ── Scrollable Content ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      padding: 18px 16px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .content::-webkit-scrollbar { width: 3px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+    /* ── Section ── */
+    .section { display: flex; flex-direction: column; gap: 10px; }
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: #3B3B3A;
+    }
+    .section-heading svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .section-box {
+      background: #F5F3F3;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Sub label ── */
+    .sub-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #757676;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* ── Character Cards ── */
+    .char-options { display: flex; gap: 10px; }
+    .char-card {
+      flex: 1;
+      background: #FFFFFF;
+      border: 1px solid #E0E0E0;
+      border-radius: 10px;
+      padding: 12px 8px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.18s;
+      -webkit-app-region: no-drag;
+    }
+    .char-card.active {
+      background: rgba(213, 232, 207, 0.3);
+      border: 2px solid #52634F;
+    }
+    .char-card:hover:not(.active) {
+      background: rgba(213, 232, 207, 0.15);
+      border-color: #A2B29F;
+    }
+    .char-img-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #f0f0f0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .char-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .char-name {
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      color: #3B3B3A;
+      line-height: 1.3;
+    }
+
+    /* ── Slider ── */
+    .slider-label { font-size: 12px; color: #3B3B3A; }
+    .slider-row { display: flex; align-items: center; gap: 12px; }
+    .slider-wrap { flex: 1; display: flex; align-items: center; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 5px;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #A2B29F;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+    .slider-val {
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 38px;
+      text-align: right;
+      color: #3B3B3A;
+    }
+
+    /* ── Box Divider ── */
+    .box-divider {
+      height: 1px;
+      background: rgba(0, 0, 0, 0.07);
+      margin: 0 -2px;
+    }
+
+    /* ── Toggle Row ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+    .toggle-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #3B3B3A;
+    }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+    }
+    .toggle-input { display: none; }
+    .toggle-track {
+      width: 44px;
+      height: 24px;
+      border-radius: 12px;
+      background: #D0D0D0;
+      position: relative;
+      transition: background 0.2s;
+      display: block;
+    }
+    .toggle-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: white;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+    .toggle-input:checked + .toggle-track { background: #B6C9B1; }
+    .toggle-input:checked + .toggle-track .toggle-thumb { transform: translateX(20px); }
+
+    /* ── Stepper ── */
+    .stepper-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+    .stepper-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #3B3B3A;
+    }
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #E9E7E7;
+      border-radius: 20px;
+      padding: 4px 10px;
+      -webkit-app-region: no-drag;
+    }
+    .step-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 400;
+      color: #3B3B3A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      line-height: 1;
+      padding-bottom: 1px;
+    }
+    .step-btn:hover { background: rgba(0, 0, 0, 0.1); }
+    .step-btn:disabled { color: #bbb; cursor: default; }
+    .step-btn:disabled:hover { background: transparent; }
+    .stepper-val {
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 52px;
+      text-align: center;
+      color: #3B3B3A;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="app-header">
+    <button class="header-btn" id="btn-back" title="Tutup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <h1 class="header-title">Settings</h1>
+    <button class="header-btn" id="btn-save" title="Simpan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="content">
+
+    <!-- Section 1: Widget Customization -->
+    <div class="section">
+      <div class="section-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+        </svg>
+        <span>Widget Customization</span>
+      </div>
+      <div class="section-box">
+        <div class="sub-label">Widget Theme</div>
+        <div class="char-options">
+          <div class="char-card active" data-char="gugugaga">
+            <div class="char-img-wrap">
+              <img src="../assets/icons/gugugaga.png" onerror="this.style.display='none'">
+            </div>
+            <div class="char-name">Gugu Gaga</div>
+          </div>
+          <div class="char-card" data-char="goldship">
+            <div class="char-img-wrap">
+              <img src="../assets/icons/goldship.png" onerror="this.style.display='none'">
+            </div>
+            <div class="char-name">GoldShip</div>
+          </div>
+        </div>
+        <div class="slider-label">Adjust the character display size:</div>
+        <div class="slider-row">
+          <div class="slider-wrap">
+            <input type="range" id="size-slider" min="30" max="200" value="60">
+          </div>
+          <div class="slider-val" id="size-val">60%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Character Behavior -->
+    <div class="section">
+      <div class="section-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6"/>
+          <path d="M2.5 22v-6h6"/>
+          <path d="M2 11.5a10 10 0 0 1 18.8-4.3"/>
+          <path d="M22 12.5a10 10 0 0 1-18.8 4.2"/>
+        </svg>
+        <span>Character Behavior</span>
+      </div>
+      <div class="section-box">
+        <div class="toggle-row">
+          <span class="toggle-label">Gravity</span>
+          <label class="toggle-wrap">
+            <input type="checkbox" class="toggle-input" id="toggle-gravity" checked>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="box-divider"></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Draggable</span>
+          <label class="toggle-wrap">
+            <input type="checkbox" class="toggle-input" id="toggle-draggable">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="box-divider"></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Sound</span>
+          <label class="toggle-wrap">
+            <input type="checkbox" class="toggle-input" id="toggle-sound">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="box-divider"></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Auto Movement</span>
+          <label class="toggle-wrap">
+            <input type="checkbox" class="toggle-input" id="toggle-auto-movement">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Focus Session -->
+    <div class="section">
+      <div class="section-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 2h4"/>
+          <path d="M12 14v-4"/>
+          <circle cx="12" cy="14" r="8"/>
+        </svg>
+        <span>Focus Session</span>
+      </div>
+      <div class="section-box">
+        <div class="stepper-row">
+          <span class="stepper-label">Timer</span>
+          <div class="stepper">
+            <button class="step-btn" id="timer-minus">−</button>
+            <span class="stepper-val" id="timer-val">25 min</span>
+            <button class="step-btn" id="timer-plus">+</button>
+          </div>
+        </div>
+        <div class="box-divider"></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Do Not Disturb</span>
+          <label class="toggle-wrap">
+            <input type="checkbox" class="toggle-input" id="toggle-dnd" checked>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const api = window.trapezi;
+
+    let state = {
+      character:      'gugugaga',
+      characterSize:  60,
+      gravity:        true,
+      draggable:      false,
+      sound:          false,
+      autoMovement:   false,
+      focusTimer:     25,
+      doNotDisturb:   true,
+    };
+
+    function updateSliderTrack(val) {
+      const slider = document.getElementById('size-slider');
+      const pct = ((val - 30) / (200 - 30)) * 100;
+      slider.style.background = `linear-gradient(to right, #A2B29F ${pct}%, #D2C6B9 ${pct}%)`;
+    }
+
+    function updateStepperButtons() {
+      document.getElementById('timer-minus').disabled = state.focusTimer <= 5;
+      document.getElementById('timer-plus').disabled  = state.focusTimer >= 60;
+    }
+
+    function updateUI() {
+      document.querySelectorAll('.char-card').forEach(el => {
+        el.classList.toggle('active', el.dataset.char === state.character);
+      });
+
+      const slider = document.getElementById('size-slider');
+      slider.value = state.characterSize;
+      document.getElementById('size-val').textContent = state.characterSize + '%';
+      updateSliderTrack(state.characterSize);
+
+      document.getElementById('toggle-gravity').checked       = state.gravity;
+      document.getElementById('toggle-draggable').checked     = state.draggable;
+      document.getElementById('toggle-sound').checked         = state.sound;
+      document.getElementById('toggle-auto-movement').checked = state.autoMovement;
+      document.getElementById('toggle-dnd').checked           = state.doNotDisturb;
+
+      document.getElementById('timer-val').textContent = state.focusTimer + ' min';
+      updateStepperButtons();
+    }
+
+    async function loadSettings() {
+      if (api && api.settings) {
+        const stored = await api.settings.get();
+        if (stored) {
+          if (stored.character      !== undefined) state.character     = stored.character;
+          if (stored.characterSize  !== undefined) state.characterSize = stored.characterSize;
+          if (stored.gravity        !== undefined) state.gravity       = stored.gravity;
+          if (stored.draggable      !== undefined) state.draggable     = stored.draggable;
+          if (stored.sound          !== undefined) state.sound         = stored.sound;
+          if (stored.autoMovement   !== undefined) state.autoMovement  = stored.autoMovement;
+          if (stored.focusTimer     !== undefined) state.focusTimer    = stored.focusTimer;
+          if (stored.doNotDisturb   !== undefined) state.doNotDisturb  = stored.doNotDisturb;
+        }
+      }
+      updateUI();
+    }
+
+    async function save() {
+      if (api && api.settings) {
+        await api.settings.set({
+          character:    state.character,
+          characterSize: state.characterSize,
+          gravity:      state.gravity,
+          draggable:    state.draggable,
+          sound:        state.sound,
+          autoMovement: state.autoMovement,
+          focusTimer:   state.focusTimer,
+          doNotDisturb: state.doNotDisturb,
+        });
+      }
+      if (api && api.window) api.window.closeSettings();
+    }
+
+    // Character cards
+    document.querySelectorAll('.char-card').forEach(card => {
+      card.addEventListener('click', () => {
+        state.character = card.dataset.char;
+        updateUI();
+      });
+    });
+
+    // Size slider
+    document.getElementById('size-slider').addEventListener('input', e => {
+      state.characterSize = parseInt(e.target.value);
+      document.getElementById('size-val').textContent = state.characterSize + '%';
+      updateSliderTrack(state.characterSize);
+    });
+
+    // Toggles
+    document.getElementById('toggle-gravity').addEventListener('change', e => {
+      state.gravity = e.target.checked;
+    });
+    document.getElementById('toggle-draggable').addEventListener('change', e => {
+      state.draggable = e.target.checked;
+    });
+    document.getElementById('toggle-sound').addEventListener('change', e => {
+      state.sound = e.target.checked;
+    });
+    document.getElementById('toggle-auto-movement').addEventListener('change', e => {
+      state.autoMovement = e.target.checked;
+    });
+    document.getElementById('toggle-dnd').addEventListener('change', e => {
+      state.doNotDisturb = e.target.checked;
+    });
+
+    // Timer stepper
+    document.getElementById('timer-minus').addEventListener('click', () => {
+      if (state.focusTimer > 5) {
+        state.focusTimer -= 5;
+        document.getElementById('timer-val').textContent = state.focusTimer + ' min';
+        updateStepperButtons();
+      }
+    });
+    document.getElementById('timer-plus').addEventListener('click', () => {
+      if (state.focusTimer < 60) {
+        state.focusTimer += 5;
+        document.getElementById('timer-val').textContent = state.focusTimer + ' min';
+        updateStepperButtons();
+      }
+    });
+
+    // Header buttons
+    document.getElementById('btn-back').addEventListener('click', () => {
+      if (api && api.window) api.window.closeSettings();
+    });
+    document.getElementById('btn-save').addEventListener('click', save);
+
+    loadSettings();
+  </script>
+</body>
+</html>

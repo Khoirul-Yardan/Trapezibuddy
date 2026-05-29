@@ -151,6 +151,7 @@ const store = new Store({
 })
 
 let settingsWindow    = null
+let appSettingsWindow = null
 let companionWindow   = null
 let minimizedWindow   = null
 let addTaskWindow     = null
@@ -399,6 +400,33 @@ function createSettingsWindow() {
   settingsWindow.on('closed', () => { settingsWindow = null })
 }
 
+// ── App Settings Window ──────────────────────────────────────
+function createAppSettingsWindow() {
+  if (appSettingsWindow) { appSettingsWindow.focus(); return }
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  appSettingsWindow = new BrowserWindow({
+    width:       420,
+    height:      680,
+    x:           Math.floor(width  / 2 - 210),
+    y:           Math.floor(height / 2 - 340),
+    frame:       false,
+    transparent: false,
+    alwaysOnTop: true,
+    resizable:   false,
+    hasShadow:   true,
+    icon:        getAppIcon(),
+    webPreferences: {
+      nodeIntegration:  false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    }
+  })
+  appSettingsWindow.loadFile(
+    path.join(__dirname, '../renderer/pages/app-settings.html')
+  )
+  appSettingsWindow.on('closed', () => { appSettingsWindow = null })
+}
+
 // ── Companion Window ─────────────────────────────────────────
 function createCompanionWindow(characterSize = 60) {
   const { width } = screen.getPrimaryDisplay().workAreaSize
@@ -558,6 +586,7 @@ function createTray() {
 // ── IPC: Settings ────────────────────────────────────────────
 ipcMain.on('window:closeSettings', () => {
   settingsWindow?.close()
+  appSettingsWindow?.close()
   if (!companionWindow) app.quit()
 })
 
@@ -785,6 +814,13 @@ ipcMain.on('window:minimize', () => {
 
 ipcMain.on('window:restore', (_, page) => {
   const target = page || lastActivePage || 'active'
+
+  // Gear icon in minimized header → open app-settings window
+  if (target === 'settings') {
+    minimizedWindow?.close()
+    createAppSettingsWindow()
+    return
+  }
 
   // If minimized header exists, use its current bounds as the single source of truth
   // for where restored windows should appear (so switching Chat/Home from the minimized
