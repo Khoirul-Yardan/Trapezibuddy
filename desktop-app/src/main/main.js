@@ -15,8 +15,6 @@ const logger = {
   warn: (msg) => console.warn(`[WARN] ${new Date().toISOString()} ${msg}`),
 }
 
-// ── Python companion process ──────────────────────────────────
-let pythonProcess = null
 
 function getProjectRoot() {
   if (app.isPackaged) {
@@ -42,93 +40,6 @@ try {
   logger.warn('Failed to set AppUserModelId: ' + err)
 }
 
-function getPythonExecutable() {
-  const projectRoot = getProjectRoot()
-  const venvPython = process.platform === 'win32'
-    ? path.join(projectRoot, 'venv', 'Scripts', 'python.exe')
-    : path.join(projectRoot, 'venv', 'bin', 'python')
-
-  if (fs.existsSync(venvPython)) return venvPython
-  return process.platform === 'win32' ? 'python' : 'python3'
-}
-
-function startPythonCompanion(characterSize = 60) {
-  if (pythonProcess) return
-
-  const safeSize = Number.isFinite(characterSize) ? characterSize : 60
-  const projectRoot = getProjectRoot()
-  
-  if (app.isPackaged) {
-    // In production, backend exe is in app.asar.unpacked/backend/
-    const backendExe = path.join(projectRoot, 'backend', 'main.exe')
-    logger.info(`Starting production python backend at: ${backendExe}`)
-    
-    if (!fs.existsSync(backendExe)) {
-      logger.error(`ERROR: Backend executable not found at ${backendExe}`)
-      logger.error(`Please ensure main.exe was built and included in the installer.`)
-      return
-    }
-    
-    pythonProcess = spawn(backendExe, ['--skip-settings', '--character-size', String(safeSize)], {
-      cwd: path.dirname(backendExe),
-      detached: false,
-      stdio: 'ignore',
-    })
-  } else {
-    const pythonScript = path.join(projectRoot, 'main.py')
-    const pythonExec = getPythonExecutable()
-    logger.info(`Starting dev python backend: ${pythonExec} ${pythonScript}`)
-    pythonProcess = spawn(pythonExec, [pythonScript, '--skip-settings', '--character-size', String(safeSize)], {
-      detached: false,
-      stdio: 'ignore',
-    })
-  }
-
-  pythonProcess.on('error', (err) => {
-    console.error('Failed to start Python companion:', err)
-    logger.error(`Python companion spawn error: ${err.message}`)
-  })
-
-  pythonProcess.on('close', (code) => {
-    console.log(`Python companion exited with code ${code}`)
-    logger.info(`Python companion exited with code ${code}`)
-    pythonProcess = null
-  })
-}
-
-function stopPythonCompanion() {
-  if (pythonProcess) {
-    pythonProcess.kill()
-    pythonProcess = null
-  }
-}
-
-// ── IPC Bridge to Python (file-based) ─────────────────────────
-const IPC_DIR = app.isPackaged 
-  ? path.join(getProjectRoot(), 'backend', '.ipc')
-  : path.join(getProjectRoot(), '.ipc')
-const IPC_COMMANDS_FILE = path.join(IPC_DIR, 'electron_commands.json')
-const IPC_STATE_FILE = path.join(IPC_DIR, 'python_state.json')
-
-function sendCommandToPython(command, params = {}) {
-  try {
-    fs.mkdirSync(IPC_DIR, { recursive: true })
-    const data = { command, id: Date.now(), ...params }
-    fs.writeFileSync(IPC_COMMANDS_FILE, JSON.stringify(data))
-    logger.info(`[IPC] Sent: ${command}`)
-  } catch (err) {
-    logger.error(`[IPC] Send error: ${err.message}`)
-  }
-}
-
-function readPythonState() {
-  try {
-    if (fs.existsSync(IPC_STATE_FILE)) {
-      return JSON.parse(fs.readFileSync(IPC_STATE_FILE, 'utf-8'))
-    }
-  } catch (e) { /* ignore */ }
-  return null
-}
 
 const store = new Store({
   defaults: {
@@ -174,7 +85,6 @@ const isDev           = process.argv.includes('--dev')
 // ═══════════════════════════════════════════════════════════════
 const COMPANION_SIZE = { width: 300, height: 700 }    // Character window
 const CHAT_SIZE = { width: 300, height: 680 }         // Chat panel
-const BUBBLE_SIZE = { width: 320, height: 140 }       // Speech bubble
 const MINIMIZED_SIZE = { width: 382, height: 44 }     // Minimized bar
 const WINDOW_GAP = 15                                  // Space between windows
 
@@ -303,66 +213,6 @@ function createStandalonePageWindow(pageName) {
   return true
 }
 
-// ── Bubble Window (Above Python Character) ───────────────────
-function createBubbleWindow() {
-  if (bubbleWindow) return
-
-  bubbleWindow = new BrowserWindow({
-    width: BUBBLE_SIZE.width,
-    height: BUBBLE_SIZE.height,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    focusable: false,
-    hasShadow: false,
-    icon: getAppIcon(),
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  })
-
-  bubbleWindow.setPosition(-2000, -2000)
-  bubbleWindow.loadFile(path.join(__dirname, '../renderer/pages/bubble.html'))
-  
-  let lastBubbleText = ''
-  
-  // Keep bubble above Python character
-  setInterval(() => {
-    if (!bubbleWindow) return
-    const state = readPythonState()
-    
-    if (state && state.visible) {
-      const charWidth = state.width || 512
-      const charHeight = state.height || 512
-      
-      const x = Math.floor(state.x + (charWidth / 2) - (BUBBLE_SIZE.width / 2))
-      // Adjust y offset by +130px to account for the transparent space inside the 512x512 window
-      // Character is 60% of 512px (bottom aligned), so its head starts around +200px
-      const y = Math.floor(state.y - BUBBLE_SIZE.height + 130)
-      
-      bubbleWindow.setBounds({ x, y, width: BUBBLE_SIZE.width, height: BUBBLE_SIZE.height })
-      if (!bubbleWindow.isVisible()) bubbleWindow.showInactive()
-      
-      // Trigger spontaneous bubble if Python passed it
-      if (state.bubble_text && state.bubble_text !== lastBubbleText) {
-        lastBubbleText = state.bubble_text
-        bubbleWindow.webContents.send('bubble:show', { text: state.bubble_text })
-        
-        // Reset lastBubbleText after duration so same message can be shown again later
-        setTimeout(() => {
-          if (lastBubbleText === state.bubble_text) lastBubbleText = ''
-        }, state.bubble_duration || 5000)
-      }
-    } else {
-      if (bubbleWindow.isVisible()) bubbleWindow.hide()
-    }
-  }, 30)
-  
-  bubbleWindow.on('closed', () => { bubbleWindow = null })
-}
 
 // ── Settings Window ──────────────────────────────────────────
 function createSettingsWindow() {
@@ -451,7 +301,11 @@ function createCompanionWindow(characterSize = 60) {
     }
   })
 
-  companionWindow.loadFile(path.join(__dirname, '../renderer/pages/companion.html'))
+  const storedCharacter = (store.get('settings') || {}).character || 'gugugaga'
+  companionWindow.loadFile(
+    path.join(__dirname, '../renderer/pages/companion.html'),
+    { query: { character: storedCharacter } }
+  )
   wireBoundsPersistence(companionWindow, 'companion')
   // keep legacy key updated for older code paths/tools
   companionWindow.on('move', () => {
@@ -573,13 +427,21 @@ function createMinimizedWindow(activePage = 'active') {
 }
 
 // ── Tray ─────────────────────────────────────────────────────
+function buildTrayMenu() {
+  if (!tray) return
+  const lang = store.get('settings.language', 'en')
+  const openLabel = lang === 'id' ? 'Buka' : 'Open'
+  const exitLabel = lang === 'id' ? 'Keluar' : 'Exit'
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: openLabel, click: () => companionWindow?.show() },
+    { type: 'separator' },
+    { label: exitLabel, click: () => app.quit() }
+  ]))
+}
+
 function createTray() {
   tray = new Tray(getAppIcon())
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Buka',   click: () => companionWindow?.show() },
-    { type: 'separator' },
-    { label: 'Keluar', click: () => app.quit() }
-  ]))
+  buildTrayMenu()
   tray.setToolTip('TrapeziBuddy')
   tray.on('click', () =>
     companionWindow?.isVisible() ? companionWindow.hide() : companionWindow?.show()
@@ -602,7 +464,6 @@ ipcMain.on('window:startApp', (_, data) => {
   settingsWindow?.close()
   createCompanionWindow()
   createTray()
-  startPythonCompanion()
 })
 
 // ── IPC: Tasks ───────────────────────────────────────────────
@@ -643,7 +504,33 @@ ipcMain.handle('tasks:delete', (_, taskId) => {
 })
 
 ipcMain.handle('settings:get', () => store.get('settings'))
-ipcMain.handle('settings:set', (_, data) => { store.set('settings', data); return true })
+ipcMain.handle('settings:set', (_, data) => {
+  store.set('settings', data)
+  // Keep settings.theme in sync so did-finish-load always reads the right value
+  if (data && data.character) store.set('settings.theme', data.character)
+  return true
+})
+
+// ── IPC: Language ────────────────────────────────────────────
+ipcMain.handle('language:get', () => store.get('settings.language', 'en'))
+ipcMain.on('language:set', (_, lang) => {
+  store.set('settings.language', lang)
+  buildTrayMenu()
+  const targets = [companionWindow, chatWindow, minimizedWindow, addTaskWindow, confirmTaskWindow, appSettingsWindow, settingsWindow]
+  targets.forEach(win => {
+    try {
+      if (win && !win.isDestroyed()) win.webContents.send('language:changed', lang)
+    } catch (_err) { /* window may be closing */ }
+  })
+})
+
+// Broadcast language when a new window finishes loading
+app.on('web-contents-created', (event, contents) => {
+  contents.on('did-finish-load', () => {
+    const lang = store.get('settings.language', 'en');
+    contents.send('language:changed', lang);
+  });
+})
 
 // ── IPC: Theme ───────────────────────────────────────────────
 ipcMain.on('theme:apply', (_, theme) => {
@@ -670,62 +557,46 @@ const localDialogResponses = {
   'default': 'Hmm, aku bingung. Bisa dijelasin lagi? 🤔',
 }
 
-// ── Call Python Backend ──────────────────────────────────────
+// ── Call Backend ──────────────────────────────────────────────
 async function callPythonBackend(userMessage) {
   try {
     return new Promise((resolve, reject) => {
       const projectRoot = getProjectRoot()
-      let python;
+      let backend;
       
-      if (app.isPackaged) {
-        const backendExe = path.join(projectRoot, 'backend', 'main.exe')
-        logger.info(`Spawning backend exe: ${backendExe}`)
-        
-        if (!fs.existsSync(backendExe)) {
-          logger.error(`Backend exe not found: ${backendExe}`)
-          reject(new Error(`Backend executable not found at ${backendExe}`))
-          return
-        }
-        
-        python = spawn(backendExe, [
-          '--chat-bridge',
-          '--message', userMessage,
-          '--execute-actions'
-        ], {
-          cwd: path.dirname(backendExe),
-          stdio: ['pipe', 'pipe', 'pipe'],
-        })
-      } else {
-        const pythonScript = path.join(projectRoot, 'main.py')
-        const pythonExe = getPythonExecutable()
-        logger.info(`Spawning python script: ${pythonScript}`)
-        
-        python = spawn(pythonExe, [
-          pythonScript,
-          '--chat-bridge',
-          '--message', userMessage,
-          '--execute-actions'
-        ], {
-          cwd: projectRoot,
-          stdio: ['pipe', 'pipe', 'pipe'],
-        })
+      const backendExe = path.join(projectRoot, 'backend', 'main.exe')
+      logger.info(`Spawning backend exe: ${backendExe}`)
+      
+      if (!fs.existsSync(backendExe)) {
+        logger.error(`Backend exe not found: ${backendExe}`)
+        reject(new Error(`Backend executable not found at ${backendExe}`))
+        return
       }
+      
+      backend = spawn(backendExe, [
+        '--chat-bridge',
+        '--message', userMessage,
+        '--execute-actions'
+      ], {
+        cwd: path.dirname(backendExe),
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
 
       let output = ''
       let error = ''
 
-      python.stdout.on('data', (data) => {
+      backend.stdout.on('data', (data) => {
         output += data.toString()
       })
 
-      python.stderr.on('data', (data) => {
+      backend.stderr.on('data', (data) => {
         error += data.toString()
       })
 
-      python.on('close', (code) => {
+      backend.on('close', (code) => {
         try {
           if (code !== 0) {
-            logger.warn(`Python script exited with code ${code}: ${error}`)
+            logger.warn(`Backend exited with code ${code}: ${error}`)
           }
           
           // Parse JSON response
@@ -739,26 +610,26 @@ async function callPythonBackend(userMessage) {
           logger.info(`[AI] Response: ${response.response}`)
           resolve(response)
         } catch (parseErr) {
-          logger.error(`Failed to parse Python response: ${parseErr}`)
+          logger.error(`Failed to parse Backend response: ${parseErr}`)
           logger.error(`Output was: ${output}`)
           logger.error(`Error was: ${error}`)
           reject(parseErr)
         }
       })
 
-      python.on('error', (err) => {
-        logger.error(`Failed to spawn Python process: ${err.message}`)
+      backend.on('error', (err) => {
+        logger.error(`Failed to spawn Backend process: ${err.message}`)
         reject(err)
       })
       
       // Timeout after 30 seconds
       setTimeout(() => {
-        python.kill()
-        reject(new Error('Python backend timeout'))
+        backend.kill()
+        reject(new Error('Backend timeout'))
       }, 30000)
     })
   } catch (err) {
-    logger.error(`Python backend error: ${err.message}`)
+    logger.error(`Backend error: ${err.message}`)
     throw err
   }
 }
@@ -782,10 +653,6 @@ ipcMain.handle('chat:sendMessage', async (_, userMessage) => {
       actions: result.actions_executed,
     })
     store.set('chatHistory', chatHistory)
-    // Also show AI response in Electron bubble
-    if (bubbleWindow) {
-      bubbleWindow.webContents.send('bubble:show', { text: response })
-    }
     
     return {
       ok: true,
@@ -1016,63 +883,17 @@ ipcMain.handle('window:openChat', () => {
 })
 ipcMain.on('window:closeChat', () => chatWindow?.close())
 
-// ── IPC: Bubble above Python character ───────────────────────
-ipcMain.on('python:showBubble', (_, data) => {
-  const text = data?.text || ''
-  if (text && bubbleWindow) {
-    bubbleWindow.webContents.send('bubble:show', { text })
-  }
-})
 
-// ── IPC: Focus session → hide/show Python character ──────────
-ipcMain.on('python:hideCharacter', () => {
-  sendCommandToPython('hide_character')
-})
-
-ipcMain.on('python:showCharacter', () => {
-  sendCommandToPython('show_character')
-})
-
-// ── IPC: Task notifications → Bubble above character ─────────
-ipcMain.on('bubble:taskAdded', (_, data) => {
-  const name = data?.name || 'Task baru'
-  const deadline = data?.deadline_date || ''
-  const time = data?.deadline_time || ''
-  const priority = data?.priority || 'Sedang'
-  const cats = (data?.categories || []).join(', ') || '-'
-  
-  let bubbleText = `\uD83D\uDCCB Task baru: "${name}"\n`
-  if (deadline) bubbleText += `\u23F0 Deadline: ${deadline} ${time}\n`
-  bubbleText += `\u26A1 Prioritas: ${priority}`
-  if (cats !== '-') bubbleText += ` | \uD83C\uDFF7 ${cats}`
-  bubbleText += `\n\uD83D\uDCAA Semangat kerjakan ya!`
-  
-  if (bubbleWindow) {
-    bubbleWindow.webContents.send('bubble:show', { text: bubbleText })
-  }
-})
-
-ipcMain.on('bubble:taskCompleted', (_, data) => {
-  const name = data?.name || 'Task'
-  const msgs = [
-    `\uD83C\uDF89 Yeey! "${name}" sudah selesai! Keren banget!`,
-    `\u2728 Mantap! "${name}" done! Kamu hebat!`,
-    `\uD83C\uDF1F Selamat! "${name}" completed! Lanjutkan!`,
-    `\uD83D\uDCAA "${name}" beres! Satu lagi selesai!`,
-  ]
-  const bubbleText = msgs[Math.floor(Math.random() * msgs.length)]
-  if (bubbleWindow) {
-    bubbleWindow.webContents.send('bubble:show', { text: bubbleText })
-  }
-})
 
 // ── App lifecycle ────────────────────────────────────────────
 
-// Send stored theme to every window once it finishes loading
+// Send stored theme to every window once it finishes loading.
+// Read settings.character as the authoritative source; fall back to settings.theme.
 app.on('browser-window-created', (_, win) => {
   win.webContents.on('did-finish-load', () => {
     try {
-      const theme = store.get('settings.theme') || 'gugugaga'
+      const settings = store.get('settings') || {}
+      const theme = settings.character || settings.theme || 'gugugaga'
       win.webContents.send('theme:apply', theme)
     } catch (_err) { /* window may be closing */ }
   })
@@ -1084,16 +905,13 @@ app.whenReady().then(() => {
     return
   }
   createSettingsWindow()
-  createBubbleWindow()
 })
 
 app.on('window-all-closed', () => {
   if (!companionWindow && process.platform !== 'darwin') app.quit()
 })
 
-app.on('before-quit', () => {
-  stopPythonCompanion()
-})
+
 
 app.on('activate', () => {
   if (!companionWindow && !settingsWindow) createSettingsWindow()

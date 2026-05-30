@@ -239,7 +239,7 @@
 <body>
   <div class="modal-content">
     <div class="modal-header">
-      <span>Confirm Task Completion</span>
+      <span data-i18n="confirmTask">Confirm Task Completion</span>
       <button class="btn-close" id="btn-close">\u00d7</button>
     </div>
 
@@ -258,18 +258,19 @@
 
       <div class="instruction" id="instruction"></div>
 
-      <div class="error-message" id="error-message"></div>
+      <div class="error-message" id="error-message" data-i18n="errorConfirm"></div>
 
-      <input 
-        type="text" 
-        id="confirm-input" 
-        placeholder="Type the task name above to confirm"
+      <input
+        type="text"
+        id="confirm-input"
+        placeholder="Type Here . . ."
+        data-i18n-placeholder="confirmInputPlaceholder"
       >
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary" id="btn-cancel">Cancel</button>
-      <button class="btn-primary" id="btn-confirm" disabled>Confirm</button>
+      <button class="btn-secondary" id="btn-cancel" data-i18n="cancel">Cancel</button>
+      <button class="btn-primary" id="btn-confirm" disabled data-i18n="confirmThisTask">Confirm</button>
     </div>
   </div>
 
@@ -288,7 +289,7 @@
 
     // Set task name
     taskNameDisplay.textContent = taskName || 'Untitled Task';
-    instruction.innerHTML = `To confirm, type <strong>"${taskName}"</strong> below`;
+    instruction.innerHTML = `<span data-i18n="toConfirm">To confirm, type</span> <strong>"${taskName}"</strong> <span data-i18n="below">below</span>`;
 
     // Handle cancel
     const closeModal = () => {
@@ -318,15 +319,15 @@
       // Validate
       if (val.toLowerCase() !== expected?.toLowerCase()) {
         confirmInput.classList.add('error');
-        errorMessage.textContent = 'Task name does not match. Please try again.';
         errorMessage.style.display = 'block';
         confirmInput.focus();
         return;
       }
 
       // Process completion
+      const _ti = () => window.i18n?.[window.currentLang || 'en'] || window.i18n?.en;
       confirmBtn.disabled = true;
-      confirmBtn.textContent = 'Completing...';
+      confirmBtn.textContent = _ti()?.completing || 'Completing...';
 
       try {
         await api.tasks.complete(taskId);
@@ -334,7 +335,7 @@
       } catch (err) {
         console.error('Error completing task:', err);
         confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm';
+        confirmBtn.textContent = _ti()?.confirmThisTask || 'Confirm';
       }
     });
 
@@ -352,6 +353,46 @@
       document.body.classList.remove('theme-gugugaga', 'theme-goldship');
       document.body.classList.add('theme-' + theme);
     });
+
+    // ── Global i18n Receiver ──
+    window.currentLang = 'en';
+
+    async function applyLanguage(lang) {
+      window.currentLang = lang;
+      const t = window.i18n[lang] || window.i18n['en'];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) el.textContent = t[key];
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key] !== undefined) el.placeholder = t[key];
+      });
+      // Re-translate confirm instruction spans inside innerHTML-built element
+      const inst = document.getElementById('instruction');
+      if (inst) {
+        const toConfirmEl = inst.querySelector('[data-i18n="toConfirm"]');
+        const belowEl = inst.querySelector('[data-i18n="below"]');
+        if (toConfirmEl && t.toConfirm !== undefined) toConfirmEl.textContent = t.toConfirm;
+        if (belowEl && t.below !== undefined) belowEl.textContent = t.below;
+      }
+    }
+
+    (async () => {
+      const api = window.trapezi;
+      if (api && api.settings) {
+        const settings = await api.settings.get();
+        applyLanguage(settings.language || 'en');
+      }
+    })();
+
+    const api = window.trapezi;
+    if (api && api.language) {
+      api.language.onChange((lang) => {
+        applyLanguage(lang);
+      });
+    }
   </script>
+  <script src="../i18n.js"></script>
 </body>
 </html>

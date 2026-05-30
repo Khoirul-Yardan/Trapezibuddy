@@ -10,6 +10,12 @@ function getApi() {
   return api
 }
 
+// i18n helper — reads current language set by the HTML page
+function t(key) {
+  const lang = window.currentLang || 'en'
+  return window.i18n?.[lang]?.[key] ?? window.i18n?.en?.[key] ?? key
+}
+
 // ── State ────────────────────────────────────────────────────
 let state = {
   tasks:       [],
@@ -37,12 +43,19 @@ function calcDeadlineLabel(deadline_date, deadline_time) {
   const now      = new Date()
   const diffMs   = deadline - now
   const diffHrs  = diffMs / (1000 * 60 * 60)
+  const lang     = window.currentLang || 'en'
 
-  if (diffMs < 0)        return 'Overdue!'
-  if (diffHrs < 1)       return `${Math.floor(diffMs / 60000)} minutes left`
-  if (diffHrs < 24)      return `${Math.floor(diffHrs)} hours left`
-  if (diffHrs < 48)      return 'Tomorrow'
-  return `${Math.floor(diffHrs / 24)} days left`
+  if (diffMs < 0)   return t('overdue')
+  if (diffHrs < 1)  return lang === 'id'
+    ? `${Math.floor(diffMs / 60000)} menit lagi`
+    : `${Math.floor(diffMs / 60000)} minutes left`
+  if (diffHrs < 24) return lang === 'id'
+    ? `${Math.floor(diffHrs)} jam lagi`
+    : `${Math.floor(diffHrs)} hours left`
+  if (diffHrs < 48) return t('tomorrow')
+  return lang === 'id'
+    ? `${Math.floor(diffHrs / 24)} hari lagi`
+    : `${Math.floor(diffHrs / 24)} days left`
 }
 
 function safeDate(value) {
@@ -167,11 +180,11 @@ function updateMoodCard() {
   const streakEl  = document.getElementById('streak-count')
 
   if (active === 0 && total > 0) {
-    moodLabel.textContent = 'All Done! 🎉'
+    moodLabel.textContent = t('allDone')
   } else if (active > 0) {
-    moodLabel.textContent = "You're Almost Done"
+    moodLabel.textContent = t('almostDone')
   } else {
-    moodLabel.textContent = 'No tasks yet'
+    moodLabel.textContent = t('noTasksYet')
   }
 
   moodSub.textContent   = `${done}/${total} Task`
@@ -244,7 +257,7 @@ function renderTaskList() {
           return doneAt >= rangeStart
         })
 
-  title.textContent = state.activeTab === 'active' ? 'Tugas Aktif' : 'Selesai'
+  title.textContent = state.activeTab === 'active' ? t('activeTasks') : t('finished')
   if (filtersEl) filtersEl.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
 
   if (filtered.length === 0) {
@@ -350,18 +363,13 @@ function initConfirmModal() {
 
     // Sukses — tandai selesai
     confirmBtn.disabled = true
-    confirmBtn.textContent = 'Menyimpan...'
+    confirmBtn.textContent = t('saving')
 
     const currentApi = getApi()
     if (currentApi) {
       await currentApi.tasks.complete(_confirmTaskId)
     }
 
-    // Show congratulatory bubble on Python character
-    const bubbleApi = getApi()
-    if (bubbleApi && bubbleApi.bubble) {
-      bubbleApi.bubble.taskCompleted({ name: _confirmTaskName })
-    }
 
     closeConfirm()
 
@@ -484,17 +492,6 @@ function initModal() {
       reminder,
     })
 
-    // Show bubble notification on Python character
-    const bubbleApi = getApi()
-    if (bubbleApi && bubbleApi.bubble) {
-      bubbleApi.bubble.taskAdded({
-        name,
-        deadline_date: date || new Date().toISOString().split('T')[0],
-        deadline_time: time || '23:59',
-        categories: cats,
-        priority: prio,
-      })
-    }
 
     closeModal()
     await loadTasks()
@@ -589,29 +586,14 @@ function stopFocusTimer() {
 
   setFocusView(false)
   
-  // Show Python character again after focus ends
-  const currentApi = getApi()
-  if (currentApi && currentApi.python) {
-    currentApi.python.showCharacter()
-  }
+
 }
 
 function startFocusTimer() {
   if (focusInterval) return
   setFocusView(true)
   
-  // Hide Python character during focus session
-  const currentApi = getApi()
-  if (currentApi && currentApi.python) {
-    // Show bubble first
-    currentApi.python.showBubble('Oke, aku sembunyi dulu ya! Semangat fokusnya! \uD83D\uDCAA\uD83D\uDD25', 3000)
-    // Hide character after bubble finishes (so user can read it)
-    setTimeout(() => {
-      if (focusInterval) { // Only hide if focus is still running
-        currentApi.python.hideCharacter()
-      }
-    }, 3500)
-  }
+
 
   const timerEl = document.getElementById('focus-timer')
   if (timerEl) timerEl.textContent = formatFocusTime(focusSeconds)
@@ -622,12 +604,7 @@ function startFocusTimer() {
       focusInterval = null
       document.getElementById('focus-dot').style.background = 'var(--c-done)'
       
-      // Show Python character when focus ends
-      const api2 = getApi()
-      if (api2 && api2.python) {
-        api2.python.showCharacter()
-        api2.python.showBubble('Focus selesai! Istirahat dulu ya, kamu keren! 🎉', 5000)
-      }
+
       return
     }
     focusSeconds--

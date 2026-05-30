@@ -32,10 +32,16 @@
       flex-shrink: 0;
       -webkit-app-region: drag;
     }
-    .header-title {
-      font-weight: 600;
-      font-size: 14px;
-      color: #CCCCCC;
+    .header-logo {
+      height: 18px;
+      width: auto;
+      display: block;
+    }
+    .branding-text {
+      font-size: 20px;
+      font-weight: 800;
+      color: #7B3F00;
+      letter-spacing: -0.3px;
     }
     .btn-close {
       background: transparent;
@@ -83,12 +89,6 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     .branding-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .branding-text {
-      font-size: 20px;
-      font-weight: 800;
-      color: #7B3F00;
-      letter-spacing: -0.3px;
-    }
 
     /* ── Section Cards ── */
     .section-card {
@@ -292,7 +292,9 @@
 
   <!-- Header -->
   <div class="header">
-    <div class="header-title">TrapeziBuddy</div>
+    <img id="header-logo" class="header-logo"
+         src="../assets/styles/images/agnesTachyon/logo.svg"
+         alt="TrapeziBuddy">
     <button class="btn-close" id="btn-close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -318,7 +320,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
         </svg>
-        <span id="label-char-opt">Character Options</span>
+        <span data-i18n="characterOptions" id="label-char-opt">Character Options</span>
       </div>
 
       <div class="char-options">
@@ -344,10 +346,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
         </svg>
-        <span id="label-lang">Language (Bahasa)</span>
+        <span data-i18n="language" id="label-lang">Language (Bahasa)</span>
       </div>
 
-      <div class="lang-label" id="label-select-lang">Select your preferred language:</div>
+      <div class="lang-label" data-i18n="selectLanguage" id="label-select-lang">Select your preferred language:</div>
       <div class="lang-options">
         <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
         <button class="lang-btn" data-lang="id">Indonesia</button>
@@ -363,10 +365,11 @@
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
         <polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
-      <span id="label-start">Start Application</span>
+      <span data-i18n="startApp" id="label-start">Start Application</span>
     </button>
   </div>
 
+  <script src="../i18n.js"></script>
   <script>
     const api = window.trapezi;
 
@@ -375,24 +378,14 @@
       language: 'en'
     };
 
-    const i18n = {
-      en: {
-        charOptions: 'Character Options',
-        language:    'Language (Bahasa)',
-        selectLang:  'Select your preferred language:',
-        startApp:    'Start Application'
-      },
-      id: {
-        charOptions: 'Pilihan Karakter',
-        language:    'Bahasa (Language)',
-        selectLang:  'Pilih bahasa yang Anda inginkan:',
-        startApp:    'Mulai Aplikasi'
-      }
-    };
-
     const BRANDING_IMGS = {
       gugugaga: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
       goldship:  '../assets/styles/images/goldShip/goldship.png',
+    };
+
+    const BRANDING_LOGOS = {
+      gugugaga: '../assets/styles/images/agnesTachyon/logo.svg',
+      goldship:  '../assets/styles/images/goldShip/logo.svg',
     };
 
     function applyThemePreview(character) {
@@ -400,15 +393,11 @@
       document.body.classList.add('theme-' + character);
       const avatar = document.querySelector('.branding-avatar img');
       if (avatar) avatar.src = BRANDING_IMGS[character] ?? BRANDING_IMGS.gugugaga;
+      const logo = document.getElementById('header-logo');
+      if (logo) logo.src = BRANDING_LOGOS[character] ?? BRANDING_LOGOS.gugugaga;
     }
 
-    function updateLanguageText() {
-      const t = i18n[state.language] || i18n.en;
-      document.getElementById('label-char-opt').textContent = t.charOptions;
-      document.getElementById('label-lang').textContent      = t.language;
-      document.getElementById('label-select-lang').textContent = t.selectLang;
-      document.getElementById('label-start').textContent       = t.startApp;
-    }
+    // Removed local updateLanguageText() as it's handled by the global i18n script
 
     function updateUI() {
       document.querySelectorAll('.char-card').forEach(el => {
@@ -417,7 +406,7 @@
       document.querySelectorAll('.lang-btn').forEach(el => {
         el.classList.toggle('active', el.dataset.lang === state.language);
       });
-      updateLanguageText();
+      // Note: text translation is now handled reactively by the global i18n script.
     }
 
     async function loadSettings() {
@@ -447,6 +436,9 @@
       btn.addEventListener('click', () => {
         state.language = btn.dataset.lang;
         updateUI();
+        if (api && api.language) {
+          api.language.set(state.language);
+        }
       });
     });
 
@@ -466,6 +458,28 @@
     });
 
     loadSettings();
+
+    // ── Global i18n Receiver ──
+    async function applyLanguage(lang) {
+      const t = window.i18n[lang] || window.i18n['en']
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n')
+        if (t[key]) el.textContent = t[key]
+      })
+    }
+    
+    (async () => {
+      if (api && api.settings) {
+        const settings = await api.settings.get()
+        applyLanguage(settings.language || 'en')
+      }
+    })();
+    
+    if (api && api.language) {
+      api.language.onChange((lang) => {
+        applyLanguage(lang)
+      })
+    }
   </script>
   <script>
     (async () => {

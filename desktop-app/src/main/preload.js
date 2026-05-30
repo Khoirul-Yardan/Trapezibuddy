@@ -22,19 +22,6 @@ contextBridge.exposeInMainWorld('trapezi', {
     sendMessage: (message) => ipcRenderer.invoke('chat:sendMessage', message),
   },
 
-  // ── Python Character Control ──────────────────────────────
-  python: {
-    showBubble:    (text, duration) => ipcRenderer.send('python:showBubble', { text, duration }),
-    hideCharacter: ()               => ipcRenderer.send('python:hideCharacter'),
-    showCharacter: ()               => ipcRenderer.send('python:showCharacter'),
-  },
-
-  // ── Bubble Notifications (task events) ────────────────────
-  bubble: {
-    taskAdded:     (data) => ipcRenderer.send('bubble:taskAdded', data),
-    taskCompleted: (data) => ipcRenderer.send('bubble:taskCompleted', data),
-  },
-
   // ── Window ────────────────────────────────────────────────
   window: {
     // Companion
@@ -75,5 +62,13 @@ contextBridge.exposeInMainWorld('trapezi', {
   },
 
   onThemeApply: (cb) => ipcRenderer.on('theme:apply', (_, theme) => cb(theme)),
+
+  // ── Language ──────────────────────────────────────────────
+  language: {
+    get: () => ipcRenderer.invoke('language:get'),
+    set: (lang) => ipcRenderer.send('language:set', lang),
+    onChange: (cb) => ipcRenderer.on('language:changed', (_, lang) => cb(lang))
+  },
+
 
 })
