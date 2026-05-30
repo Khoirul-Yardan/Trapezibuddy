@@ -235,25 +235,32 @@ class DesktopAssistantWindow(QMainWindow):
         self.character_widget.set_animation(animation_name)
     
     def _on_position_changed(self, x: int, y: int):
-        """Handle behavior position change with automatic screen bounds clamping"""
-        screen_geometry = self.screen().availableGeometry()
+        """Handle behavior position change with relaxed desktop-pet bounds"""
+
+        screen_geometry = self.screen().geometry()
+
         screen_width = screen_geometry.width()
         screen_height = screen_geometry.height()
-        
-        # Auto-clamp to screen bounds (both X and Y for all edges)
-        # Left/right boundaries
-        clamped_x = max(0, min(x, screen_width - WINDOW_WIDTH))
-        
-        # Top/bottom boundaries (prevent falling off screen)
-        clamped_y = max(0, min(y, screen_height - WINDOW_HEIGHT))
-        
-        # Move the window to the new position
+
+        # Bagian karakter yang harus tetap terlihat
+        visible_margin_x = 80
+        visible_margin_y = 80
+
+        # Horizontal bounds
+        min_x = -WINDOW_WIDTH + visible_margin_x
+        max_x = screen_width - visible_margin_x
+
+        # Vertical bounds
+        min_y = -WINDOW_HEIGHT + visible_margin_y
+        max_y = screen_height - visible_margin_y
+
+        clamped_x = max(min_x, min(x, max_x))
+        clamped_y = max(min_y, min(y, max_y))
+
         self.move(clamped_x, clamped_y)
-        
-        # Write position for Electron bubble overlay
+
         self._write_position_state()
-        
-        # Start timer to update dialog position
+
         if not self.position_update_timer.isActive():
             self.position_update_timer.start(50)
     
