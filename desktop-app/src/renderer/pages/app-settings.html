@@ -540,6 +540,7 @@
         });
       }
       // 1. Broadcast theme first so companion updates immediately
+      console.log('Applying theme:', state.character);
       window.trapezi?.theme?.apply(state.character);
       // 2. Broadcast language
       if (api && api.language) {

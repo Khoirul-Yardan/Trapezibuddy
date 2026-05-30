@@ -689,8 +689,38 @@ async function init() {
   }
 }
 
+const THEME_SPRITES = {
+  agnesTachyon: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+  goldship: '../assets/styles/images/goldShip/goldship.png',
+}
+const THEME_LOGOS = {
+  agnesTachyon: '../assets/styles/images/agnesTachyon/logo.svg',
+  goldship: '../assets/styles/images/goldShip/logo.svg',
+}
+
+function applyThemeAssets(theme) {
+  const logo = document.querySelector('.panel-title, img[alt="TrapeziBuddy"]')
+  const avatar = document.querySelector('#companion-sprite, .avatar img')
+  if (logo) logo.src = THEME_LOGOS[theme] ?? THEME_LOGOS.agnesTachyon
+  if (avatar) avatar.src = THEME_SPRITES[theme] ?? THEME_SPRITES.agnesTachyon
+}
+
+// Theme listener — registered at load time so broadcasts from any window are handled immediately
+window.trapezi?.onThemeApply?.((theme) => {
+  document.body.classList.remove('theme-agnesTachyon', 'theme-goldship')
+  document.body.classList.add(`theme-${theme}`)
+  applyThemeAssets(theme)
+})
+
 // Set today's date as default on date input
 document.addEventListener('DOMContentLoaded', () => {
+  ;(async () => {
+    try {
+      const s = await window.trapezi?.settings?.get()
+      applyThemeAssets(s?.character || 'agnesTachyon')
+    } catch (_) { applyThemeAssets('agnesTachyon') }
+  })()
+
   const today = new Date().toISOString().split('T')[0]
   const dateInput = document.getElementById('task-date')
   if (dateInput) dateInput.value = today

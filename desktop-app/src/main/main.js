@@ -534,13 +534,23 @@ app.on('web-contents-created', (event, contents) => {
 
 // ── IPC: Theme ───────────────────────────────────────────────
 ipcMain.on('theme:apply', (_, theme) => {
-  store.set('settings.theme', theme)
-  store.set('settings.character', theme)  // keep character in sync so recreated windows get correct theme
-  const targets = [companionWindow, chatWindow, minimizedWindow, addTaskWindow, confirmTaskWindow, appSettingsWindow, settingsWindow]
-  targets.forEach(win => {
+  store.set('settings.character', theme)
+  const windows = [
+    companionWindow,
+    minimizedWindow,
+    chatWindow,
+    addTaskWindow,
+    confirmTaskWindow,
+    appSettingsWindow
+  ]
+  windows.forEach(win => {
     try {
-      if (win && !win.isDestroyed()) win.webContents.send('theme:apply', theme)
-    } catch (_err) { /* window may be closing */ }
+      if (win && !win.isDestroyed() && win.webContents) {
+        win.webContents.send('theme:apply', theme)
+      }
+    } catch (e) {
+      console.error('Failed to send theme to window:', e)
+    }
   })
 })
 
