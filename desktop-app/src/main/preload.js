@@ -16,23 +16,36 @@ contextBridge.exposeInMainWorld('trapezi', {
     get: ()       => ipcRenderer.invoke('settings:get'),
     set: (data)   => ipcRenderer.invoke('settings:set', data),
   },
-
-  // ── Chat ─────────────────────────────────────────────────
-  chat: {
-    sendMessage: (message) => ipcRenderer.invoke('chat:sendMessage', message),
+  // ── Character Selection ────────────────────────────
+  character: {
+    select: (character) => ipcRenderer.send('character:select', character),
   },
 
-  // ── Python Character Control ──────────────────────────────
+  // ── Agnes Character Control ──────────────────────────────
+  agnes: {
+    hideCharacter: () => ipcRenderer.send('agnes:hideCharacter'),
+    showCharacter: () => ipcRenderer.send('agnes:showCharacter'),
+  },
+
+  // ── GoldShip Character Control ────────────────────────────
+  goldship: {
+    hideCharacter: () => ipcRenderer.send('goldship:hideCharacter'),
+    showCharacter: () => ipcRenderer.send('goldship:showCharacter'),
+  },
+
+  // ── Python Character Control (DEPRECATED - use agnes/goldship) ──────────────────────────────
   python: {
-    showBubble:    (text, duration) => ipcRenderer.send('python:showBubble', { text, duration }),
-    hideCharacter: ()               => ipcRenderer.send('python:hideCharacter'),
-    showCharacter: ()               => ipcRenderer.send('python:showCharacter'),
+    showBubble:    (text, duration) => ipcRenderer.send('bubble:taskAdded', { text, duration }),
+    hideCharacter: () => ipcRenderer.send('agnes:hideCharacter'), // Try Agnes first
+    showCharacter: () => ipcRenderer.send('agnes:showCharacter'),
   },
 
   // ── Bubble Notifications (task events) ────────────────────
   bubble: {
+    show:          (text) => ipcRenderer.send('bubble:show', { text }),
     taskAdded:     (data) => ipcRenderer.send('bubble:taskAdded', data),
     taskCompleted: (data) => ipcRenderer.send('bubble:taskCompleted', data),
+    hide:          ()     => ipcRenderer.send('bubble:hide'),
   },
 
   // ── Window ────────────────────────────────────────────────
@@ -41,6 +54,7 @@ contextBridge.exposeInMainWorld('trapezi', {
     minimize:         ()             => ipcRenderer.send('window:minimize'),
     hide:             ()             => ipcRenderer.send('window:hide'),
     restore:          (page)         => ipcRenderer.send('window:restore', page),
+    getSelectedCharacter: ()         => ipcRenderer.invoke('window:getSelectedCharacter'),
 
     // Add Task modal
     openAddTask:      ()             => ipcRenderer.invoke('modal:openAddTask'),
@@ -57,13 +71,10 @@ contextBridge.exposeInMainWorld('trapezi', {
     // Navigation listener from main
     onNavigate:       (cb)           => ipcRenderer.on('navigate', (_, page) => cb(page)),
 
-    // Chat window
-    openChat:         ()             => ipcRenderer.invoke('window:openChat'),
-    closeChat:        ()             => ipcRenderer.send('window:closeChat'),
-
     // Settings window
     closeSettings:    ()             => ipcRenderer.send('window:closeSettings'),
     startApp:         (data)         => ipcRenderer.send('window:startApp', data),
+    exitApp:          ()             => ipcRenderer.send('window:exitApp'),
   },
 
 })

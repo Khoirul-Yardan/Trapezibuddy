@@ -6,7 +6,6 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "dev:chat": "electron . --dev --page=chat",
     "dev:companion": "electron . --dev --page=companion",
     "dev:add-task": "electron . --dev --page=add-task",
     "dev:confirm-task": "electron . --dev --page=confirm-task",

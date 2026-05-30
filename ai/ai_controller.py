@@ -1,11 +1,7 @@
-# AI Controller - handles AI integration (Gemini, OpenAI, or Ollama)
-import requests
+# AI Controller - handles AI integration (Gemini or lightweight local responses)
 import json
 from typing import Dict, Any, Optional, List
-from config.config import (
-    AI_TYPE, AI_API_KEY, AI_MODEL, OLLAMA_URL, OLLAMA_MODEL, 
-    AI_ENABLED, GEMINI_SAFETY_SETTINGS
-)
+from config.config import AI_API_KEY, AI_MODEL, AI_ENABLED, GEMINI_SAFETY_SETTINGS
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -14,23 +10,24 @@ logger = setup_logger(__name__)
 class AIController:
     """
     Manage AI integration for character
-    Supports Gemini, OpenAI API, and local Ollama
+    Supports Gemini API with lightweight local fallback
+    (Ollama removed for lighter memory footprint)
+    Lazy loads Gemini module to reduce initial RAM usage
     """
     
     def __init__(self):
-        self.ai_type = AI_TYPE
         self.api_key = AI_API_KEY
         self.model = AI_MODEL
-        self.ollama_url = OLLAMA_URL
-        self.ollama_model = OLLAMA_MODEL
         self.enabled = AI_ENABLED
         self.gemini_model = None
+        self._genai = None  # Lazy load genai module
         
-        logger.info(f"AIController initialized - Type: {self.ai_type}, Enabled: {self.enabled}")
+        logger.info(f"AIController initialized - Gemini enabled: {self.enabled}")
     
     def process_command(self, user_input: str) -> Dict[str, Any]:
         """
         Process user command and get AI response
+        Priority: Gemini API -> Lightweight local responses
         
         Args:
             user_input: User command
@@ -39,55 +36,32 @@ class AIController:
             Dict with intent, action, and parameters
         """
         if not self.enabled:
-            logger.warning("AI is disabled")
-            return self._parse_intent_local(user_input)
+            logger.info("AI disabled, using lightweight local response")
+            return self._get_lightweight_response(user_input)
         
-        if self.ai_type == "gemini":
-            return self._process_gemini(user_input)
-        elif self.ai_type == "openai":
-            return self._process_openai(user_input)
-        elif self.ai_type == "local":
-            return self._process_ollama(user_input)
-        else:
-            logger.error(f"Unknown AI type: {self.ai_type}")
-            return self._parse_intent_local(user_input)
-    
-    def _process_openai(self, user_input: str) -> Dict[str, Any]:
-        """Process command using OpenAI API"""
+        # Try Gemini first
         try:
-            import openai
-            openai.api_key = self.api_key
-            
-            system_prompt = self._get_system_prompt()
-            
-            response = openai.ChatCompletion.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_input}
-                ],
-                temperature=0.7,
-                max_tokens=150
-            )
-            
-            ai_response = response.choices[0].message.content
-            logger.info(f"OpenAI response: {ai_response}")
-            return self._parse_ai_response(ai_response)
-        
-        except ImportError:
-            logger.error("openai package not installed")
-            return self._parse_intent_local(user_input)
+            return self._process_gemini(user_input)
         except Exception as e:
-            logger.error(f"OpenAI API error: {e}")
-            return self._parse_intent_local(user_input)
+            logger.warning(f"Gemini API failed: {e}, falling back to lightweight response")
+            return self._get_lightweight_response(user_input)
+    
+    def _get_genai(self):
+        """Lazy load and return google.generativeai module"""
+        if self._genai is None:
+            try:
+                import google.generativeai as genai
+                self._genai = genai
+                genai.configure(api_key=self.api_key)
+            except ImportError:
+                logger.error("google-generativeai not installed")
+                raise
+        return self._genai
     
     def _process_gemini(self, user_input: str) -> Dict[str, Any]:
         """Process command using Google Gemini API"""
         try:
-            import google.generativeai as genai
-            
-            # Configure Gemini
-            genai.configure(api_key=self.api_key)
+            genai = self._get_genai()
             
             system_prompt = self._get_system_prompt()
             
@@ -127,35 +101,6 @@ class AIController:
             return self._parse_intent_local(user_input)
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
-            return self._parse_intent_local(user_input)
-    
-    def _process_ollama(self, user_input: str) -> Dict[str, Any]:
-        """Process command using local Ollama"""
-        try:
-            system_prompt = self._get_system_prompt()
-            
-            response = requests.post(
-                f"{self.ollama_url}/api/generate",
-                json={
-                    "model": self.ollama_model,
-                    "prompt": f"{system_prompt}\n\nUser: {user_input}\nAssistant:",
-                    "stream": False,
-                    "temperature": 0.7,
-                },
-                timeout=30
-            )
-            
-            response.raise_for_status()
-            result = response.json()
-            ai_response = result.get("response", "").strip()
-            logger.info(f"Ollama response: {ai_response}")
-            return self._parse_ai_response(ai_response)
-        
-        except requests.exceptions.ConnectionError:
-            logger.warning(f"Cannot connect to Ollama at {self.ollama_url}")
-            return self._parse_intent_local(user_input)
-        except Exception as e:
-            logger.error(f"Ollama error: {e}")
             return self._parse_intent_local(user_input)
     
     def _get_system_prompt(self) -> str:
@@ -398,6 +343,54 @@ INGAT: Response HANYA JSON, tanpa teks tambahan! Format response SELALU valid JS
         
         logger.info("Falling back to local parsing")
         return self._parse_intent_local(response)
+    
+    def _get_lightweight_response(self, user_input: str) -> Dict[str, Any]:
+        """
+        Get lightweight local response without AI API
+        Fast, no network latency, minimal memory usage
+        
+        Args:
+            user_input: User command
+        
+        Returns:
+            Response dict with text and optional actions
+        """
+        logger.debug(f"Lightweight response for: {user_input[:50]}...")
+        
+        user_lower = user_input.lower().strip()
+        
+        # Simple keyword-based lightweight responses
+        if any(word in user_lower for word in ["halo", "hai", "hello", "hi", "assalamualaikum", "apa kabar"]):
+            return {
+                "response": "Hai! Apa kabar? Ada yang bisa saya bantu? 😊",
+                "intent": "greeting",
+                "actions": []
+            }
+        elif any(word in user_lower for word in ["thanks", "terima kasih", "thanks", "thx", "makasih"]):
+            return {
+                "response": "Sama-sama! Senang membantu Anda! 🌟",
+                "intent": "thanks",
+                "actions": []
+            }
+        elif any(word in user_lower for word in ["apa nama", "siapa kamu", "who are you", "namamu"]):
+            return {
+                "response": "Saya adalah Desktop Assistant, companion digital Anda! Siap membantu dengan apapun yang Anda butuhkan.",
+                "intent": "identity",
+                "actions": []
+            }
+        elif any(word in user_lower for word in ["apa yang bisa", "help", "bantuan", "fitur", "kemampuan"]):
+            return {
+                "response": "Saya bisa membantu membuka aplikasi, mencari di internet, menjalankan perintah, dan berbincang dengan Anda. Apa yang ingin Anda lakukan?",
+                "intent": "capabilities",
+                "actions": []
+            }
+        else:
+            # Generic helpful response
+            return {
+                "response": f"Menarik! Anda mengatakan '{user_input[:40]}...'. Coba tanya sesuatu yang lebih spesifik atau beri perintah apa yang ingin saya lakukan!",
+                "intent": "generic",
+                "actions": []
+            }
     
     def _parse_intent_local(self, user_input: str) -> Dict[str, Any]:
         """Parse user input locally (fallback) - enhanced with better command recognition"""

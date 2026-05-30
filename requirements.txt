@@ -5,6 +5,7 @@ Pillow>=10.2.0
 requests==2.31.0
 PyInstaller>=6.8.0
 pyperclip==1.8.2
+psutil>=5.9.0
 
 # Google Generative AI (Gemini) integration
 google-generativeai==0.3.0

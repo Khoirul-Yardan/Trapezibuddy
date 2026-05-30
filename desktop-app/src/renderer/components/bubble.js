@@ -68,6 +68,37 @@ function hideBubble() {
   }
 }
 
+// ── Clear bubble content completely ──────────────────────────
+function clearBubble() {
+  const textEl = document.getElementById('bubble-text')
+  if (textEl) {
+    textEl.innerHTML = ''
+    textEl.textContent = ''
+  }
+  
+  // Remove any emoji badges
+  const card = document.getElementById('bubble-card')
+  if (card) {
+    const existingEmoji = card.querySelector('.bubble-emoji')
+    if (existingEmoji) existingEmoji.remove()
+    
+    // Ensure card is hidden
+    card.classList.remove('active', 'hiding')
+  }
+  
+  // Clear all timers
+  if (typeTimer) {
+    clearInterval(typeTimer)
+    typeTimer = null
+  }
+  if (autoHideTimer) {
+    clearTimeout(autoHideTimer)
+    autoHideTimer = null
+  }
+  
+  console.log('Bubble cleared completely')
+}
+
 // ── Listen for messages from main process ────────────────────
 // Note: contextIsolation is OFF for this window since it needs direct ipcRenderer
 try {
@@ -94,7 +125,13 @@ try {
     ipc.on('bubble:hide', () => {
       hideBubble()
     })
+    ipc.on('bubble:clear', () => {
+      clearBubble()
+    })
   }
 } catch (e) {
   // nodeIntegration not available, use preload
 }
+
+// Ensure bubble starts completely empty
+clearBubble()

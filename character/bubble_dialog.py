@@ -72,14 +72,14 @@ class BubbleDialog(QWidget):
         # Better width estimation - account for actual character sizes
         # Use 9px per character for better accuracy
         char_width = 9
-        line_height = 24  # Increased line height for better spacing
+        line_height = 26  # INCREASED from 24 for better text spacing
         
-        padding = 25  # Increased padding for better text breathing room
-        min_width = 180
-        max_width = 400  # Increased max width to accommodate longer text
+        padding = 30  # Increased padding for better text breathing room
+        min_width = 200  # INCREASED from 180 for better minimum size
+        max_width = 450  # INCREASED from 400 to accommodate longer text
         
         self.bubble_width = max(min_width, min(max_width, max_line_width * char_width + padding * 2))
-        self.bubble_height = max(70, line_count * line_height + padding * 2)
+        self.bubble_height = max(80, line_count * line_height + padding * 2)  # INCREASED min height from 70
         
         # Set widget size (add extra padding for shadow/effects)
         total_height = self.bubble_height + self.pointer_height + 5
@@ -225,20 +225,21 @@ class BubbleDialog(QWidget):
         painter.setPen(border_pen)
         painter.drawPath(path)
         
-        # Draw text with excellent rendering
+        # Draw text with excellent rendering - IMPROVED STYLING
         painter.setPen(self.text_color)
-        font = QFont("Segoe UI", 10)
+        font = QFont("Segoe UI", 12)  # INCREASED from 10 to 12 for better readability
         font.setStyleStrategy(QFont.PreferAntialias)
         font.setLetterSpacing(QFont.PercentageSpacing, 102)
         painter.setFont(font)
         
         # IMPROVED text rectangle - more padding and proper sizing
         text_rect = QRect(
-            int(bubble_x + 12), int(bubble_y + 8),
-            int(self.bubble_width - 24), int(self.bubble_height - 16)
+            int(bubble_x + 15), int(bubble_y + 10),
+            int(self.bubble_width - 30), int(self.bubble_height - 20)
         )
         
         painter.setRenderHint(QPainter.TextAntialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         painter.drawText(
             text_rect,
             Qt.AlignCenter | Qt.TextWordWrap,

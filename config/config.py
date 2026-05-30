@@ -27,7 +27,7 @@ HOTKEY_MOVE_LEFT = 'Q'       # Move character left
 HOTKEY_MOVE_RIGHT = 'E'      # Move character right
 
 # Animation Settings
-ANIMATION_FRAME_INTERVAL = 150  # milliseconds
+ANIMATION_FRAME_INTERVAL = 200  # milliseconds - INCREASED for lighter CPU/memory load (was 150)
 ANIMATION_SCALE = 1.0  # Scale factor for sprites
 
 # Behavior Settings
@@ -48,10 +48,10 @@ DIALOG_BOX_DURATION = 3000  # milliseconds - how long dialog stays visible
 DIALOG_BOX_MAX_WIDTH = 300  # pixels
 
 # Spontaneous Chat Settings - Character speaks to user naturally
-SPONTANEOUS_CHAT_ENABLED = True  # Enable character to speak without user input
-SPONTANEOUS_CHAT_PROBABILITY = 0.3  # Probability (0-1) to chat during idle (0.3 = 30%)
-SPONTANEOUS_CHAT_INTERVAL_MIN = 15000  # Minimum time between spontaneous chats (ms)
-SPONTANEOUS_CHAT_INTERVAL_MAX = 45000  # Maximum time between spontaneous chats (ms)
+SPONTANEOUS_CHAT_ENABLED = False  # DISABLED by default for lighter processing (was True)
+SPONTANEOUS_CHAT_PROBABILITY = 0.1  # Probability (0-1) to chat during idle - REDUCED (was 0.3)
+SPONTANEOUS_CHAT_INTERVAL_MIN = 30000  # Minimum time between spontaneous chats (ms) - INCREASED (was 15000)
+SPONTANEOUS_CHAT_INTERVAL_MAX = 60000  # Maximum time between spontaneous chats (ms) - INCREASED (was 45000)
 SPONTANEOUS_CHAT_DURATION = 4000  # Duration to show dialog (ms)
 
 # Chat Panel Theme Settings - SINGLE THEME FOR BETTER PERFORMANCE
@@ -93,11 +93,7 @@ GEMINI_SAFETY_SETTINGS = [
         "threshold": "BLOCK_NONE",
     },
 ]
-OLLAMA_URL = "http://localhost:11434"  # For local Ollama (legacy)
-OLLAMA_MODEL = "llama2"  # For local Ollama (legacy)
-
-OLLAMA_URL = "http://localhost:11434"  # For local Ollama (legacy)
-OLLAMA_MODEL = "llama2"  # For local Ollama (legacy)
+# OLLAMA REMOVED - Using Gemini API only for lightweight processing
 
 # Asset Paths - Support both dev mode and PyInstaller production mode
 import sys

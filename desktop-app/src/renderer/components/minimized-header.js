@@ -4,10 +4,8 @@ const params = new URLSearchParams(window.location.search)
 let activePage = params.get('activePage') || 'active'
 
 function syncActiveIcon(page) {
-  activePage = page === 'chat' ? 'chat' : 'active'
-  const chatBtn = document.getElementById('btn-chat')
+  activePage = 'active'
   const homeBtn = document.getElementById('btn-home')
-  chatBtn?.classList.toggle('active', activePage === 'chat')
   homeBtn?.classList.toggle('active', activePage === 'active')
 }
 
@@ -29,7 +27,7 @@ function updateClock() {
 }
 
 updateClock()
-setInterval(updateClock, 30_000)
+setInterval(updateClock, 60000)  // Update clock every 60 seconds instead of 30 for lower RAM usage
 
 /* ── Load streak & task counts */
 async function loadData() {
@@ -51,11 +49,6 @@ async function loadData() {
 loadData()
 
 /* ── Button actions (restore now accepts optional page) */
-document.getElementById('btn-chat')?.addEventListener('click', () => {
-  syncActiveIcon('chat')
-  api.window.restore('chat')
-})
-
 document.getElementById('btn-home')?.addEventListener('click', () => {
   syncActiveIcon('active')
   api.window.restore('active')

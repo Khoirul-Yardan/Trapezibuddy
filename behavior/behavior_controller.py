@@ -33,6 +33,9 @@ class BehaviorController(QObject):
         self.screen_height = screen_height
         self.window_height = window_height
         
+        # Movement control flag - character only walks when this is enabled
+        self.allow_auto_walk = False  # Disabled by default - only walks when triggered
+        
         # Start at center of screen, near top
         self.current_x = self.window_width // 2
         self.current_y = 100  # Near top
@@ -63,7 +66,7 @@ class BehaviorController(QObject):
         # Physics/gravity timer (runs faster for smooth gravity)
         self.physics_timer = QTimer()
         self.physics_timer.timeout.connect(self._update_physics)
-        self.physics_timer.start(50)  # Physics update every 50ms
+        self.physics_timer.start(100)  # Physics update every 100ms (was 50ms - reduced for memory)
         
         # Walking
         self.is_walking = False
@@ -144,8 +147,8 @@ class BehaviorController(QObject):
         current_state = self.fsm.get_state()
         
         if current_state == State.IDLE:
-            # Random chance to walk
-            if random.random() < 0.6:
+            # Only walk if auto-walk is enabled (triggered by keyboard B)
+            if self.allow_auto_walk and random.random() < 0.6:
                 direction = random.choice(["left", "right"])
                 if direction == "left":
                     self.fsm.set_state(State.WALK_LEFT)
@@ -263,6 +266,16 @@ class BehaviorController(QObject):
         """Handle spontaneous chat trigger from IdleDialogueEngine"""
         logger.info(f"Spontaneous chat: {chat_dict['type']}")
         self.spontaneous_chat_triggered.emit(chat_dict)
+    
+    def set_auto_walk_enabled(self, enabled: bool):
+        """
+        Enable or disable automatic walking behavior
+        
+        Args:
+            enabled: True to allow auto-walk, False to disable
+        """
+        self.allow_auto_walk = enabled
+        logger.debug(f"Auto-walk enabled: {enabled}")
     
     def cleanup(self):
         """Cleanup timers"""

@@ -509,13 +509,18 @@ function initModal() {
 
 // ── Window controls ──────────────────────────────────────────
 function initWindowControls() {
+  document.getElementById('btn-settings')
+    ?.addEventListener('click', () => api?.window?.minimize())
   document.getElementById('btn-minimize')
-    ?.addEventListener('click', () => api.window.minimize())
+    ?.addEventListener('click', () => api?.window?.minimize())
+  document.getElementById('btn-exit')
+    ?.addEventListener('click', () => api?.window?.exitApp())
 }
 
 // ── Focus Timer ──────────────────────────────────────────────
 let focusSeconds = 25 * 60
 let focusInterval = null
+let shouldStartFocusInterval = false
 
 // ── Task Acknowledgment Messages ─────────────────────────────
 function showTaskAcknowledgment() {
@@ -575,10 +580,12 @@ function setFocusView(isRunning) {
 }
 
 function stopFocusTimer() {
+  console.log('Focus: User stopped focus session')
   if (focusInterval) {
     clearInterval(focusInterval)
     focusInterval = null
   }
+  shouldStartFocusInterval = false
   focusSeconds = 25 * 60
 
   const timerEl = document.getElementById('focus-timer')
@@ -589,30 +596,79 @@ function stopFocusTimer() {
 
   setFocusView(false)
   
-  // Show Python character again after focus ends
+  // Hide bubble to clear any lingering content
   const currentApi = getApi()
-  if (currentApi && currentApi.python) {
-    currentApi.python.showCharacter()
+  if (currentApi && currentApi.bubble && currentApi.bubble.hide) {
+    currentApi.bubble.hide()
+  }
+  
+  // Show only the SELECTED character when focus is stopped
+  if (!currentApi) return
+  
+  console.log('Focus: Showing only selected character after manual stop')
+  
+  // Get which character is selected and show ONLY that one
+  if (currentApi.window && currentApi.window.getSelectedCharacter) {
+    currentApi.window.getSelectedCharacter().then(character => {
+      console.log(`Focus: Selected character is: ${character}`)
+      if (character === 'goldship' && currentApi.goldship) {
+        currentApi.goldship.showCharacter()
+      } else if (character === 'agnes' && currentApi.agnes) {
+        currentApi.agnes.showCharacter()
+      }
+    }).catch(err => {
+      console.error('Error getting selected character on stop:', err)
+      // Fallback: show agnes
+      if (currentApi.agnes) currentApi.agnes.showCharacter()
+    })
   }
 }
 
 function startFocusTimer() {
   if (focusInterval) return
+  shouldStartFocusInterval = true
   setFocusView(true)
   
-  // Hide Python character during focus session
+  // Show initial bubble message
   const currentApi = getApi()
-  if (currentApi && currentApi.python) {
-    // Show bubble first
-    currentApi.python.showBubble('Oke, aku sembunyi dulu ya! Semangat fokusnya! \uD83D\uDCAA\uD83D\uDD25', 3000)
-    // Hide character after bubble finishes (so user can read it)
-    setTimeout(() => {
-      if (focusInterval) { // Only hide if focus is still running
-        currentApi.python.hideCharacter()
+  if (currentApi && currentApi.bubble && currentApi.bubble.show) {
+    currentApi.bubble.show('oke sistem akan masuk mode focus mulai menghilangkan character')
+  }
+  
+  // Hide BOTH characters during focus session
+  if (!currentApi) return
+
+  const hideCharacters = async () => {
+    try {
+      // Hide both characters with explicit hide calls
+      console.log('Focus: Hiding Agnes character')
+      if (currentApi.agnes) {
+        currentApi.agnes.hideCharacter()
       }
-    }, 3500)
+      console.log('Focus: Hiding Goldship character')
+      if (currentApi.goldship) {
+        currentApi.goldship.hideCharacter()
+      }
+      
+      // Wait longer to ensure both processes are fully terminated
+      console.log('Focus: Waiting 2000ms for processes to terminate...')
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log('Focus: Characters should now be hidden, starting timer')
+    } catch (err) {
+      console.error('Error hiding characters:', err)
+    }
+    
+    // NOW start the focus timer after characters are hidden (only if still requested)
+    if (shouldStartFocusInterval) {
+      startFocusInterval()
+    }
   }
 
+  hideCharacters()
+}
+
+function startFocusInterval() {
+  focusSeconds = 25 * 60
   const timerEl = document.getElementById('focus-timer')
   if (timerEl) timerEl.textContent = formatFocusTime(focusSeconds)
 
@@ -622,11 +678,49 @@ function startFocusTimer() {
       focusInterval = null
       document.getElementById('focus-dot').style.background = 'var(--c-done)'
       
-      // Show Python character when focus ends
+      console.log('Focus timer complete: Showing selected character and completion message')
+      
+      // When timer ends, show only the SELECTED character
       const api2 = getApi()
-      if (api2 && api2.python) {
-        api2.python.showCharacter()
-        api2.python.showBubble('Focus selesai! Istirahat dulu ya, kamu keren! 🎉', 5000)
+      if (api2) {
+        // Get which character is selected and show ONLY that one
+        if (api2.window && api2.window.getSelectedCharacter) {
+          api2.window.getSelectedCharacter().then(character => {
+            console.log(`Focus complete: Showing character: ${character}`)
+            
+            // Clear any lingering bubble content before showing completion
+            if (api2.bubble && api2.bubble.hide) {
+              api2.bubble.hide()
+            }
+            
+            if (character === 'goldship' && api2.goldship) {
+              api2.goldship.showCharacter()
+            } else if (character === 'agnes' && api2.agnes) {
+              api2.agnes.showCharacter()
+            }
+            
+            // Show completion bubble after character is visible
+            setTimeout(() => {
+              console.log('Focus: Showing completion message')
+              if (api2.bubble && api2.bubble.taskCompleted) {
+                api2.bubble.taskCompleted({ name: 'Focus selesai! Istirahat dulu ya, kamu keren! 🎉' })
+              }
+            }, 500)
+          }).catch(err => {
+            console.error('Error getting selected character:', err)
+            // Fallback: show agnes
+            if (api2.agnes) api2.agnes.showCharacter()
+            // Clear bubble before showing completion
+            if (api2.bubble && api2.bubble.hide) {
+              api2.bubble.hide()
+            }
+            setTimeout(() => {
+              if (api2.bubble && api2.bubble.taskCompleted) {
+                api2.bubble.taskCompleted({ name: 'Focus selesai! Istirahat dulu ya, kamu keren! 🎉' })
+              }
+            }, 500)
+          })
+        }
       }
       return
     }
@@ -687,9 +781,6 @@ async function init() {
       } else if (page === 'add-task') {
         const addApi = getApi()
         if (addApi) addApi.window.openAddTask()
-      } else if (page === 'chat') {
-        const chatApi = getApi()
-        if (chatApi) chatApi.window.openChat()
       }
     })
   }

@@ -1,0 +1,23 @@
+//Make sure to Enable Keyboard control on the config.txt
+//Also the programs has to be active for controls to take input
+@"KEYBOARD CONTROLS: Can be Turned off in Config.txt
+
+                MOVEMENT (Disabled in Combat Mode):
+                    WASD / Arrow Keys - Move character
+                    E - Toggle cursor following
+                    R - Random movement
+                    ESC - Stop all movement
+
+                ACTIONS:
+                    SPACE - Click animation
+                    T - Toggle sleep/wake
+                    C - Toggle Gravity                  
+                    Q - Spawn Food
+                    1 - Emote 1 
+                    2 - Emote 3 
+                    3 - Emote 2 
+                    4 - Emote 4 
+                HELP:
+                    F1 - Show this help
+                    X - Close Program
+                    0/Zero - Disable Hitbox //Non-Mouse Interactable";    

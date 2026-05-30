@@ -1,11 +1,43 @@
 # Animation system - handles spritesheet loading and frame animation
+# Optimized for reduced RAM usage with lazy frame caching
 from PySide6.QtGui import QPixmap, QImage, QPainter, QColor
 from PySide6.QtCore import QRect
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from utils.logger import setup_logger
+from utils.memory_profiler import log_memory
 
 logger = setup_logger(__name__)
+
+# Global frame cache with size limit to prevent excessive RAM usage
+_FRAME_CACHE = {}
+_MAX_CACHE_SIZE = 100  # Reduced from 150 to 100 frames
+_ANIMATION_INSTANCES = {}  # Track animation instances for cleanup
+_ACTIVE_ANIMATIONS = set()  # Track currently active animations
+_CACHE_ACCESS_ORDER = []  # Track access order for LRU eviction
+
+
+def _add_to_cache(key: str, value: QPixmap):
+    """Add item to cache with LRU eviction when full"""
+    global _FRAME_CACHE, _CACHE_ACCESS_ORDER
+    
+    if key in _FRAME_CACHE:
+        # Update access order
+        _CACHE_ACCESS_ORDER.remove(key)
+    
+    _FRAME_CACHE[key] = value
+    _CACHE_ACCESS_ORDER.append(key)
+    
+    # Evict oldest items if cache is too full
+    if len(_FRAME_CACHE) > _MAX_CACHE_SIZE * 1.1:  # Allow 10% overage before evicting
+        # Remove 20% of cache (oldest items)
+        num_to_remove = max(1, len(_FRAME_CACHE) // 5)
+        for _ in range(num_to_remove):
+            if _CACHE_ACCESS_ORDER:
+                old_key = _CACHE_ACCESS_ORDER.pop(0)
+                if old_key in _FRAME_CACHE:
+                    del _FRAME_CACHE[old_key]
+                    logger.debug(f"Evicted cache entry: {old_key} (cache size: {len(_FRAME_CACHE)})")
 
 
 class Animation:
@@ -60,17 +92,26 @@ class FrameSequenceAnimation:
         self.frame_duration = 1000 // fps  # milliseconds
         self.num_frames = len(frame_files)
         self.frames: List[QPixmap] = []
+        self.frame_files = frame_files  # Keep file references for lazy loading
         
-        # Load all frames
+        # Load all frames with cache optimization
         for i, frame_path in enumerate(frame_files):
             if not os.path.exists(frame_path):
                 logger.warning(f"Frame file not found: {frame_path}")
                 continue
             
-            pixmap = QPixmap(frame_path)
-            if pixmap.isNull():
-                logger.warning(f"Failed to load frame: {frame_path}")
-                continue
+            # Check cache first
+            cache_key = f"{name}_{i}"
+            if cache_key in _FRAME_CACHE:
+                pixmap = _FRAME_CACHE[cache_key]
+            else:
+                pixmap = QPixmap(frame_path)
+                if pixmap.isNull():
+                    logger.warning(f"Failed to load frame: {frame_path}")
+                    continue
+                
+                # Add to cache with LRU eviction
+                _add_to_cache(cache_key, pixmap)
             
             self.frames.append(pixmap)
             logger.debug(f"Loaded frame {i+1}/{self.num_frames}: {frame_path}")
@@ -78,7 +119,7 @@ class FrameSequenceAnimation:
         if not self.frames:
             logger.error(f"No valid frames loaded for animation: {name}")
         else:
-            logger.info(f"FrameSequenceAnimation '{name}' created: {len(self.frames)} frames at {fps} fps")
+            logger.info(f"FrameSequenceAnimation '{name}' created: {len(self.frames)} frames at {fps} fps (cache size: {len(_FRAME_CACHE)})")
     
     def get_frame(self, frame_index: int) -> QPixmap:
         """Get frame at index"""
@@ -100,7 +141,9 @@ class AnimationController:
         self.current_animation: Animation = None
         self.current_frame_index = 0
         self.elapsed_time = 0  # Track time in milliseconds
+        self.last_animation: Optional[str] = None  # Track previous animation
         logger.info("AnimationController initialized")
+        log_memory("AnimationController.init")
     
     def add_animation(self, animation: Animation):
         """Add animation to controller"""
@@ -109,16 +152,47 @@ class AnimationController:
             self.set_animation(animation.name)
     
     def set_animation(self, animation_name: str) -> bool:
-        """Switch to different animation"""
+        """Switch to different animation with automatic cleanup"""
         if animation_name not in self.animations:
             logger.warning(f"Animation '{animation_name}' not found")
             return False
         
+        # Clean up previous animation if switching
+        if self.current_animation and self.last_animation != animation_name:
+            self._cleanup_old_animation()
+        
         self.current_animation = self.animations[animation_name]
         self.current_frame_index = 0
         self.elapsed_time = 0
+        self.last_animation = animation_name
+        _ACTIVE_ANIMATIONS.add(animation_name)
+        
+        log_memory(f"AnimationController.set_animation.{animation_name}")
         logger.debug(f"Animation switched to: {animation_name}")
         return True
+    
+    def _cleanup_old_animation(self):
+        """Cleanup and unload old animation to free memory"""
+        if self.last_animation and self.last_animation in _ACTIVE_ANIMATIONS:
+            _ACTIVE_ANIMATIONS.discard(self.last_animation)
+            logger.debug(f"Cleaned up animation: {self.last_animation}")
+            # Note: We keep the animation in self.animations for quick re-switching
+            # but its frame cache will be evicted when new animations load
+    
+    def cleanup_all(self):
+        """Clear all animations from memory"""
+        _ACTIVE_ANIMATIONS.clear()
+        self.animations.clear()
+        self.current_animation = None
+        logger.debug("All animations cleared")
+    
+    def get_animation_count(self) -> int:
+        """Get number of loaded animations"""
+        return len(self.animations)
+    
+    def get_cache_size(self) -> int:
+        """Get current frame cache size"""
+        return len(_FRAME_CACHE)
     
     def update_frame(self, delta_time: int = 150) -> QPixmap:
         """

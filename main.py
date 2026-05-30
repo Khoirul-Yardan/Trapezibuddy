@@ -12,25 +12,20 @@ Usage:
 import sys
 import os
 import argparse
-import chat_bridge
-
 
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QIcon
-from main_window import DesktopAssistantWindow
-from ui.settings_panel import SettingsPanel
-from utils.logger import setup_logger
-from utils.asset_generator import generate_all_placeholder_sprites
-
-logger = setup_logger(__name__)
-
 
 def main():
     """Main application entry point"""
+    # Deferred imports for reduced initial RAM usage
+    from utils.logger import setup_logger
+    import subprocess
+    
+    logger = setup_logger(__name__)
+    
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--skip-settings', action='store_true')
     parser.add_argument('--character-size', type=int, default=60)
@@ -40,6 +35,7 @@ def main():
     args, _ = parser.parse_known_args()
 
     if args.chat_bridge:
+        # Lazy load chat bridge only when needed
         import chat_bridge
         import json
         import io
@@ -62,7 +58,6 @@ def main():
         sys.stdout.buffer.write((json.dumps(payload, ensure_ascii=False) + '\n').encode('utf-8'))
         sys.exit(0)
 
-
     logger.info("="*60)
     logger.info("Desktop Assistant 2D - Starting")
     logger.info("="*60)
@@ -70,7 +65,12 @@ def main():
     # Generate placeholder sprites if they don't exist
     from config.config import SPRITES_DIR
     from pathlib import Path
-    from utils.asset_generator import get_sprite_config
+    from utils.asset_generator import generate_all_placeholder_sprites, get_sprite_config
+    from PySide6.QtWidgets import QApplication
+    from main_window import DesktopAssistantWindow
+    from ui.settings_panel import SettingsPanel
+    from ui.character_selection import CharacterSelectionDialog
+    from ui.hints_dialog import HintsDialog
     
     if not Path(SPRITES_DIR).exists() or not list(Path(SPRITES_DIR).glob("*.png")):
         logger.info("Generating placeholder sprites...")
@@ -86,6 +86,33 @@ def main():
         app.quit()
     
     signal.signal(signal.SIGINT, signal_handler)
+    
+    # Helper function for Goldship character selection
+    def handle_goldship_selection():
+        goldship_path = os.path.join(os.path.dirname(__file__), 'assets', 'GoldShip', 'Goldship.exe')
+        if os.path.exists(goldship_path):
+            logger.info(f"Launching Goldship.exe: {goldship_path}")
+            try:
+                subprocess.Popen([goldship_path])
+                return True
+            except Exception as e:
+                logger.warning(f"Failed to launch Goldship.exe: {e}")
+        return False
+    
+    # Character Selection - show before settings
+    if not args.skip_settings:
+        logger.info("Showing character selection dialog...")
+        char_select_dialog = CharacterSelectionDialog()
+        if char_select_dialog.exec() != CharacterSelectionDialog.Accepted:
+            logger.info("Character selection cancelled by user")
+            return
+        
+        selected_character = char_select_dialog.get_selected_character()
+        
+        # If Goldship is selected, launch it and exit
+        if selected_character == 'goldship' and handle_goldship_selection():
+            logger.info("Goldship launched, exiting Python app")
+            sys.exit(0)
     
     # Settings flow:
     # - Electron mode: skip Python settings and trust CLI args
@@ -118,8 +145,13 @@ def main():
     window.show()
     logger.info("Window displayed")
     
-    # Show chat panel help tip
-    logger.info("💡 Tip: Press B to toggle chat panel | Type freely and chat with character!")
+    # Show hints dialog on first startup
+    logger.info("Showing tips and shortcuts dialog...")
+    hints_dialog = HintsDialog(window)
+    hints_dialog.exec()
+    
+    # Log tip
+    logger.info("💡 Tip: Press B to enable character movement | Press B again for chat!")
     
     # Start application
     logger.info("Application running - Press Ctrl+C to exit")
@@ -128,10 +160,18 @@ def main():
 
 if __name__ == "__main__":
     try:
+        from utils.logger import setup_logger
+        logger = setup_logger(__name__)
         main()
     except KeyboardInterrupt:
-        logger.info("Application interrupted by user")
+        try:
+            logger.info("Application interrupted by user")
+        except:
+            pass
         sys.exit(0)
     except Exception as e:
-        logger.error(f"Application error: {e}", exc_info=True)
+        try:
+            logger.error(f"Application error: {e}", exc_info=True)
+        except:
+            print(f"Application error: {e}")
         sys.exit(1)

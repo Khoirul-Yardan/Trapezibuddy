@@ -552,9 +552,12 @@ class DesktopAssistantWindow(QMainWindow):
             # ESC - close application
             self.close()
         elif event.text().upper() == HOTKEY_TOGGLE_CHAT:
-            # B - toggle Electron chat window (replace legacy PySide chat panel)
+            # B - toggle auto-walk behavior (character movement control)
+            # Also toggle Electron chat window
+            current_state = self.behavior_controller.allow_auto_walk
+            self.behavior_controller.set_auto_walk_enabled(not current_state)
+            logger.info(f"Auto-walk toggled: {not current_state}")
             self._toggle_electron_chat()
-            logger.info("Electron chat toggled")
         elif event.text().upper() == HOTKEY_SIZE_INCREASE:
             # D - increase size
             self.character_widget.increase_size(5)
