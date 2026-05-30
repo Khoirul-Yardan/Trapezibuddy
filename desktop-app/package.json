@@ -40,13 +40,7 @@
       "createStartMenuShortcut": true,
       "shortcutName": "TrapeziBuddy"
     },
-    "extraResources": [
-      {
-        "from": "../dist/main",
-        "to": "backend",
-        "filter": ["**/*"]
-      }
-    ],
+
     "directories": {
       "output": "dist"
     }

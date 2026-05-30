@@ -13,8 +13,12 @@
       box-sizing: border-box;
     }
 
+    /* Override global.css transparent — window is not transparent */
+    html, body {
+      background: #FBF9F8 !important;
+    }
+
     body {
-      background: var(--c-bg);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       padding: 16px;
       -webkit-user-select: none;
@@ -168,32 +172,105 @@
     .btn-secondary:hover {
       background: #e0e0e0;
     }
+
+    /* ── Document icon ─────────────────────────────────────── */
+    .confirm-icon {
+      display: flex;
+      justify-content: center;
+      padding: 8px 0 4px;
+    }
+    .confirm-icon svg { width: 56px; height: 56px; }
+    .icon-paper  { fill: #C8DFC5; stroke: #A2B29F; stroke-width: 1.5px; }
+    .icon-header { fill: #A2B29F; }
+    .icon-corner-line { stroke: #A2B29F; stroke-width: 1.5px; stroke-linecap: round; }
+    .icon-corner { fill: #EBF3EA; stroke: #A2B29F; stroke-width: 1.5px; }
+    .icon-line   { stroke: #A2B29F; stroke-width: 1.5px; stroke-linecap: round; }
+
+    /* ── GoldShip theme overrides ──────────────────────────── */
+    body.theme-goldship {
+      background: #E8E2D8 !important;
+    }
+    body.theme-goldship .modal-content {
+      background: #E8E2D8;
+    }
+    body.theme-goldship .icon-paper  { fill: #DDD6F0; stroke: #9E8EC6; }
+    body.theme-goldship .icon-header { fill: #9E8EC6; }
+    body.theme-goldship .icon-corner-line { stroke: #9E8EC6; }
+    body.theme-goldship .icon-corner { fill: #F0EBF8; stroke: #9E8EC6; }
+    body.theme-goldship .icon-line   { stroke: #9E8EC6; }
+    body.theme-goldship .modal-header {
+      background: #E8E2D8;
+      border-bottom-color: rgba(0, 0, 0, 0.08);
+    }
+    body.theme-goldship .modal-header span {
+      color: #9E8EC6;
+    }
+    body.theme-goldship .btn-close {
+      background: #1A1714;
+      color: white;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+    }
+    body.theme-goldship .task-name {
+      border-left-color: #C4B8E3;
+    }
+    body.theme-goldship input[type="text"] {
+      background: #F3EFE9;
+      border-color: #9E8EC6;
+    }
+    body.theme-goldship input[type="text"]:focus {
+      border-color: #9E8EC6;
+      box-shadow: 0 0 0 2px rgba(158, 142, 198, 0.15);
+    }
+    body.theme-goldship .modal-footer {
+      background: #AAAAAA;
+      border-top-color: rgba(0, 0, 0, 0.08);
+    }
+    body.theme-goldship .btn-primary {
+      background: #9E8EC6;
+    }
+    body.theme-goldship .btn-primary:hover:not(:disabled) {
+      background: #7B6BA8;
+      box-shadow: 0 2px 8px rgba(158, 142, 198, 0.3);
+    }
   </style>
 </head>
 <body>
   <div class="modal-content">
     <div class="modal-header">
-      <span>Confirm Task Completion</span>
+      <span data-i18n="confirmTask">Confirm Task Completion</span>
       <button class="btn-close" id="btn-close">\u00d7</button>
     </div>
 
     <div class="modal-body">
+      <div class="confirm-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect class="icon-paper"  x="8" y="4" width="28" height="36" rx="3"/>
+          <rect class="icon-header" x="8" y="4" width="20" height="10" rx="3"/>
+          <path class="icon-corner-line" d="M28 4 L36 12"/>
+          <rect class="icon-corner" x="28" y="4" width="8" height="8" rx="1"/>
+          <line class="icon-line" x1="14" y1="22" x2="30" y2="22"/>
+          <line class="icon-line" x1="14" y1="28" x2="26" y2="28"/>
+        </svg>
+      </div>
       <div class="task-name" id="task-name-display"></div>
 
       <div class="instruction" id="instruction"></div>
 
-      <div class="error-message" id="error-message"></div>
+      <div class="error-message" id="error-message" data-i18n="errorConfirm"></div>
 
-      <input 
-        type="text" 
-        id="confirm-input" 
-        placeholder="Type the task name above to confirm"
+      <input
+        type="text"
+        id="confirm-input"
+        placeholder="Type Here . . ."
+        data-i18n-placeholder="confirmInputPlaceholder"
       >
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary" id="btn-cancel">Cancel</button>
-      <button class="btn-primary" id="btn-confirm" disabled>Confirm</button>
+      <button class="btn-secondary" id="btn-cancel" data-i18n="cancel">Cancel</button>
+      <button class="btn-primary" id="btn-confirm" disabled data-i18n="confirmThisTask">Confirm</button>
     </div>
   </div>
 
@@ -212,7 +289,7 @@
 
     // Set task name
     taskNameDisplay.textContent = taskName || 'Untitled Task';
-    instruction.innerHTML = `To confirm, type <strong>"${taskName}"</strong> below`;
+    instruction.innerHTML = `<span data-i18n="toConfirm">To confirm, type</span> <strong>"${taskName}"</strong> <span data-i18n="below">below</span>`;
 
     // Handle cancel
     const closeModal = () => {
@@ -242,15 +319,15 @@
       // Validate
       if (val.toLowerCase() !== expected?.toLowerCase()) {
         confirmInput.classList.add('error');
-        errorMessage.textContent = 'Task name does not match. Please try again.';
         errorMessage.style.display = 'block';
         confirmInput.focus();
         return;
       }
 
       // Process completion
+      const _ti = () => window.i18n?.[window.currentLang || 'en'] || window.i18n?.en;
       confirmBtn.disabled = true;
-      confirmBtn.textContent = 'Completing...';
+      confirmBtn.textContent = _ti()?.completing || 'Completing...';
 
       try {
         await api.tasks.complete(taskId);
@@ -258,12 +335,64 @@
       } catch (err) {
         console.error('Error completing task:', err);
         confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm';
+        confirmBtn.textContent = _ti()?.confirmThisTask || 'Confirm';
       }
     });
 
     // Focus input on load
     setTimeout(() => confirmInput.focus(), 100);
   </script>
+  <script>
+    (async () => {
+      try {
+        const s = await window.trapezi?.settings?.get();
+        document.body.classList.add('theme-' + (s?.character || 'agnesTachyon'));
+      } catch (_) { document.body.classList.add('theme-agnesTachyon'); }
+    })();
+    window.trapezi?.onThemeApply?.((theme) => {
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
+      document.body.classList.add('theme-' + theme);
+    });
+
+    // ── Global i18n Receiver ──
+    window.currentLang = 'en';
+
+    async function applyLanguage(lang) {
+      window.currentLang = lang;
+      const t = window.i18n[lang] || window.i18n['en'];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) el.textContent = t[key];
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key] !== undefined) el.placeholder = t[key];
+      });
+      // Re-translate confirm instruction spans inside innerHTML-built element
+      const inst = document.getElementById('instruction');
+      if (inst) {
+        const toConfirmEl = inst.querySelector('[data-i18n="toConfirm"]');
+        const belowEl = inst.querySelector('[data-i18n="below"]');
+        if (toConfirmEl && t.toConfirm !== undefined) toConfirmEl.textContent = t.toConfirm;
+        if (belowEl && t.below !== undefined) belowEl.textContent = t.below;
+      }
+    }
+
+    (async () => {
+      const api = window.trapezi;
+      if (api && api.settings) {
+        const settings = await api.settings.get();
+        applyLanguage(settings.language || 'en');
+      }
+    })();
+
+    const api = window.trapezi;
+    if (api && api.language) {
+      api.language.onChange((lang) => {
+        applyLanguage(lang);
+      });
+    }
+  </script>
+  <script src="../i18n.js"></script>
 </body>
 </html>

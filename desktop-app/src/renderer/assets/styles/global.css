@@ -35,6 +35,34 @@
   --font-main: 'Segoe UI', system-ui, sans-serif;
 }
 
+/* ── Theme Classes ──────────────────────────────────────── */
+body.theme-agnesTachyon {
+  --c-bg:           #FBF9F8;
+  --c-section-bg:   #2C2C2B;
+  --c-primary:      #A2B29F;
+  --c-coconut:      #A2B29F;
+  --c-thatch:       #798777;
+  --c-zen-gray:     #BDD2B6;
+  --c-dark:         #3B3B3A;
+  --c-mid:          #757676;
+  --c-tech-white:   #F8EDE3;
+  --c-cal-bg:       #FDF2E8;
+}
+
+body.theme-goldship {
+  --c-bg:           #E8E2D8;
+  --c-section-bg:   #AAAAAA;
+  --c-primary:      #9E8EC6;
+  --c-coconut:      #9E8EC6;
+  --c-thatch:       #7B6BA8;
+  --c-zen-gray:     #C4B8E3;
+  --c-dark:         #1A1714;
+  --c-mid:          rgba(26, 23, 20, 0.7);
+  --c-tech-white:   #F8EDE3;
+  --c-cal-bg:       rgba(255, 255, 255, 0.4);
+  --c-white:        rgba(255, 255, 255, 0.4);
+}
+
 /* ── Base ───────────────────────────────────────────────── */
 html, body {
   font-family: var(--font-main);
@@ -51,6 +79,11 @@ button {
   cursor: pointer;
   border: none;
   outline: none;
+  -webkit-app-region: no-drag !important;
+}
+
+button * {
+  -webkit-app-region: no-drag !important;
 }
 
 input {

@@ -10,6 +10,12 @@ function getApi() {
   return api
 }
 
+// i18n helper — reads current language set by the HTML page
+function t(key) {
+  const lang = window.currentLang || 'en'
+  return window.i18n?.[lang]?.[key] ?? window.i18n?.en?.[key] ?? key
+}
+
 // ── State ────────────────────────────────────────────────────
 let state = {
   tasks:       [],
@@ -37,12 +43,19 @@ function calcDeadlineLabel(deadline_date, deadline_time) {
   const now      = new Date()
   const diffMs   = deadline - now
   const diffHrs  = diffMs / (1000 * 60 * 60)
+  const lang     = window.currentLang || 'en'
 
-  if (diffMs < 0)        return 'Overdue!'
-  if (diffHrs < 1)       return `${Math.floor(diffMs / 60000)} minutes left`
-  if (diffHrs < 24)      return `${Math.floor(diffHrs)} hours left`
-  if (diffHrs < 48)      return 'Tomorrow'
-  return `${Math.floor(diffHrs / 24)} days left`
+  if (diffMs < 0)   return t('overdue')
+  if (diffHrs < 1)  return lang === 'id'
+    ? `${Math.floor(diffMs / 60000)} menit lagi`
+    : `${Math.floor(diffMs / 60000)} minutes left`
+  if (diffHrs < 24) return lang === 'id'
+    ? `${Math.floor(diffHrs)} jam lagi`
+    : `${Math.floor(diffHrs)} hours left`
+  if (diffHrs < 48) return t('tomorrow')
+  return lang === 'id'
+    ? `${Math.floor(diffHrs / 24)} hari lagi`
+    : `${Math.floor(diffHrs / 24)} days left`
 }
 
 function safeDate(value) {
@@ -167,11 +180,11 @@ function updateMoodCard() {
   const streakEl  = document.getElementById('streak-count')
 
   if (active === 0 && total > 0) {
-    moodLabel.textContent = 'All Done! 🎉'
+    moodLabel.textContent = t('allDone')
   } else if (active > 0) {
-    moodLabel.textContent = "You're Almost Done"
+    moodLabel.textContent = t('almostDone')
   } else {
-    moodLabel.textContent = 'No tasks yet'
+    moodLabel.textContent = t('noTasksYet')
   }
 
   moodSub.textContent   = `${done}/${total} Task`
@@ -215,6 +228,18 @@ function createTaskCard(task) {
   return card
 }
 
+// ── Translate DOM ─────────────────────────────────────────────
+// Re-applies data-i18n translations after dynamic renders (no re-render loop).
+function translateDOM() {
+  const lang = window.currentLang || 'en'
+  const dict = window.i18n?.[lang] || window.i18n?.en
+  if (!dict) return
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n')
+    if (dict[key] !== undefined) el.textContent = dict[key]
+  })
+}
+
 // ── Task List ────────────────────────────────────────────────
 function renderTaskList() {
   const list  = document.getElementById('task-list')
@@ -244,7 +269,7 @@ function renderTaskList() {
           return doneAt >= rangeStart
         })
 
-  title.textContent = state.activeTab === 'active' ? 'Tugas Aktif' : 'Selesai'
+  title.textContent = state.activeTab === 'active' ? t('activeTasks') : t('finished')
   if (filtersEl) filtersEl.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
 
   if (filtered.length === 0) {
@@ -255,6 +280,9 @@ function renderTaskList() {
       list.appendChild(createTaskCard(task))
     })
   }
+
+  // Re-apply translations to all data-i18n elements (tabs, filters, title, empty state)
+  translateDOM()
 }
 
 // ── Task Check — buka confirm modal ──────────────────────────
@@ -350,18 +378,13 @@ function initConfirmModal() {
 
     // Sukses — tandai selesai
     confirmBtn.disabled = true
-    confirmBtn.textContent = 'Menyimpan...'
+    confirmBtn.textContent = t('saving')
 
     const currentApi = getApi()
     if (currentApi) {
       await currentApi.tasks.complete(_confirmTaskId)
     }
 
-    // Show congratulatory bubble on Python character
-    const bubbleApi = getApi()
-    if (bubbleApi && bubbleApi.bubble) {
-      bubbleApi.bubble.taskCompleted({ name: _confirmTaskName })
-    }
 
     closeConfirm()
 
@@ -396,7 +419,9 @@ async function loadSettings() {
   const currentApi = getApi()
   if (currentApi) {
     const settings = await currentApi.settings.get()
-    state.streak   = settings.streak ?? 0
+    state.streak = settings.streak ?? 0
+    // Set language before first render so t() returns correct translations
+    if (settings.language) window.currentLang = settings.language
   }
 }
 
@@ -484,17 +509,6 @@ function initModal() {
       reminder,
     })
 
-    // Show bubble notification on Python character
-    const bubbleApi = getApi()
-    if (bubbleApi && bubbleApi.bubble) {
-      bubbleApi.bubble.taskAdded({
-        name,
-        deadline_date: date || new Date().toISOString().split('T')[0],
-        deadline_time: time || '23:59',
-        categories: cats,
-        priority: prio,
-      })
-    }
 
     closeModal()
     await loadTasks()
@@ -509,18 +523,13 @@ function initModal() {
 
 // ── Window controls ──────────────────────────────────────────
 function initWindowControls() {
-  document.getElementById('btn-settings')
-    ?.addEventListener('click', () => api?.window?.minimize())
   document.getElementById('btn-minimize')
-    ?.addEventListener('click', () => api?.window?.minimize())
-  document.getElementById('btn-exit')
-    ?.addEventListener('click', () => api?.window?.exitApp())
+    ?.addEventListener('click', () => api.window.minimize())
 }
 
 // ── Focus Timer ──────────────────────────────────────────────
 let focusSeconds = 25 * 60
 let focusInterval = null
-let shouldStartFocusInterval = false
 
 // ── Task Acknowledgment Messages ─────────────────────────────
 function showTaskAcknowledgment() {
@@ -580,12 +589,10 @@ function setFocusView(isRunning) {
 }
 
 function stopFocusTimer() {
-  console.log('Focus: User stopped focus session')
   if (focusInterval) {
     clearInterval(focusInterval)
     focusInterval = null
   }
-  shouldStartFocusInterval = false
   focusSeconds = 25 * 60
 
   const timerEl = document.getElementById('focus-timer')
@@ -596,79 +603,15 @@ function stopFocusTimer() {
 
   setFocusView(false)
   
-  // Hide bubble to clear any lingering content
-  const currentApi = getApi()
-  if (currentApi && currentApi.bubble && currentApi.bubble.hide) {
-    currentApi.bubble.hide()
-  }
-  
-  // Show only the SELECTED character when focus is stopped
-  if (!currentApi) return
-  
-  console.log('Focus: Showing only selected character after manual stop')
-  
-  // Get which character is selected and show ONLY that one
-  if (currentApi.window && currentApi.window.getSelectedCharacter) {
-    currentApi.window.getSelectedCharacter().then(character => {
-      console.log(`Focus: Selected character is: ${character}`)
-      if (character === 'goldship' && currentApi.goldship) {
-        currentApi.goldship.showCharacter()
-      } else if (character === 'agnes' && currentApi.agnes) {
-        currentApi.agnes.showCharacter()
-      }
-    }).catch(err => {
-      console.error('Error getting selected character on stop:', err)
-      // Fallback: show agnes
-      if (currentApi.agnes) currentApi.agnes.showCharacter()
-    })
-  }
+
 }
 
 function startFocusTimer() {
   if (focusInterval) return
-  shouldStartFocusInterval = true
   setFocusView(true)
   
-  // Show initial bubble message
-  const currentApi = getApi()
-  if (currentApi && currentApi.bubble && currentApi.bubble.show) {
-    currentApi.bubble.show('oke sistem akan masuk mode focus mulai menghilangkan character')
-  }
-  
-  // Hide BOTH characters during focus session
-  if (!currentApi) return
 
-  const hideCharacters = async () => {
-    try {
-      // Hide both characters with explicit hide calls
-      console.log('Focus: Hiding Agnes character')
-      if (currentApi.agnes) {
-        currentApi.agnes.hideCharacter()
-      }
-      console.log('Focus: Hiding Goldship character')
-      if (currentApi.goldship) {
-        currentApi.goldship.hideCharacter()
-      }
-      
-      // Wait longer to ensure both processes are fully terminated
-      console.log('Focus: Waiting 2000ms for processes to terminate...')
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      console.log('Focus: Characters should now be hidden, starting timer')
-    } catch (err) {
-      console.error('Error hiding characters:', err)
-    }
-    
-    // NOW start the focus timer after characters are hidden (only if still requested)
-    if (shouldStartFocusInterval) {
-      startFocusInterval()
-    }
-  }
 
-  hideCharacters()
-}
-
-function startFocusInterval() {
-  focusSeconds = 25 * 60
   const timerEl = document.getElementById('focus-timer')
   if (timerEl) timerEl.textContent = formatFocusTime(focusSeconds)
 
@@ -678,50 +621,7 @@ function startFocusInterval() {
       focusInterval = null
       document.getElementById('focus-dot').style.background = 'var(--c-done)'
       
-      console.log('Focus timer complete: Showing selected character and completion message')
-      
-      // When timer ends, show only the SELECTED character
-      const api2 = getApi()
-      if (api2) {
-        // Get which character is selected and show ONLY that one
-        if (api2.window && api2.window.getSelectedCharacter) {
-          api2.window.getSelectedCharacter().then(character => {
-            console.log(`Focus complete: Showing character: ${character}`)
-            
-            // Clear any lingering bubble content before showing completion
-            if (api2.bubble && api2.bubble.hide) {
-              api2.bubble.hide()
-            }
-            
-            if (character === 'goldship' && api2.goldship) {
-              api2.goldship.showCharacter()
-            } else if (character === 'agnes' && api2.agnes) {
-              api2.agnes.showCharacter()
-            }
-            
-            // Show completion bubble after character is visible
-            setTimeout(() => {
-              console.log('Focus: Showing completion message')
-              if (api2.bubble && api2.bubble.taskCompleted) {
-                api2.bubble.taskCompleted({ name: 'Focus selesai! Istirahat dulu ya, kamu keren! 🎉' })
-              }
-            }, 500)
-          }).catch(err => {
-            console.error('Error getting selected character:', err)
-            // Fallback: show agnes
-            if (api2.agnes) api2.agnes.showCharacter()
-            // Clear bubble before showing completion
-            if (api2.bubble && api2.bubble.hide) {
-              api2.bubble.hide()
-            }
-            setTimeout(() => {
-              if (api2.bubble && api2.bubble.taskCompleted) {
-                api2.bubble.taskCompleted({ name: 'Focus selesai! Istirahat dulu ya, kamu keren! 🎉' })
-              }
-            }, 500)
-          })
-        }
-      }
+
       return
     }
     focusSeconds--
@@ -781,10 +681,19 @@ async function init() {
       } else if (page === 'add-task') {
         const addApi = getApi()
         if (addApi) addApi.window.openAddTask()
+      } else if (page === 'chat') {
+        const chatApi = getApi()
+        if (chatApi) chatApi.window.openChat()
       }
     })
   }
 }
+
+// Theme listener — registered at load time so broadcasts from any window are handled immediately
+window.trapezi?.onThemeApply?.((theme) => {
+  document.body.classList.remove('theme-agnesTachyon', 'theme-goldship')
+  document.body.classList.add(`theme-${theme}`)
+})
 
 // Set today's date as default on date input
 document.addEventListener('DOMContentLoaded', () => {

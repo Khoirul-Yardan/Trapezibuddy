@@ -1,15 +1,15 @@
+import { showConfirmModal } from "./confirm-modal.js";
+// Exit button with confirm dialog
+document.getElementById('btn-exit')?.addEventListener('click', () => {
+  showConfirmModal("Apakah anda yakin untuk keluar dari TrapeziBuddy?", () => {
+    api.window.close();
+  });
+});
 // minimized-header.js — externalized from minimized-header.html to satisfy CSP
 const api = window.trapezi
 const params = new URLSearchParams(window.location.search)
 let activePage = params.get('activePage') || 'active'
 
-function syncActiveIcon(page) {
-  activePage = 'active'
-  const homeBtn = document.getElementById('btn-home')
-  homeBtn?.classList.toggle('active', activePage === 'active')
-}
-
-syncActiveIcon(activePage)
 
 /* ── Live clock */
 function updateClock() {
@@ -27,7 +27,13 @@ function updateClock() {
 }
 
 updateClock()
-setInterval(updateClock, 60000)  // Update clock every 60 seconds instead of 30 for lower RAM usage
+setInterval(updateClock, 30_000)
+
+/* ── Theme */
+function applyTheme(theme) {
+  document.body.classList.remove('theme-agnesTachyon', 'theme-goldship')
+  document.body.classList.add('theme-' + theme)
+}
 
 /* ── Load streak & task counts */
 async function loadData() {
@@ -41,6 +47,7 @@ async function loadData() {
     const total  = tasks.length
     document.getElementById('task-progress').textContent = `${done}/${total}`
     document.getElementById('streak-count').textContent  = settings.streak ?? 0
+    applyTheme(settings?.character || 'agnesTachyon')
   } catch (err) {
     console.error('Failed to load data:', err)
   }
@@ -48,9 +55,10 @@ async function loadData() {
 
 loadData()
 
-/* ── Button actions (restore now accepts optional page) */
+api?.onThemeApply?.((theme) => applyTheme(theme))
+
+/* ── Button actions */
 document.getElementById('btn-home')?.addEventListener('click', () => {
-  syncActiveIcon('active')
   api.window.restore('active')
 })
 
