@@ -381,11 +381,11 @@
       <div class="section-box">
         <div class="sub-label" data-i18n="widgetTheme">Widget Theme</div>
         <div class="char-options">
-          <div class="char-card active" data-char="gugugaga">
+          <div class="char-card active" data-char="agnesTachyon">
             <div class="char-img-wrap">
               <img src="../assets/styles/images/agnesTachyon/agnesTahcyon.png" onerror="this.style.display='none'">
             </div>
-            <div class="char-name">Gugu Gaga</div>
+            <div class="char-name">Agnes Tachyon</div>
           </div>
           <div class="char-card" data-char="goldship">
             <div class="char-img-wrap">
@@ -482,7 +482,7 @@
 
     // savedState = nilai dari store (untuk revert jika user tekan ←)
     // state      = nilai sementara selama session ini
-    let savedState = { character: 'gugugaga', focusTimer: 25, doNotDisturb: true, language: 'en' };
+    let savedState = { character: 'agnesTachyon', focusTimer: 25, doNotDisturb: true, language: 'en' };
     let state      = { ...savedState };
 
     function updateStepperButtons() {
@@ -508,7 +508,7 @@
 
     // Terapkan CSS class lokal tanpa broadcast ke window lain
     function applyThemeLocal(character) {
-      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
       document.body.classList.add('theme-' + character);
     }
 
@@ -529,26 +529,33 @@
 
     async function save() {
       if (api && api.settings) {
+        // Merge with existing to preserve fields not managed here (character_size, etc.)
+        const existing = await api.settings.get() || {}
         await api.settings.set({
+          ...existing,
           character:    state.character,
           focusTimer:   state.focusTimer,
           doNotDisturb: state.doNotDisturb,
+          language:     state.language,
         });
       }
-      if (api && api.language && state.language !== savedState.language) {
+      // 1. Broadcast theme first so companion updates immediately
+      window.trapezi?.theme?.apply(state.character);
+      // 2. Broadcast language
+      if (api && api.language) {
         api.language.set(state.language);
       }
-      // Broadcast theme ke semua window hanya saat ✓ diklik
-      window.trapezi?.theme?.apply(state.character);
+      // 3. Close window last
       if (api && api.window) api.window.closeSettings();
     }
 
-    // Character cards — preview lokal saja, belum broadcast
+    // Character cards — preview lokal + langsung broadcast ke companion
     document.querySelectorAll('.char-card').forEach(card => {
       card.addEventListener('click', () => {
         state.character = card.dataset.char;
         applyThemeLocal(state.character);
         updateUI();
+        window.trapezi?.theme?.apply(state.character);
       });
     });
 
@@ -581,9 +588,10 @@
       }
     });
 
-    // ← tutup tanpa simpan, revert theme preview ke nilai tersimpan
+    // ← tutup tanpa simpan, revert theme preview ke nilai tersimpan + broadcast revert
     document.getElementById('btn-back').addEventListener('click', () => {
       applyThemeLocal(savedState.character);
+      window.trapezi?.theme?.apply(savedState.character);
       if (api && api.window) api.window.closeSettings();
     });
 
@@ -623,11 +631,11 @@
     (async () => {
       try {
         const s = await window.trapezi?.settings?.get();
-        document.body.classList.add('theme-' + (s?.character || 'gugugaga'));
-      } catch (_) { document.body.classList.add('theme-gugugaga'); }
+        document.body.classList.add('theme-' + (s?.character || 'agnesTachyon'));
+      } catch (_) { document.body.classList.add('theme-agnesTachyon'); }
     })();
     window.trapezi?.onThemeApply?.((theme) => {
-      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
       document.body.classList.add('theme-' + theme);
     });
   </script>

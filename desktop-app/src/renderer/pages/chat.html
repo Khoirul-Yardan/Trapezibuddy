@@ -69,11 +69,11 @@
     (async () => {
       try {
         const s = await window.trapezi?.settings?.get();
-        document.body.classList.add('theme-' + (s?.character || 'gugugaga'));
-      } catch (_) { document.body.classList.add('theme-gugugaga'); }
+        document.body.classList.add('theme-' + (s?.character || 'agnesTachyon'));
+      } catch (_) { document.body.classList.add('theme-agnesTachyon'); }
     })();
     window.trapezi?.onThemeApply?.((theme) => {
-      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
       document.body.classList.add('theme-' + theme);
     });
   </script>

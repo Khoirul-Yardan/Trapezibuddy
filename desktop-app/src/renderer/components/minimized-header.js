@@ -31,7 +31,7 @@ setInterval(updateClock, 30_000)
 
 /* ── Theme */
 function applyTheme(theme) {
-  document.body.classList.remove('theme-gugugaga', 'theme-goldship')
+  document.body.classList.remove('theme-agnesTachyon', 'theme-goldship')
   document.body.classList.add('theme-' + theme)
 }
 
@@ -47,7 +47,7 @@ async function loadData() {
     const total  = tasks.length
     document.getElementById('task-progress').textContent = `${done}/${total}`
     document.getElementById('streak-count').textContent  = settings.streak ?? 0
-    applyTheme(settings?.character || 'gugugaga')
+    applyTheme(settings?.character || 'agnesTachyon')
   } catch (err) {
     console.error('Failed to load data:', err)
   }

@@ -228,6 +228,18 @@ function createTaskCard(task) {
   return card
 }
 
+// ── Translate DOM ─────────────────────────────────────────────
+// Re-applies data-i18n translations after dynamic renders (no re-render loop).
+function translateDOM() {
+  const lang = window.currentLang || 'en'
+  const dict = window.i18n?.[lang] || window.i18n?.en
+  if (!dict) return
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n')
+    if (dict[key] !== undefined) el.textContent = dict[key]
+  })
+}
+
 // ── Task List ────────────────────────────────────────────────
 function renderTaskList() {
   const list  = document.getElementById('task-list')
@@ -268,6 +280,9 @@ function renderTaskList() {
       list.appendChild(createTaskCard(task))
     })
   }
+
+  // Re-apply translations to all data-i18n elements (tabs, filters, title, empty state)
+  translateDOM()
 }
 
 // ── Task Check — buka confirm modal ──────────────────────────
@@ -404,7 +419,9 @@ async function loadSettings() {
   const currentApi = getApi()
   if (currentApi) {
     const settings = await currentApi.settings.get()
-    state.streak   = settings.streak ?? 0
+    state.streak = settings.streak ?? 0
+    // Set language before first render so t() returns correct translations
+    if (settings.language) window.currentLang = settings.language
   }
 }
 

@@ -94,7 +94,9 @@ const i18n = {
     // Finished filters
     today: "Today",
     last3: "Last 3 days",
+    last3days: "Last 3 days",
     week: "This week",
+    thisWeek: "This week",
     all: "All",
 
     // Error messages
@@ -203,7 +205,9 @@ const i18n = {
     // Finished filters
     today: "Hari ini",
     last3: "3 hari terakhir",
+    last3days: "3 hari terakhir",
     week: "Minggu ini",
+    thisWeek: "Minggu ini",
     all: "Semua",
 
     // Error messages

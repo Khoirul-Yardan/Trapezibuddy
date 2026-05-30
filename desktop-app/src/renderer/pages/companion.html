@@ -14,22 +14,22 @@
     // Apply theme synchronously from URL param — runs before any async IPC call.
     (function () {
       try {
-        const c = new URLSearchParams(location.search).get('character') || 'gugugaga'
+        const c = new URLSearchParams(location.search).get('character') || 'agnesTachyon'
         document.body.classList.add('theme-' + c)
         // Patch sprite src immediately once DOM is parsed
         document.addEventListener('DOMContentLoaded', function () {
           const SPRITES = {
-            gugugaga: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+            agnesTachyon: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
             goldship:  '../assets/styles/images/goldShip/goldship.png',
           }
           const LOGOS = {
-            gugugaga: '../assets/styles/images/agnesTachyon/logo.svg',
+            agnesTachyon: '../assets/styles/images/agnesTachyon/logo.svg',
             goldship:  '../assets/styles/images/goldShip/logo.svg',
           }
           const sprite = document.getElementById('companion-sprite')
-          if (sprite) sprite.src = SPRITES[c] || SPRITES.gugugaga
+          if (sprite) sprite.src = SPRITES[c] || SPRITES.agnesTachyon
           const logo = document.querySelector('.panel-title')
-          if (logo) logo.src = LOGOS[c] || LOGOS.gugugaga
+          if (logo) logo.src = LOGOS[c] || LOGOS.agnesTachyon
         }, { once: true })
       } catch (_) {}
     })()
@@ -146,8 +146,8 @@
       <!-- Finished filters (shown only on Finished tab) -->
       <div class="finished-filters" id="finished-filters" style="display:none">
         <button class="filter-chip active" data-filter="today" data-i18n="today">Today</button>
-        <button class="filter-chip" data-filter="last3" data-i18n="last3">Last 3 days</button>
-        <button class="filter-chip" data-filter="week" data-i18n="week">This week</button>
+        <button class="filter-chip" data-filter="last3" data-i18n="last3days">Last 3 days</button>
+        <button class="filter-chip" data-filter="week" data-i18n="thisWeek">This week</button>
         <button class="filter-chip" data-filter="all" data-i18n="all">All</button>
       </div>
 
@@ -304,29 +304,29 @@
   <script src="../components/companion.js"></script>
   <script>
     const CHAR_SPRITES = {
-      gugugaga: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+      agnesTachyon: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
       goldship:  '../assets/styles/images/goldShip/goldship.png',
     };
 
     const CHAR_LOGOS = {
-      gugugaga: '../assets/styles/images/agnesTachyon/logo.svg',
+      agnesTachyon: '../assets/styles/images/agnesTachyon/logo.svg',
       goldship:  '../assets/styles/images/goldShip/logo.svg',
     };
 
     function applyTheme(theme) {
-      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
       document.body.classList.add('theme-' + theme);
       const sprite = document.getElementById('companion-sprite');
-      if (sprite) sprite.src = CHAR_SPRITES[theme] ?? CHAR_SPRITES.gugugaga;
+      if (sprite) sprite.src = CHAR_SPRITES[theme] ?? CHAR_SPRITES.agnesTachyon;
       const logo = document.querySelector('.panel-title');
-      if (logo) logo.src = CHAR_LOGOS[theme] ?? CHAR_LOGOS.gugugaga;
+      if (logo) logo.src = CHAR_LOGOS[theme] ?? CHAR_LOGOS.agnesTachyon;
     }
 
     (async () => {
       try {
         const s = await window.trapezi?.settings?.get();
-        applyTheme(s?.character || 'gugugaga');
-      } catch (_) { applyTheme('gugugaga'); }
+        applyTheme(s?.character || 'agnesTachyon');
+      } catch (_) { applyTheme('agnesTachyon'); }
     })();
 
     window.trapezi?.onThemeApply?.((theme) => applyTheme(theme));

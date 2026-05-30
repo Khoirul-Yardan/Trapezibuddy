@@ -301,7 +301,7 @@ function createCompanionWindow(characterSize = 60) {
     }
   })
 
-  const storedCharacter = (store.get('settings') || {}).character || 'gugugaga'
+  const storedCharacter = (store.get('settings') || {}).character || 'agnesTachyon'
   companionWindow.loadFile(
     path.join(__dirname, '../renderer/pages/companion.html'),
     { query: { character: storedCharacter } }
@@ -535,7 +535,8 @@ app.on('web-contents-created', (event, contents) => {
 // ── IPC: Theme ───────────────────────────────────────────────
 ipcMain.on('theme:apply', (_, theme) => {
   store.set('settings.theme', theme)
-  const targets = [companionWindow, chatWindow, minimizedWindow, addTaskWindow, confirmTaskWindow, appSettingsWindow]
+  store.set('settings.character', theme)  // keep character in sync so recreated windows get correct theme
+  const targets = [companionWindow, chatWindow, minimizedWindow, addTaskWindow, confirmTaskWindow, appSettingsWindow, settingsWindow]
   targets.forEach(win => {
     try {
       if (win && !win.isDestroyed()) win.webContents.send('theme:apply', theme)
@@ -830,7 +831,7 @@ ipcMain.on('modal:taskAdded', () => {
 ipcMain.handle('modal:openConfirmTask', (_, { taskId, taskName }) => {
   if (confirmTaskWindow) { confirmTaskWindow.focus(); return }
   const [px, py] = companionWindow.getPosition()
-  const confirmTheme = store.get('settings.theme') || store.get('settings.character') || 'gugugaga'
+  const confirmTheme = store.get('settings.theme') || store.get('settings.character') || 'agnesTachyon'
   confirmTaskWindow = new BrowserWindow({
     width: 280, height: 380, x: px + 10, y: py + 200,
     frame: false, transparent: false, alwaysOnTop: true,
@@ -893,7 +894,7 @@ app.on('browser-window-created', (_, win) => {
   win.webContents.on('did-finish-load', () => {
     try {
       const settings = store.get('settings') || {}
-      const theme = settings.character || settings.theme || 'gugugaga'
+      const theme = settings.character || settings.theme || 'agnesTachyon'
       win.webContents.send('theme:apply', theme)
     } catch (_err) { /* window may be closing */ }
   })

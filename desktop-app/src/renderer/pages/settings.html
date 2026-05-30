@@ -324,11 +324,11 @@
       </div>
 
       <div class="char-options">
-        <div class="char-card active" data-char="gugugaga">
+        <div class="char-card active" data-char="agnesTachyon">
           <div class="char-img-wrap">
             <img src="../assets/styles/images/agnesTachyon/agnesTahcyon.png" onerror="this.style.display='none'">
           </div>
-          <div class="char-name">Gugu Gaga</div>
+          <div class="char-name">Agnes Tachyon</div>
         </div>
         <div class="char-card" data-char="goldship">
           <div class="char-img-wrap">
@@ -374,27 +374,27 @@
     const api = window.trapezi;
 
     let state = {
-      character: 'gugugaga',
+      character: 'agnesTachyon',
       language: 'en'
     };
 
     const BRANDING_IMGS = {
-      gugugaga: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+      agnesTachyon: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
       goldship:  '../assets/styles/images/goldShip/goldship.png',
     };
 
     const BRANDING_LOGOS = {
-      gugugaga: '../assets/styles/images/agnesTachyon/logo.svg',
+      agnesTachyon: '../assets/styles/images/agnesTachyon/logo.svg',
       goldship:  '../assets/styles/images/goldShip/logo.svg',
     };
 
     function applyThemePreview(character) {
-      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
       document.body.classList.add('theme-' + character);
       const avatar = document.querySelector('.branding-avatar img');
-      if (avatar) avatar.src = BRANDING_IMGS[character] ?? BRANDING_IMGS.gugugaga;
+      if (avatar) avatar.src = BRANDING_IMGS[character] ?? BRANDING_IMGS.agnesTachyon;
       const logo = document.getElementById('header-logo');
-      if (logo) logo.src = BRANDING_LOGOS[character] ?? BRANDING_LOGOS.gugugaga;
+      if (logo) logo.src = BRANDING_LOGOS[character] ?? BRANDING_LOGOS.agnesTachyon;
     }
 
     // Removed local updateLanguageText() as it's handled by the global i18n script
@@ -485,11 +485,11 @@
     (async () => {
       try {
         const s = await window.trapezi?.settings?.get();
-        document.body.classList.add('theme-' + (s?.character || 'gugugaga'));
-      } catch (_) { document.body.classList.add('theme-gugugaga'); }
+        document.body.classList.add('theme-' + (s?.character || 'agnesTachyon'));
+      } catch (_) { document.body.classList.add('theme-agnesTachyon'); }
     })();
     window.trapezi?.onThemeApply?.((theme) => {
-      document.body.classList.remove('theme-gugugaga', 'theme-goldship');
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
       document.body.classList.add('theme-' + theme);
     });
   </script>
