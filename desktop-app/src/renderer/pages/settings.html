@@ -15,7 +15,8 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      overflow: visible;
+      justify-content: space-between;
+      overflow: hidden;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -53,12 +54,12 @@
 
     /* ── Content Area ── */
     .content-area {
-      flex: 1;
-      overflow: visible;
-      padding: 18px 18px 14px;
+      flex-shrink: 0;
+      overflow: hidden;
+      padding: 16px 16px 12px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       background: #FBF9F8;
     }
 
@@ -93,11 +94,13 @@
     .section-card {
       background: #F5F3F3;
       border-radius: 12px;
-      padding: 16px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       flex-shrink: 0;
+      width: 100%;
+      overflow: hidden;
     }
     .section-header {
       display: flex;
@@ -112,14 +115,16 @@
     /* ── Character Options ── */
     .char-options {
       display: flex;
-      gap: 12px;
+      gap: 10px;
+      width: 100%;
     }
     .char-card {
       flex: 1;
+      min-width: 0;
       background: #FFFFFF;
       border: 1px solid #E0E0E0;
       border-radius: 10px;
-      padding: 14px 8px 12px;
+      padding: 12px 8px 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -155,44 +160,6 @@
       line-height: 1.3;
     }
 
-    /* ── Slider ── */
-    .slider-label {
-      font-size: 12px;
-      color: #3B3B3A;
-    }
-    .slider-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .slider-wrap { flex: 1; display: flex; align-items: center; }
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 5px;
-      background: linear-gradient(to right, #A2B29F var(--pct, 17.6%), #D2C6B9 var(--pct, 17.6%));
-      border-radius: 3px;
-      outline: none;
-      cursor: pointer;
-      -webkit-app-region: no-drag !important;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #A2B29F;
-      cursor: pointer;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-    }
-    .slider-val {
-      font-size: 13px;
-      font-weight: 700;
-      min-width: 38px;
-      text-align: right;
-      color: #3B3B3A;
-    }
-
     /* ── Language Options ── */
     .lang-label {
       font-size: 12px;
@@ -200,11 +167,13 @@
     }
     .lang-options {
       display: flex;
-      gap: 10px;
+      gap: 8px;
+      width: 100%;
     }
     .lang-btn {
       flex: 1;
-      padding: 11px 8px;
+      min-width: 0;
+      padding: 10px 6px;
       border-radius: 8px;
       font-weight: 600;
       font-size: 13px;
@@ -261,12 +230,14 @@
     .btn-start svg { width: 18px; height: 18px; flex-shrink: 0; }
 
     /* ── GoldShip theme overrides ── */
-    body.theme-goldship,
+    body.theme-goldship {
+      background: #E8E2D8;
+    }
     body.theme-goldship .content-area {
       background: #E8E2D8;
     }
     body.theme-goldship .header {
-      background: #C4B8E3;
+      background: #A5A5A5;
     }
     body.theme-goldship .header-title {
       color: #1A1714;
@@ -303,19 +274,14 @@
       border: 2px solid #9E8EC6;
     }
     body.theme-goldship .char-name,
-    body.theme-goldship .slider-label,
-    body.theme-goldship .slider-val,
     body.theme-goldship .lang-label {
       color: #1A1714;
-    }
-    body.theme-goldship input[type="range"]::-webkit-slider-thumb {
-      background: #9E8EC6;
     }
     body.theme-goldship .lang-btn.active[data-lang="en"] {
       border: 2px solid #9E8EC6;
     }
     body.theme-goldship .footer {
-      background: #C4B8E3;
+      background: #A5A5A5;
     }
     body.theme-goldship .btn-start {
       background: #9E8EC6;
@@ -370,13 +336,6 @@
         </div>
       </div>
 
-      <div class="slider-label" id="label-adjust-size">Adjust the character display size:</div>
-      <div class="slider-row">
-        <div class="slider-wrap">
-          <input type="range" id="size-slider" min="30" max="200" value="60">
-        </div>
-        <div class="slider-val" id="size-val">60%</div>
-      </div>
     </div>
 
     <!-- Section 2: Language -->
@@ -413,35 +372,23 @@
 
     let state = {
       character: 'gugugaga',
-      characterSize: 60,
       language: 'en'
     };
 
     const i18n = {
       en: {
         charOptions: 'Character Options',
-        adjustSize:  'Adjust the character display size:',
         language:    'Language (Bahasa)',
         selectLang:  'Select your preferred language:',
         startApp:    'Start Application'
       },
       id: {
         charOptions: 'Pilihan Karakter',
-        adjustSize:  'Atur ukuran tampilan karakter:',
         language:    'Bahasa (Language)',
         selectLang:  'Pilih bahasa yang Anda inginkan:',
         startApp:    'Mulai Aplikasi'
       }
     };
-
-    function updateSliderTrack(val) {
-      const slider = document.getElementById('size-slider');
-      const pct = ((val - 30) / (200 - 30)) * 100;
-      const gs = document.body.classList.contains('theme-goldship');
-      const active = gs ? '#9E8EC6' : '#A2B29F';
-      const track  = gs ? '#D8D0E8' : '#D2C6B9';
-      slider.style.background = `linear-gradient(to right, ${active} ${pct}%, ${track} ${pct}%)`;
-    }
 
     const BRANDING_IMGS = {
       gugugaga: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
@@ -453,14 +400,12 @@
       document.body.classList.add('theme-' + character);
       const avatar = document.querySelector('.branding-avatar img');
       if (avatar) avatar.src = BRANDING_IMGS[character] ?? BRANDING_IMGS.gugugaga;
-      updateSliderTrack(state.characterSize);
     }
 
     function updateLanguageText() {
       const t = i18n[state.language] || i18n.en;
-      document.getElementById('label-char-opt').textContent   = t.charOptions;
-      document.getElementById('label-adjust-size').textContent = t.adjustSize;
-      document.getElementById('label-lang').textContent        = t.language;
+      document.getElementById('label-char-opt').textContent = t.charOptions;
+      document.getElementById('label-lang').textContent      = t.language;
       document.getElementById('label-select-lang').textContent = t.selectLang;
       document.getElementById('label-start').textContent       = t.startApp;
     }
@@ -472,10 +417,6 @@
       document.querySelectorAll('.lang-btn').forEach(el => {
         el.classList.toggle('active', el.dataset.lang === state.language);
       });
-      const slider = document.getElementById('size-slider');
-      slider.value = state.characterSize;
-      document.getElementById('size-val').textContent = state.characterSize + '%';
-      updateSliderTrack(state.characterSize);
       updateLanguageText();
     }
 
@@ -483,9 +424,8 @@
       if (api && api.settings) {
         const stored = await api.settings.get();
         if (stored) {
-          if (stored.character)     state.character     = stored.character;
-          if (stored.characterSize) state.characterSize = stored.characterSize;
-          if (stored.language)      state.language      = stored.language;
+          if (stored.character) state.character = stored.character;
+          if (stored.language)  state.language  = stored.language;
         }
       }
       applyThemePreview(state.character);
@@ -508,13 +448,6 @@
         state.language = btn.dataset.lang;
         updateUI();
       });
-    });
-
-    // Slider
-    document.getElementById('size-slider').addEventListener('input', e => {
-      state.characterSize = parseInt(e.target.value);
-      document.getElementById('size-val').textContent = state.characterSize + '%';
-      updateSliderTrack(state.characterSize);
     });
 
     // Close

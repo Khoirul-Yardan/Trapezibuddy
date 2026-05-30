@@ -369,16 +369,16 @@ function createSettingsWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
 
   const fallback = {
-    width: 520,
-    height: 680,
-    x: Math.floor(width / 2 - 260),
-    y: Math.floor(height / 2 - 340),
+    width: 420,
+    height: 510,
+    x: Math.floor(width / 2 - 210),
+    y: Math.floor(height / 2 - 255),
   }
   const b = getSavedBounds('settings', fallback)
 
   settingsWindow = new BrowserWindow({
-    width:       b.width,
-    height:      Math.max(b.height, 680),
+    width:       420,
+    height:      600,
     x:           b.x,
     y:           b.y,
     frame:       false,
@@ -599,11 +599,10 @@ ipcMain.on('window:forceQuit', () => {
 });
 
 ipcMain.on('window:startApp', (_, data) => {
-  const size = data?.characterSize ?? 60
   settingsWindow?.close()
-  createCompanionWindow(size)
+  createCompanionWindow()
   createTray()
-  startPythonCompanion(size)
+  startPythonCompanion()
 })
 
 // ── IPC: Tasks ───────────────────────────────────────────────
