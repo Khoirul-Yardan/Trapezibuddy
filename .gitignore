@@ -35,7 +35,6 @@ env/
 debug.log
 
 # Build outputs
-*.exe
 *.dmg
 *.dll
 *.so
