@@ -5,7 +5,7 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, screen, nativeImage } = require('electron')
 const path  = require('path')
 const Store = require('electron-store')
-const { spawn } = require('child_process')
+const { spawn, exec, execSync } = require('child_process')
 const fs = require('fs')
 
 // ── Simple Logger ──────────────────────────────────────────────
@@ -61,7 +61,9 @@ const store = new Store({
   }
 })
 
-let settingsWindow    = null
+let characterProcess   = null
+let currentRunningChar = null
+let settingsWindow     = null
 let appSettingsWindow = null
 let companionWindow   = null
 let minimizedWindow   = null
@@ -460,7 +462,45 @@ ipcMain.on('window:forceQuit', () => {
   app.quit();
 });
 
+const CHARACTER_EXE_MAP = {
+  agnesTachyon: path.join('assets', 'agnesTachyon', 'agnesTachyon.exe'),
+  goldship:     path.join('assets', 'goldShip',     'goldShip.exe'),
+}
+
+function killAllCharacterExes() {
+  if (characterProcess) {
+    try { characterProcess.kill() } catch (_) {}
+    characterProcess = null
+  }
+  if (process.platform === 'win32') {
+    Object.values(CHARACTER_EXE_MAP).forEach(relPath => {
+      const exeName = path.basename(relPath)
+      try { execSync(`taskkill /IM "${exeName}" /F`, { stdio: 'pipe' }) } catch (_) {}
+    })
+  }
+}
+
+function spawnCharacterExe(charKey) {
+  killAllCharacterExes()
+  const relExe = CHARACTER_EXE_MAP[charKey]
+  if (!relExe) return
+  const exePath = path.join(getProjectRoot(), relExe)
+  if (!fs.existsSync(exePath)) {
+    logger.warn('Character exe not found: ' + exePath)
+    return
+  }
+  try {
+    characterProcess   = spawn(exePath, [], { detached: true, stdio: 'ignore' })
+    currentRunningChar = charKey
+    logger.info('Launched character exe: ' + exePath)
+  } catch (err) {
+    logger.error('Failed to launch character exe: ' + err)
+  }
+}
+
 ipcMain.on('window:startApp', (_, data) => {
+  const charKey = data?.character || store.get('settings.character') || 'agnesTachyon'
+  spawnCharacterExe(charKey)
   settingsWindow?.close()
   createCompanionWindow()
   createTray()
@@ -506,8 +546,12 @@ ipcMain.handle('tasks:delete', (_, taskId) => {
 ipcMain.handle('settings:get', () => store.get('settings'))
 ipcMain.handle('settings:set', (_, data) => {
   store.set('settings', data)
-  // Keep settings.theme in sync so did-finish-load always reads the right value
   if (data && data.character) store.set('settings.theme', data.character)
+  // Compare against the exe actually running, not the store
+  // (store is already updated by theme:apply before save() fires)
+  if (data?.character && data.character !== currentRunningChar) {
+    spawnCharacterExe(data.character)
+  }
   return true
 })
 
@@ -920,6 +964,19 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (!companionWindow && process.platform !== 'darwin') app.quit()
+})
+
+app.on('before-quit', () => {
+  if (characterProcess) {
+    try { characterProcess.kill() } catch (_) {}
+    characterProcess = null
+  }
+  if (process.platform === 'win32') {
+    Object.values(CHARACTER_EXE_MAP).forEach(relPath => {
+      const exeName = path.basename(relPath)
+      try { execSync(`taskkill /IM "${exeName}" /F`, { timeout: 3000 }) } catch (_) {}
+    })
+  }
 })
 
 

@@ -8,7 +8,8 @@
       "Read(//c/Users/UNKNOWN/.claude/projects/d--Dev-Projects-Trapezibuddy\" 2>/dev/**)",
       "Read(//c/Users/UNKNOWN/AppData/Roaming/Electron/**)",
       "Read(//c/Users/UNKNOWN/AppData/Roaming/electron/**)",
-      "PowerShell($path = \"$env:APPDATA\\\\trapezibuddy\\\\config.json\"; if \\(Test-Path $path\\) { Get-Content $path } else { \"not found at $path\" })"
+      "PowerShell($path = \"$env:APPDATA\\\\trapezibuddy\\\\config.json\"; if \\(Test-Path $path\\) { Get-Content $path } else { \"not found at $path\" })",
+      "Bash(Get-ChildItem -Recurse -Filter \"*.exe\" -Path \"d:\\\\Dev\\\\Projects\\\\Trapezibuddy\" -ErrorAction SilentlyContinue)"
     ],
     "additionalDirectories": [
       "C:\\Users\\UNKNOWN\\.claude\\projects\\d--Dev-Projects-Trapezibuddy"
