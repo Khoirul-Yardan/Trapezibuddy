@@ -462,6 +462,14 @@ ipcMain.on('window:forceQuit', () => {
   app.quit();
 });
 
+ipcMain.on('window:startApp', (_, data) => {
+  const size = data?.characterSize ?? 60
+  settingsWindow?.close()
+  characterSelectionWindow?.close()
+  createCompanionWindow(size)
+  createTray()
+})
+
 const CHARACTER_EXE_MAP = {
   agnesTachyon: path.join('assets', 'agnesTachyon', 'agnesTachyon.exe'),
   goldship:     path.join('assets', 'goldShip',     'goldShip.exe'),
@@ -984,3 +992,5 @@ app.on('before-quit', () => {
 app.on('activate', () => {
   if (!companionWindow && !settingsWindow) createSettingsWindow()
 })
+
+// (no demo IPC; demo button selects Goldship card in renderer)
