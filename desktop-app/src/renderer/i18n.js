@@ -108,6 +108,25 @@ const i18n = {
     // Tray menu
     trayOpen: "Open",
     trayExit: "Exit",
+
+    // Streak Progress Modal
+    streakProgress: "Streak Progress",
+    currentStreak: "Current streak",
+    longestStreak: "Longest streak",
+    tasksOnTime: "tasks on time",
+    personalBest: "personal best",
+    onTimeRate: "On-time rate",
+    tasks: "tasks",
+    onTime: "on time",
+    missed: "missed",
+    freezeTokens: "Freeze tokens",
+    protectsStreak: "Protects streak from 1 miss",
+    missedDeadline: "You miss the deadline :(",
+    frozen: "FROZEN",
+    unfreezeTitle: "Unfreeze Streak",
+    unfreezeConfirm: "Are you sure you want to unfreeze your streak?",
+    yes: "Yes",
+    no: "Cancel",
   },
 
   id: {
@@ -219,6 +238,25 @@ const i18n = {
     // Tray menu
     trayOpen: "Buka",
     trayExit: "Keluar",
+
+    // Streak Progress Modal
+    streakProgress: "Progres Streak",
+    currentStreak: "Streak saat ini",
+    longestStreak: "Streak terpanjang",
+    tasksOnTime: "tugas tepat waktu",
+    personalBest: "terbaikmu",
+    onTimeRate: "Rasio tepat waktu",
+    tasks: "tugas",
+    onTime: "tepat waktu",
+    missed: "terlewat",
+    freezeTokens: "Token beku",
+    protectsStreak: "Melindungi streak dari 1 kelalaian",
+    missedDeadline: "Kamu melewatkan deadline :(",
+    frozen: "BEKU",
+    unfreezeTitle: "Nyalakan Streak",
+    unfreezeConfirm: "Apakah yakin ingin menyalakan streak lagi?",
+    yes: "Ya",
+    no: "Batal",
   }
 }
 

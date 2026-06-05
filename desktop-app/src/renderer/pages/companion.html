@@ -169,6 +169,129 @@
       </div>
 
     </div>
+
+    <!-- ── Streak Progress Bottom Sheet ────────────────────── -->
+    <div class="bottom-sheet-overlay" id="streak-overlay" style="display:none">
+      <div class="bottom-sheet" id="streak-sheet">
+        <!-- Handle bar for mobile-style bottom sheet aesthetic -->
+        <div class="bottom-sheet-handle"></div>
+        
+        <!-- Header -->
+        <div class="bottom-sheet-header">
+          <span class="bottom-sheet-title">
+            <span class="streak-title-icon">🔥</span>
+            <span data-i18n="streakProgress">Streak Progress</span>
+          </span>
+          <button class="bottom-sheet-close" id="btn-close-streak" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="bottom-sheet-body">
+          
+          <!-- Cards Grid -->
+          <div class="streak-cards-grid">
+            
+            <!-- Left Card: Current Streak (Toggleable between Normal/Frozen by clicking) -->
+            <div class="streak-card-stat current" id="current-streak-card" title="Click to toggle Normal/Frozen preview!">
+              <!-- Normal Mode State -->
+              <div class="streak-card-state-normal" id="streak-normal-state">
+                <span class="stat-card-title" data-i18n="currentStreak">Current streak</span>
+                <div class="stat-card-val-row">
+                  <span class="stat-card-val" id="current-streak-val-normal">12</span>
+                  <span class="stat-card-val-icon">🔥</span>
+                </div>
+                <span class="stat-card-sub" data-i18n="tasksOnTime">tasks on time</span>
+              </div>
+
+              <!-- Frozen Mode State (hidden by default) -->
+              <div class="streak-card-state-frozen" id="streak-frozen-state" style="display: none;">
+                <span class="stat-card-title" data-i18n="currentStreak">Current streak</span>
+                <div class="frozen-badge">
+                  <span data-i18n="frozen">FROZEN</span>
+                </div>
+                <div class="stat-card-val-row">
+                  <span class="stat-card-val" id="current-streak-val-frozen">12</span>
+                  <span class="stat-card-val-icon">❄️</span>
+                </div>
+                <div class="missed-deadline-box">
+                  <svg class="missed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span class="missed-text" data-i18n="missedDeadline">You miss the deadline :(</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Card: Longest Streak -->
+            <div class="streak-card-stat longest">
+              <span class="stat-card-title" data-i18n="longestStreak">Longest streak</span>
+              <div class="stat-card-val-row">
+                <span class="stat-card-val" id="longest-streak-val">24</span>
+                <span class="stat-card-val-icon">🏆</span>
+              </div>
+              <span class="stat-card-sub" data-i18n="personalBest">personal best</span>
+            </div>
+
+          </div>
+
+          <!-- On-time Rate section -->
+          <div class="on-time-section">
+            <div class="on-time-header">
+              <span class="on-time-title" data-i18n="onTimeRate">On-time rate</span>
+              <span class="on-time-fraction" id="on-time-fraction-label">18 / 24 tasks</span>
+            </div>
+            <div class="on-time-progress-bar">
+              <div class="on-time-progress-fill" id="on-time-progress-fill" style="width: 75%;"></div>
+            </div>
+            <div class="on-time-labels">
+              <span class="on-time-label-left" id="on-time-percent-label">75% on time</span>
+              <span class="on-time-label-right" id="on-time-missed-label">25% missed</span>
+            </div>
+          </div>
+
+          <!-- Freeze tokens section -->
+          <div class="freeze-tokens-section">
+            <div class="freeze-info">
+              <span class="freeze-title">
+                <span class="freeze-title-icon">❄️</span>
+                <span data-i18n="freezeTokens">Freeze tokens</span>
+              </span>
+              <span class="freeze-desc" data-i18n="protectsStreak">Protects streak from 1 miss</span>
+            </div>
+            <div class="freeze-buttons" id="freeze-tokens-container">
+              <!-- Rendered dynamically by companion.js based on shopAPI shields owned -->
+              <button class="freeze-token-btn active" id="freeze-btn-1">❄️</button>
+              <button class="freeze-token-btn" id="freeze-btn-2">❄️</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Unfreeze Confirmation Overlay inside Bottom Sheet -->
+        <div class="unfreeze-overlay" id="unfreeze-overlay" style="display:none">
+          <div class="unfreeze-modal">
+            <div class="unfreeze-modal-header">
+              <span class="unfreeze-modal-title" data-i18n="unfreezeTitle">Nyalakan Streak</span>
+            </div>
+            <div class="unfreeze-modal-body">
+              <p class="unfreeze-modal-text" data-i18n="unfreezeConfirm">Apakah yakin ingin menyalakan streak lagi?</p>
+            </div>
+            <div class="unfreeze-modal-footer">
+              <button class="btn-unfreeze-cancel" id="btn-unfreeze-cancel" data-i18n="no">Batal</button>
+              <button class="btn-unfreeze-confirm" id="btn-unfreeze-confirm" data-i18n="yes">Ya</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
   <!-- Add Task Modal -->

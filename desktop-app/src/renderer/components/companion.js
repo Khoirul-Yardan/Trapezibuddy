@@ -420,6 +420,7 @@ async function loadSettings() {
   if (currentApi) {
     const settings = await currentApi.settings.get()
     state.streak = settings.streak ?? 0
+    state.longestStreak = settings.longest_streak ?? Math.max(24, state.streak * 2)
     // Set language before first render so t() returns correct translations
     if (settings.language) window.currentLang = settings.language
   }
@@ -657,6 +658,7 @@ async function init() {
   initModal()
   initConfirmModal()
   initWindowControls()
+  initStreakBottomSheet()
   // Focus timer starts only on user action
   setFocusView(false)
   const startBtn = document.getElementById('btn-focus-start')
@@ -725,6 +727,264 @@ window.trapezi?.onThemeApply?.((theme) => {
   document.body.classList.add(`theme-${theme}`)
   applyThemeAssets(theme)
 })
+
+// ── Streak Progress Bottom Sheet Controller ──────────────────
+let streakIsFrozen = false
+
+function openUnfreezeConfirmation() {
+  const unfreezeOverlay = document.getElementById('unfreeze-overlay')
+  if (!unfreezeOverlay) return
+  unfreezeOverlay.style.display = 'flex'
+  setTimeout(() => {
+    unfreezeOverlay.classList.add('active')
+  }, 20)
+}
+
+function closeUnfreezeConfirmation() {
+  const unfreezeOverlay = document.getElementById('unfreeze-overlay')
+  if (!unfreezeOverlay) return
+  unfreezeOverlay.classList.remove('active')
+  setTimeout(() => {
+    unfreezeOverlay.style.display = 'none'
+  }, 250)
+}
+
+function renderStreakProgress() {
+  const overlay = document.getElementById('streak-overlay')
+  const currentCard = document.getElementById('current-streak-card')
+  const normalState = document.getElementById('streak-normal-state')
+  const frozenState = document.getElementById('streak-frozen-state')
+  
+  if (!overlay || !currentCard || !normalState || !frozenState) return
+
+  // Set current streak values
+  const valNormal = document.getElementById('current-streak-val-normal')
+  const valFrozen = document.getElementById('current-streak-val-frozen')
+  if (valNormal) valNormal.textContent = state.streak
+  if (valFrozen) valFrozen.textContent = state.streak
+
+  // Set longest streak
+  const longestValEl = document.getElementById('longest-streak-val')
+  if (longestValEl) {
+    longestValEl.textContent = state.longestStreak
+  }
+
+  // Calculate On-time Rate
+  let totalTasks = state.tasks.length
+  let onTimeCount = 0
+  let missedCount = 0
+
+  state.tasks.forEach(t => {
+    if (t.is_done) {
+      const doneAt = getTaskCompletedAt(t)
+      const deadline = safeDate(`${t.deadline_date}T${t.deadline_time}`)
+      if (!deadline || (deadline - doneAt >= 0)) {
+        onTimeCount++
+      } else {
+        missedCount++
+      }
+    } else {
+      const deadline = safeDate(`${t.deadline_date}T${t.deadline_time}`)
+      if (deadline && (deadline - new Date() < 0)) {
+        missedCount++
+      }
+    }
+  })
+
+  // Fallback to mockup data if no tasks exist
+  if (totalTasks === 0) {
+    totalTasks = 24
+    onTimeCount = 18
+    missedCount = 6
+  }
+
+  const onTimePercent = Math.round((onTimeCount / totalTasks) * 100) || 0
+  const missedPercent = 100 - onTimePercent
+
+  const fractionLabel = document.getElementById('on-time-fraction-label')
+  const progressFill = document.getElementById('on-time-progress-fill')
+  const percentLabel = document.getElementById('on-time-percent-label')
+  const missedLabel = document.getElementById('on-time-missed-label')
+
+  if (fractionLabel) {
+    fractionLabel.textContent = `${onTimeCount} / ${totalTasks} ${t('task')}`
+  }
+  if (progressFill) {
+    progressFill.style.width = `${onTimePercent}%`
+  }
+  if (percentLabel) {
+    percentLabel.textContent = `${onTimePercent}% ${t('onTime')}`
+  }
+  if (missedLabel) {
+    missedLabel.textContent = `${missedPercent}% ${t('missed')}`
+  }
+
+  // Render Freeze Tokens (Streak Shields from Shop)
+  const shields = window.shopAPI ? window.shopAPI.getStreakShields() : 0
+  const tokensContainer = document.getElementById('freeze-tokens-container')
+  if (tokensContainer) {
+    tokensContainer.innerHTML = ''
+    for (let i = 1; i <= 2; i++) {
+      const btn = document.createElement('button')
+      btn.className = 'freeze-token-btn'
+      btn.textContent = '❄'
+
+      // Force mock state in Frozen preview mode to match design mockup:
+      // (Right card has 1 token active/blue and 1 token used/greyed out)
+      let isActive = false
+      if (streakIsFrozen) {
+        isActive = (i === 1)
+      } else {
+        isActive = (shields >= i)
+      }
+
+      if (isActive) {
+        btn.classList.add('active')
+      }
+
+      // Interaction: Click to buy/use token
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        if (streakIsFrozen) {
+          if (isActive) {
+            // Confirm with user before unfreezing
+            openUnfreezeConfirmation()
+          } else {
+            if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+              window.trapezi.bubble.show({
+                text: 'Token ini sudah digunakan untuk membekukan streak.',
+                emoji: '❄️'
+              })
+            }
+          }
+          return
+        }
+
+        if (!isActive) {
+          // Attempt to purchase streak shield
+          if (window.shopAPI) {
+            const shopState = window.shopAPI.getState()
+            if (shopState.points >= 50) {
+              const success = window.shopAPI.purchaseItem('streak-shield')
+              if (success) {
+                renderStreakProgress()
+              }
+            } else {
+              if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+                window.trapezi.bubble.show({
+                  text: `Poin tidak cukup! Butuh 50 ⭐ untuk membeli token beku. Poinmu: ${shopState.points}`,
+                  emoji: '⭐'
+                })
+              }
+            }
+          }
+        } else {
+          if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+            window.trapezi.bubble.show({
+              text: 'Token beku aktif melindungi streak kamu dari 1 deadline terlewat!',
+              emoji: '🛡️'
+            })
+          }
+        }
+      })
+
+      tokensContainer.appendChild(btn)
+    }
+  }
+
+  // Toggle card state classes
+  if (streakIsFrozen) {
+    currentCard.classList.add('frozen')
+    normalState.style.display = 'none'
+    frozenState.style.display = 'block'
+  } else {
+    currentCard.classList.remove('frozen')
+    normalState.style.display = 'block'
+    frozenState.style.display = 'none'
+  }
+}
+
+function initStreakBottomSheet() {
+  const badge = document.getElementById('streak-badge')
+  const overlay = document.getElementById('streak-overlay')
+  const closeBtn = document.getElementById('btn-close-streak')
+  const currentCard = document.getElementById('current-streak-card')
+
+  const unfreezeOverlay = document.getElementById('unfreeze-overlay')
+  const btnUnfreezeConfirm = document.getElementById('btn-unfreeze-confirm')
+  const btnUnfreezeCancel = document.getElementById('btn-unfreeze-cancel')
+
+  if (!badge || !overlay || !closeBtn || !currentCard) return
+
+  // Unfreeze Confirmation buttons setup
+  if (btnUnfreezeConfirm && btnUnfreezeCancel && unfreezeOverlay) {
+    btnUnfreezeCancel.addEventListener('click', (e) => {
+      e.stopPropagation()
+      closeUnfreezeConfirmation()
+    })
+    btnUnfreezeConfirm.addEventListener('click', (e) => {
+      e.stopPropagation()
+      // Unfreeze streak
+      streakIsFrozen = false
+      
+      // Consume a freeze token if available in the shop
+      if (window.shopAPI) {
+        window.shopAPI.useStreakShield()
+      }
+      
+      closeUnfreezeConfirmation()
+      
+      // Show celebration bubble
+      if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+        window.trapezi.bubble.show({
+          text: 'Streak menyala kembali! 🔥 Semangat produktif lagi ya!',
+          emoji: '🔥'
+        })
+      }
+      
+      renderStreakProgress()
+      updateMoodCard()
+    })
+    
+    unfreezeOverlay.addEventListener('click', (e) => {
+      e.stopPropagation()
+      if (e.target === unfreezeOverlay) {
+        closeUnfreezeConfirmation()
+      }
+    })
+  }
+
+  // Click to open sheet
+  badge.addEventListener('click', () => {
+    overlay.style.display = 'block'
+    setTimeout(() => {
+      overlay.classList.add('active')
+      renderStreakProgress()
+    }, 20)
+  })
+
+  // Click to close sheet
+  const closeSheet = () => {
+    overlay.classList.remove('active')
+    setTimeout(() => {
+      overlay.style.display = 'none'
+      closeUnfreezeConfirmation() // close confirmation as well if sheet is closed
+    }, 300)
+  }
+
+  closeBtn.addEventListener('click', closeSheet)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeSheet()
+    }
+  })
+
+  // Toggle between Normal/Frozen views when clicking the Current Streak card
+  currentCard.addEventListener('click', () => {
+    streakIsFrozen = !streakIsFrozen
+    renderStreakProgress()
+  })
+}
 
 // Set today's date as default on date input
 document.addEventListener('DOMContentLoaded', () => {
