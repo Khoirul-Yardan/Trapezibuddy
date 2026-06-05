@@ -63,6 +63,7 @@ const store = new Store({
 
 let characterProcess   = null
 let currentRunningChar = null
+let characterSelectionWindow = null  // Character selection dialog (added from BACKEND2 merge)
 let settingsWindow     = null
 let appSettingsWindow = null
 let companionWindow   = null
@@ -462,13 +463,8 @@ ipcMain.on('window:forceQuit', () => {
   app.quit();
 });
 
-ipcMain.on('window:startApp', (_, data) => {
-  const size = data?.characterSize ?? 60
-  settingsWindow?.close()
-  characterSelectionWindow?.close()
-  createCompanionWindow(size)
-  createTray()
-})
+// Note: window:startApp from BACKEND2 not used in main flow - character selection handled differently
+// See createCharacterSelectionWindow() and character:select handler for flow
 
 const CHARACTER_EXE_MAP = {
   agnesTachyon: path.join('assets', 'agnesTachyon', 'agnesTachyon.exe'),
