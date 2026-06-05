@@ -484,6 +484,20 @@ function initModal() {
     })
   })
 
+  // Initialize custom calendar for embedded add task modal
+  const taskDateInput = document.getElementById('task-date')
+  if (taskDateInput && typeof CustomCalendar !== 'undefined') {
+    // Only for Agnes Tachyon theme
+    if (!document.body.classList.contains('theme-goldship')) {
+      new CustomCalendar(taskDateInput, {
+        disablePast: true,
+        onChange: (date) => {
+          console.log('Date selected in embedded modal:', date);
+        }
+      })
+    }
+  }
+
   // Save task
   saveBtn.addEventListener('click', async () => {
     const name = document.getElementById('task-name').value.trim()

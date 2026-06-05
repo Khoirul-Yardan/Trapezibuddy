@@ -1,0 +1,258 @@
+/* Custom Calendar Picker - Agnes Tachyon Theme */
+
+.custom-date-display {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.custom-calendar-wrapper {
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+
+/* Remove the overlay - we don't need it for dropdown calendar */
+.custom-calendar-overlay {
+  display: none !important;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-calendar {
+  position: fixed;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  z-index: 99999;
+  display: none;
+  animation: slideUp 0.2s ease;
+  width: 320px;
+  box-sizing: border-box;
+}
+
+.custom-calendar.active {
+  display: block;
+}
+
+/* Calendar Header */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.calendar-month-year {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3B3B3A;
+  user-select: none;
+}
+
+.calendar-nav-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #F8EDE3;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: #798777;
+  flex-shrink: 0;
+}
+
+.calendar-nav-btn:hover {
+  background: #A2B29F;
+  color: white;
+}
+
+.calendar-nav-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Calendar Grid */
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #757676;
+  padding: 8px 0;
+  user-select: none;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #3B3B3A;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: inherit;
+  min-height: 36px;
+}
+
+.calendar-day:hover:not(.disabled):not(.selected) {
+  background: #F8EDE3;
+}
+
+.calendar-day.other-month {
+  color: #C5C5C5;
+}
+
+.calendar-day.disabled {
+  color: #D9D9D9;
+  cursor: not-allowed;
+}
+
+.calendar-day.today {
+  color: #A2B29F;
+  font-weight: 700;
+}
+
+.calendar-day.selected {
+  background: #A2B29F;
+  color: white;
+  font-weight: 700;
+}
+
+.calendar-day.selected:hover {
+  background: #8FA18D;
+}
+
+/* Calendar Footer */
+.calendar-footer {
+  display: flex;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid #F3F4F4;
+}
+
+.calendar-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.calendar-btn-clear {
+  background: #F8EDE3;
+  color: #798777;
+}
+
+.calendar-btn-clear:hover {
+  background: #EFE0D1;
+}
+
+.calendar-btn-today {
+  background: #A2B29F;
+  color: white;
+}
+
+.calendar-btn-today:hover {
+  background: #8FA18D;
+}
+
+/* Dark/disabled dates for past */
+.calendar-day.past {
+  color: #C5C5C5;
+  cursor: not-allowed;
+}
+
+.calendar-day.past:hover {
+  background: transparent;
+}
+
+/* Responsive adjustments */
+@media (max-width: 340px) {
+  .custom-calendar {
+    width: 280px;
+    padding: 16px;
+  }
+  
+  .calendar-header {
+    margin-bottom: 16px;
+  }
+  
+  .calendar-month-year {
+    font-size: 14px;
+  }
+  
+  .calendar-nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .calendar-weekday {
+    font-size: 10px;
+    padding: 6px 0;
+  }
+  
+  .calendar-day {
+    font-size: 12px;
+    min-height: 32px;
+    border-radius: 10px;
+  }
+  
+  .calendar-days {
+    gap: 3px;
+  }
+  
+  .calendar-footer {
+    padding-top: 12px;
+    gap: 8px;
+  }
+  
+  .calendar-btn {
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+
+/* GoldShip theme calendar (keep original sharp style) */
+body.theme-goldship .custom-calendar {
+  /* GoldShip keeps the default browser date picker */
+  display: none !important;
+}

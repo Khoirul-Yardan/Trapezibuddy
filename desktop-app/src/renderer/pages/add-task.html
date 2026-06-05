@@ -133,6 +133,43 @@
       color: var(--c-mid);
       pointer-events: none;
     }
+    
+    /* Time display field (not editable, clickable via button) */
+    .time-display {
+      cursor: default;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+    }
+    
+    .field-icon-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      color: var(--c-mid);
+      padding: 0;
+    }
+    
+    .field-icon-btn:hover {
+      background: rgba(162, 178, 159, 0.15);
+      color: var(--c-coconut);
+    }
+    
+    .field-icon-btn svg {
+      width: 16px;
+      height: 16px;
+    }
 
     /* Native date/time picker indicator (Windows/Chromium) can look "double"
        when we also show our own SVG icon. Hide the native icon visually, but
@@ -590,12 +627,13 @@
         <div class="field-group">
           <label class="field-label" data-i18n="time">Jam</label>
           <div class="input-with-icon">
-            <input class="field-input" type="time" id="task-time" value="23:59"/>
-            <svg class="field-icon" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
+            <div class="field-input time-display" id="task-time-display">23:59</div>
+            <button class="field-icon-btn" id="btn-time-picker" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -668,12 +706,89 @@
 
   </div>
 
+  <script src="../i18n.js"></script>
   <script>
     const api = window.trapezi
 
     // Set today as default date
-    document.getElementById('task-date').value =
-      new Date().toISOString().split('T')[0]
+    const taskDateInput = document.getElementById('task-date');
+    taskDateInput.value = new Date().toISOString().split('T')[0];
+    
+    // Theme detection
+    let currentTheme = 'agnesTachyon';
+    
+    // Time picker button handler - opens popup window
+    const timeDisplay = document.getElementById('task-time-display');
+    const btnTimePicker = document.getElementById('btn-time-picker');
+    
+    if (btnTimePicker && timeDisplay && api && api.clock) {
+      btnTimePicker.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentTime = timeDisplay.textContent;
+        api.clock.open(currentTime);
+      });
+      
+      // Listen for time selection from clock picker window
+      api.clock.onTimeSelected((time) => {
+        if (time) {
+          timeDisplay.textContent = time;
+          console.log('Time selected from clock picker:', time);
+        }
+      });
+    }
+    
+    // For Agnes Tachyon theme: open custom calendar modal instead of native picker
+    function setupCalendarHandler() {
+      const isAgnesTachyon = !document.body.classList.contains('theme-goldship');
+      
+      if (isAgnesTachyon) {
+        // Remove native date picker behavior, open custom calendar modal
+        taskDateInput.addEventListener('click', (e) => {
+          e.preventDefault();
+          const currentDate = taskDateInput.value;
+          api.calendar.open(currentDate || null);
+        });
+        
+        // Prevent native picker from opening
+        taskDateInput.addEventListener('mousedown', (e) => {
+          if (!document.body.classList.contains('theme-goldship')) {
+            e.preventDefault();
+          }
+        });
+        
+        // Hide keyboard on focus for touch devices
+        taskDateInput.addEventListener('focus', (e) => {
+          if (!document.body.classList.contains('theme-goldship')) {
+            e.target.blur();
+          }
+        });
+      }
+    }
+    
+    // Listen for date selection from calendar modal
+    if (api && api.calendar) {
+      api.calendar.onDateSelected((date) => {
+        if (date) {
+          taskDateInput.value = date;
+          console.log('Date selected from calendar:', date);
+        } else {
+          // Clear was clicked
+          taskDateInput.value = '';
+        }
+      });
+    }
+    
+    // Initialize calendar handler on load
+    setupCalendarHandler();
+    
+    // Re-setup when theme changes
+    window.trapezi?.onThemeApply?.((theme) => {
+      currentTheme = theme;
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
+      document.body.classList.add('theme-' + theme);
+      setupCalendarHandler();
+    });
 
     // Category toggle
     document.querySelectorAll('.cat-tag').forEach(tag => {
@@ -765,7 +880,7 @@
         await api.tasks.add({
           name,
           deadline_date: document.getElementById('task-date').value,
-          deadline_time: document.getElementById('task-time').value || '23:59',
+          deadline_time: document.getElementById('task-time-display').textContent || '23:59',
           categories:    cats,
           priority:      prio,
           reminder:      document.getElementById('reminder-toggle').checked,
@@ -797,6 +912,7 @@
     window.currentLang = 'en';
 
     async function applyLanguage(lang) {
+      console.log('[AddTask] Applying language:', lang);
       window.currentLang = lang;
       const t = window.i18n[lang] || window.i18n['en'];
       document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -811,19 +927,24 @@
 
     (async () => {
       const api = window.trapezi;
-      if (api && api.settings) {
-        const settings = await api.settings.get();
-        applyLanguage(settings.language || 'en');
+      if (api && api.language) {
+        try {
+          const lang = await api.language.get();
+          console.log('[AddTask] Initial language:', lang);
+          applyLanguage(lang || 'en');
+        } catch (err) {
+          console.error('[AddTask] Failed to get language:', err);
+          applyLanguage('en');
+        }
       }
     })();
 
-    const api = window.trapezi;
     if (api && api.language) {
       api.language.onChange((lang) => {
+        console.log('[AddTask] Language changed to:', lang);
         applyLanguage(lang);
       });
     }
   </script>
-  <script src="../i18n.js"></script>
 </body>
 </html>

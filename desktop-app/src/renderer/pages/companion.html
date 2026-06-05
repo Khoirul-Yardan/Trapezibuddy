@@ -8,6 +8,7 @@
   <title>TrapeziBuddy</title>
   <link rel="stylesheet" href="../assets/styles/global.css" />
   <link rel="stylesheet" href="../assets/styles/companion.css" />
+  <link rel="stylesheet" href="../assets/styles/custom-calendar.css" />
 </head>
 <body>
   <script>
@@ -187,6 +188,7 @@
       <div class="modal-body">
         <label class="field-label" data-i18n="taskName">Nama Tugas</label>
         <input class="field-input" type="text" id="task-name"
+               data-i18n-placeholder="taskNamePlaceholder"
                placeholder="Mengerjakan laporan..." />
 
         <div class="field-row">
@@ -291,6 +293,7 @@
         class="confirm-input"
         type="text"
         id="confirm-input"
+        data-i18n-placeholder="confirmInputPlaceholder"
         placeholder="Type Here . . ."
         autocomplete="off"
       />
@@ -309,6 +312,8 @@
   </div>
 </div>
 
+  <script src="../i18n.js"></script>
+  <script src="../components/custom-calendar.js"></script>
   <script src="../components/companion.js"></script>
   <script>
     const CHAR_SPRITES = {
@@ -343,36 +348,71 @@
     window.currentLang = 'en';
 
     async function applyLanguage(lang) {
+      console.log('[Companion] Applying language:', lang);
+      console.log('[Companion] window.i18n available?', !!window.i18n);
+      console.log('[Companion] window.i18n keys:', window.i18n ? Object.keys(window.i18n) : 'none');
+      
       window.currentLang = lang;
+      
+      // Wait for i18n to be available
+      if (!window.i18n) {
+        console.error('[Companion] window.i18n not available yet, retrying...');
+        setTimeout(() => applyLanguage(lang), 100);
+        return;
+      }
+      
       const t = window.i18n[lang] || window.i18n['en'];
+      console.log('[Companion] Using translations for:', lang, 'Sample key "task":', t.task);
+      
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (t[key] !== undefined) el.textContent = t[key];
+        if (t[key] !== undefined) {
+          console.log(`[Companion] Translating ${key}: ${el.textContent} -> ${t[key]}`);
+          el.textContent = t[key];
+        }
       });
       document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title');
         if (t[key] !== undefined) el.title = t[key];
       });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key] !== undefined) el.placeholder = t[key];
+      });
       // Re-render companion dynamic text to reflect new language
-      if (typeof updateMoodCard === 'function') updateMoodCard();
-      if (typeof renderTaskList === 'function') renderTaskList();
+      if (typeof updateMoodCard === 'function') {
+        console.log('[Companion] Calling updateMoodCard()');
+        updateMoodCard();
+      }
+      if (typeof renderTaskList === 'function') {
+        console.log('[Companion] Calling renderTaskList()');
+        renderTaskList();
+      }
     }
 
+    // Initialize language on load
     (async () => {
       const api = window.trapezi;
-      if (api && api.settings) {
-        const settings = await api.settings.get();
-        applyLanguage(settings.language || 'en');
+      if (api && api.language) {
+        try {
+          const lang = await api.language.get();
+          console.log('[Companion] Initial language:', lang);
+          applyLanguage(lang || 'en');
+        } catch (err) {
+          console.error('[Companion] Failed to get language:', err);
+          applyLanguage('en');
+        }
       }
     })();
 
+    // Listen for language changes
     const api = window.trapezi;
     if (api && api.language) {
       api.language.onChange((lang) => {
+        console.log('[Companion] Language changed to:', lang);
         applyLanguage(lang);
       });
     }
   </script>
-  <script src="../i18n.js"></script>
 </body>
 </html>

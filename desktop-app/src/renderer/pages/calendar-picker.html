@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Date</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-bg:        #F8EDE3;
+      --c-white:     #FFFFFF;
+      --c-thatch:    #798777;
+      --c-coconut:   #A2B29F;
+      --c-dark:      #3B3B3A;
+      --c-mid:       #757676;
+      --c-light:     #F3F4F4;
+    }
+
+    html, body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--c-white);
+      color: var(--c-dark);
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow: hidden;
+    }
+
+    .calendar-container {
+      width: 100%;
+      max-width: 360px;
+      padding: 24px;
+      background: var(--c-white);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Calendar Header */
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding: 0 4px;
+    }
+
+    .calendar-month-year {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--c-dark);
+      user-select: none;
+    }
+
+    .calendar-nav-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: var(--c-bg);
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      color: var(--c-thatch);
+      flex-shrink: 0;
+    }
+
+    .calendar-nav-btn:hover {
+      background: var(--c-coconut);
+      color: white;
+    }
+
+    .calendar-nav-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Calendar Grid */
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .calendar-weekday {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--c-mid);
+      padding: 10px 0;
+      user-select: none;
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      border: none;
+      background: transparent;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--c-dark);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-family: inherit;
+      min-height: 42px;
+    }
+
+    .calendar-day:hover:not(.disabled):not(.selected) {
+      background: var(--c-bg);
+    }
+
+    .calendar-day.other-month {
+      color: #C5C5C5;
+    }
+
+    .calendar-day.disabled {
+      color: #D9D9D9;
+      cursor: not-allowed;
+    }
+
+    .calendar-day.today {
+      color: var(--c-coconut);
+      font-weight: 700;
+    }
+
+    .calendar-day.selected {
+      background: var(--c-coconut);
+      color: white;
+      font-weight: 700;
+    }
+
+    .calendar-day.selected:hover {
+      background: var(--c-thatch);
+    }
+
+    .calendar-day.past {
+      color: #C5C5C5;
+      cursor: not-allowed;
+    }
+
+    .calendar-day.past:hover {
+      background: transparent;
+    }
+
+    /* Calendar Footer */
+    .calendar-footer {
+      display: flex;
+      gap: 12px;
+      padding-top: 20px;
+      border-top: 1px solid var(--c-light);
+    }
+
+    .calendar-btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .calendar-btn-clear {
+      background: var(--c-bg);
+      color: var(--c-thatch);
+    }
+
+    .calendar-btn-clear:hover {
+      background: #EFE0D1;
+    }
+
+    .calendar-btn-select {
+      background: var(--c-coconut);
+      color: white;
+    }
+
+    .calendar-btn-select:hover {
+      background: var(--c-thatch);
+    }
+
+    .calendar-btn-select:disabled {
+      background: #D9D9D9;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="calendar-container">
+    
+    <!-- Header -->
+    <div class="calendar-header">
+      <button type="button" class="calendar-nav-btn" id="btn-prev-month">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <div class="calendar-month-year" id="month-year">June 2026</div>
+      <button type="button" class="calendar-nav-btn" id="btn-next-month">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Weekdays -->
+    <div class="calendar-weekdays">
+      <div class="calendar-weekday">Su</div>
+      <div class="calendar-weekday">Mo</div>
+      <div class="calendar-weekday">Tu</div>
+      <div class="calendar-weekday">We</div>
+      <div class="calendar-weekday">Th</div>
+      <div class="calendar-weekday">Fr</div>
+      <div class="calendar-weekday">Sa</div>
+    </div>
+
+    <!-- Days -->
+    <div class="calendar-days" id="calendar-days">
+      <!-- Generated by JavaScript -->
+    </div>
+
+    <!-- Footer -->
+    <div class="calendar-footer">
+      <button type="button" class="calendar-btn calendar-btn-clear" id="btn-clear">Clear</button>
+      <button type="button" class="calendar-btn calendar-btn-select" id="btn-select" disabled>Select Date</button>
+    </div>
+
+  </div>
+
+  <script src="../i18n.js"></script>
+  <script>
+    const api = window.trapezi;
+    
+    let viewDate = new Date();
+    let selectedDate = null;
+    let disablePast = true;
+    let currentLang = 'en';
+
+    const monthNames = {
+      en: ['January', 'February', 'March', 'April', 'May', 'June',
+           'July', 'August', 'September', 'October', 'November', 'December'],
+      id: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+           'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+    };
+
+    const weekdayNames = {
+      en: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+      id: ['Mg', 'Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb']
+    };
+
+    // Parse URL params to get initial date
+    const params = new URLSearchParams(window.location.search);
+    const initialDate = params.get('date');
+    if (initialDate) {
+      selectedDate = new Date(initialDate + 'T00:00:00');
+      viewDate = new Date(selectedDate);
+    }
+
+    // i18n support
+    function applyLanguage(lang) {
+      currentLang = lang;
+      const t = window.i18n[lang] || window.i18n['en'];
+      
+      // Update button text
+      document.getElementById('btn-clear').textContent = t.cancel || 'Clear';
+      document.getElementById('btn-select').textContent = t.saveTask || 'Select Date';
+      
+      // Update weekday headers
+      const weekdayElements = document.querySelectorAll('.calendar-weekday');
+      weekdayNames[lang].forEach((day, i) => {
+        if (weekdayElements[i]) weekdayElements[i].textContent = day;
+      });
+      
+      // Re-render calendar with new month names
+      renderCalendar();
+    }
+
+    // Initialize language
+    (async () => {
+      if (api && api.language) {
+        try {
+          const lang = await api.language.get();
+          applyLanguage(lang || 'en');
+        } catch (err) {
+          console.error('Failed to get language:', err);
+          applyLanguage('en');
+        }
+      }
+    })();
+
+    // Listen for language changes
+    if (api && api.language) {
+      api.language.onChange((lang) => {
+        applyLanguage(lang);
+      });
+    }
+
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function renderCalendar() {
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+      
+      // Update header with localized month name
+      const monthName = monthNames[currentLang] || monthNames['en'];
+      document.getElementById('month-year').textContent = `${monthName[month]} ${year}`;
+      
+      // Clear days
+      const daysGrid = document.getElementById('calendar-days');
+      daysGrid.innerHTML = '';
+      
+      // Get first day of month
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Previous month days
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const date = new Date(year, month - 1, day);
+        const dayBtn = createDayButton(day, date, true);
+        daysGrid.appendChild(dayBtn);
+      }
+      
+      // Current month days
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dayBtn = createDayButton(day, date, false);
+        daysGrid.appendChild(dayBtn);
+      }
+      
+      // Next month days to fill grid
+      const totalCells = daysGrid.children.length;
+      const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let day = 1; day <= remainingCells; day++) {
+        const date = new Date(year, month + 1, day);
+        const dayBtn = createDayButton(day, date, true);
+        daysGrid.appendChild(dayBtn);
+      }
+    }
+
+    function createDayButton(day, date, isOtherMonth) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'calendar-day';
+      btn.textContent = day;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const compareDate = new Date(date);
+      compareDate.setHours(0, 0, 0, 0);
+      
+      if (isOtherMonth) {
+        btn.classList.add('other-month');
+      }
+      
+      // Check if today
+      if (compareDate.getTime() === today.getTime()) {
+        btn.classList.add('today');
+      }
+      
+      // Check if selected
+      if (selectedDate) {
+        const selected = new Date(selectedDate);
+        selected.setHours(0, 0, 0, 0);
+        if (compareDate.getTime() === selected.getTime()) {
+          btn.classList.add('selected');
+        }
+      }
+      
+      // Check if past
+      if (disablePast && compareDate < today) {
+        btn.classList.add('past', 'disabled');
+        btn.disabled = true;
+      }
+      
+      // Add click handler
+      if (!btn.disabled) {
+        btn.addEventListener('click', () => {
+          selectedDate = new Date(date);
+          selectedDate.setHours(0, 0, 0, 0);
+          renderCalendar();
+          document.getElementById('btn-select').disabled = false;
+        });
+      }
+      
+      return btn;
+    }
+
+    // Navigation
+    document.getElementById('btn-prev-month').addEventListener('click', () => {
+      viewDate.setMonth(viewDate.getMonth() - 1);
+      renderCalendar();
+    });
+
+    document.getElementById('btn-next-month').addEventListener('click', () => {
+      viewDate.setMonth(viewDate.getMonth() + 1);
+      renderCalendar();
+    });
+
+    // Clear button
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      if (api && api.calendar) {
+        api.calendar.selectDate(null);
+      }
+    });
+
+    // Select button
+    document.getElementById('btn-select').addEventListener('click', () => {
+      if (selectedDate && api && api.calendar) {
+        const formatted = formatDate(selectedDate);
+        api.calendar.selectDate(formatted);
+      }
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (api && api.calendar) {
+          api.calendar.close();
+        }
+      }
+    });
+
+    // Initial render
+    renderCalendar();
+    
+    // Enable select button if date already selected
+    if (selectedDate) {
+      document.getElementById('btn-select').disabled = false;
+    }
+  </script>
+</body>
+</html>

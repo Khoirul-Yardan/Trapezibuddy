@@ -70,5 +70,20 @@ contextBridge.exposeInMainWorld('trapezi', {
     onChange: (cb) => ipcRenderer.on('language:changed', (_, lang) => cb(lang))
   },
 
+  // ── Calendar ──────────────────────────────────────────────
+  calendar: {
+    open: (currentDate) => ipcRenderer.invoke('calendar:open', currentDate),
+    selectDate: (date) => ipcRenderer.send('calendar:selectDate', date),
+    close: () => ipcRenderer.send('calendar:close'),
+    onDateSelected: (cb) => ipcRenderer.on('calendar:dateSelected', (_, date) => cb(date))
+  },
+
+  // ── Clock ─────────────────────────────────────────────────
+  clock: {
+    open: (currentTime) => ipcRenderer.invoke('clock:open', currentTime),
+    selectTime: (time) => ipcRenderer.send('clock:selectTime', time),
+    close: () => ipcRenderer.send('clock:close'),
+    onTimeSelected: (cb) => ipcRenderer.on('clock:timeSelected', (_, time) => cb(time))
+  },
 
 })

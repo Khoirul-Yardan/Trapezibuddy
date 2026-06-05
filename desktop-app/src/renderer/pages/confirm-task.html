@@ -380,15 +380,22 @@
 
     (async () => {
       const api = window.trapezi;
-      if (api && api.settings) {
-        const settings = await api.settings.get();
-        applyLanguage(settings.language || 'en');
+      if (api && api.language) {
+        try {
+          const lang = await api.language.get();
+          console.log('[ConfirmTask] Initial language:', lang);
+          applyLanguage(lang || 'en');
+        } catch (err) {
+          console.error('[ConfirmTask] Failed to get language:', err);
+          applyLanguage('en');
+        }
       }
     })();
 
     const api = window.trapezi;
     if (api && api.language) {
       api.language.onChange((lang) => {
+        console.log('[ConfirmTask] Language changed to:', lang);
         applyLanguage(lang);
       });
     }

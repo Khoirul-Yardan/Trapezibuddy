@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Time</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-bg:           #FBF9F8;
+      --c-section-bg:   #2C2C2B;
+      --c-primary:      #A2B29F;
+      --c-coconut:      #A2B29F;
+      --c-thatch:       #798777;
+      --c-zen-gray:     #BDD2B6;
+      --c-dark:         #3B3B3A;
+      --c-mid:          #757676;
+      --c-tech-white:   #F8EDE3;
+      --c-cal-bg:       #FDF2E8;
+    }
+
+    html, body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: white;
+      color: var(--c-dark);
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    .clock-picker-container {
+      width: 100%;
+      padding: 16px 20px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .clock-picker-header {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: #AAAAAA;
+      margin-bottom: 16px;
+      text-align: center;
+      cursor: move;
+      -webkit-app-region: drag;
+      padding: 4px 0;
+    }
+
+    .clock-picker-time-input {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .clock-picker-input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .clock-picker-input-box {
+      width: 90px;
+      height: 90px;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background: var(--c-cal-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--c-dark);
+      cursor: text;
+      position: relative;
+      transition: all 0.2s;
+      user-select: none;
+      -webkit-app-region: no-drag;
+    }
+
+    .clock-picker-input-box:hover {
+      background: #FFF9F0;
+    }
+
+    .clock-picker-input-box.focused {
+      border-color: var(--c-primary);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(162, 178, 159, 0.12);
+    }
+
+    .clock-picker-input-box input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      font-size: 42px;
+      font-weight: 700;
+      color: inherit;
+      text-align: center;
+      outline: none;
+      font-family: inherit;
+      padding: 0;
+      -moz-appearance: textfield;
+      -webkit-app-region: no-drag;
+    }
+
+    .clock-picker-input-box input::-webkit-outer-spin-button,
+    .clock-picker-input-box input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .clock-picker-cursor {
+      position: absolute;
+      width: 2px;
+      height: 48px;
+      background: var(--c-primary);
+      animation: blink 1s infinite;
+      opacity: 0;
+      pointer-events: none;
+      -webkit-app-region: no-drag;
+    }
+
+    .clock-picker-input-box.focused .clock-picker-cursor {
+      opacity: 1;
+    }
+
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .clock-picker-input-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #AAAAAA;
+      text-transform: capitalize;
+    }
+
+    .clock-picker-colon {
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--c-mid);
+      margin-top: -32px;
+    }
+
+    .clock-picker-period {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: -32px;
+    }
+
+    .clock-picker-period-btn {
+      width: 70px;
+      height: 42px;
+      border: 2px solid #E0E0E0;
+      border-radius: 10px;
+      background: white;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--c-mid);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      -webkit-app-region: no-drag;
+    }
+
+    .clock-picker-period-btn:hover {
+      border-color: var(--c-primary);
+      background: rgba(162, 178, 159, 0.05);
+    }
+
+    .clock-picker-period-btn.active {
+      background: var(--c-primary);
+      color: white;
+      border-color: var(--c-primary);
+    }
+
+    .clock-picker-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    .clock-picker-icon {
+      width: 28px;
+      height: 28px;
+      color: #D0D0D0;
+      -webkit-app-region: no-drag;
+    }
+
+    .clock-picker-actions {
+      display: flex;
+      gap: 20px;
+      -webkit-app-region: no-drag;
+    }
+
+    .clock-picker-btn {
+      background: none;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--c-primary);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      font-family: inherit;
+      text-transform: uppercase;
+      -webkit-app-region: no-drag;
+    }
+
+    .clock-picker-btn:hover {
+      background: rgba(162, 178, 159, 0.1);
+    }
+
+    .clock-picker-btn:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+  <div class="clock-picker-container">
+    <div class="clock-picker-header">ENTER TIME</div>
+    
+    <div class="clock-picker-time-input">
+      <!-- Hour -->
+      <div class="clock-picker-input-group">
+        <div class="clock-picker-input-box" data-field="hour">
+          <input type="number" id="clock-hour" min="1" max="12" value="11" />
+          <div class="clock-picker-cursor"></div>
+        </div>
+        <div class="clock-picker-input-label">Hour</div>
+      </div>
+
+      <!-- Colon -->
+      <div class="clock-picker-colon">:</div>
+
+      <!-- Minute -->
+      <div class="clock-picker-input-group">
+        <div class="clock-picker-input-box" data-field="minute">
+          <input type="number" id="clock-minute" min="0" max="59" value="59" />
+          <div class="clock-picker-cursor"></div>
+        </div>
+        <div class="clock-picker-input-label">Minute</div>
+      </div>
+
+      <!-- AM/PM -->
+      <div class="clock-picker-period">
+        <button class="clock-picker-period-btn" data-period="AM" type="button">AM</button>
+        <button class="clock-picker-period-btn active" data-period="PM" type="button">PM</button>
+      </div>
+    </div>
+
+    <div class="clock-picker-footer">
+      <svg class="clock-picker-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <div class="clock-picker-actions">
+        <button class="clock-picker-btn" id="btn-cancel" type="button">CANCEL</button>
+        <button class="clock-picker-btn" id="btn-ok" type="button">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const api = window.trapezi;
+    
+    let hourInput = document.getElementById('clock-hour');
+    let minuteInput = document.getElementById('clock-minute');
+    let amBtn = document.querySelector('[data-period="AM"]');
+    let pmBtn = document.querySelector('[data-period="PM"]');
+    let currentPeriod = 'PM';
+
+    // Parse URL params to get initial time
+    const params = new URLSearchParams(window.location.search);
+    const initialTime = params.get('time');
+    if (initialTime) {
+      const time = parseTime(initialTime);
+      hourInput.value = time.hour;
+      minuteInput.value = String(time.minute).padStart(2, '0');
+      currentPeriod = time.period;
+      
+      if (time.period === 'AM') {
+        amBtn.classList.add('active');
+        pmBtn.classList.remove('active');
+      } else {
+        pmBtn.classList.add('active');
+        amBtn.classList.remove('active');
+      }
+    }
+
+    function parseTime(timeString) {
+      // Parse time string like "23:59" or "7:15"
+      const [hour24, minute] = timeString.split(':').map(s => parseInt(s) || 0);
+      
+      let hour12 = hour24 % 12;
+      if (hour12 === 0) hour12 = 12;
+      
+      const period = hour24 >= 12 ? 'PM' : 'AM';
+      
+      return {
+        hour: hour12,
+        minute: minute,
+        period: period
+      };
+    }
+
+    // Input box focus handling
+    const hourBox = document.querySelector('[data-field="hour"]');
+    const minuteBox = document.querySelector('[data-field="minute"]');
+
+    hourBox.addEventListener('click', () => {
+      hourInput.focus();
+      hourInput.select();
+    });
+
+    minuteBox.addEventListener('click', () => {
+      minuteInput.focus();
+      minuteInput.select();
+    });
+
+    hourInput.addEventListener('focus', () => {
+      hourBox.classList.add('focused');
+      hourInput.select();
+    });
+
+    hourInput.addEventListener('blur', () => {
+      hourBox.classList.remove('focused');
+    });
+
+    minuteInput.addEventListener('focus', () => {
+      minuteBox.classList.add('focused');
+      minuteInput.select();
+    });
+
+    minuteInput.addEventListener('blur', () => {
+      minuteBox.classList.remove('focused');
+    });
+
+    // Input validation and auto-advance
+    hourInput.addEventListener('input', (e) => {
+      let val = parseInt(e.target.value) || 0;
+      
+      // Limit to 1-12
+      if (val < 1) val = 1;
+      if (val > 12) val = 12;
+      
+      e.target.value = val;
+
+      // Auto-advance to minute after 2 digits
+      if (e.target.value.length >= 2) {
+        minuteInput.focus();
+        minuteInput.select();
+      }
+    });
+
+    minuteInput.addEventListener('input', (e) => {
+      let val = parseInt(e.target.value);
+      
+      // Limit to 0-59
+      if (isNaN(val)) val = 0;
+      if (val < 0) val = 0;
+      if (val > 59) val = 59;
+      
+      e.target.value = String(val).padStart(2, '0');
+    });
+
+    // Format minute on blur
+    minuteInput.addEventListener('blur', (e) => {
+      const val = parseInt(e.target.value) || 0;
+      e.target.value = String(val).padStart(2, '0');
+    });
+
+    // AM/PM buttons
+    amBtn.addEventListener('click', () => {
+      amBtn.classList.add('active');
+      pmBtn.classList.remove('active');
+      currentPeriod = 'AM';
+    });
+
+    pmBtn.addEventListener('click', () => {
+      pmBtn.classList.add('active');
+      amBtn.classList.remove('active');
+      currentPeriod = 'PM';
+    });
+
+    // Cancel button
+    document.getElementById('btn-cancel').addEventListener('click', () => {
+      if (api && api.clock) {
+        api.clock.close();
+      }
+    });
+
+    // OK button
+    document.getElementById('btn-ok').addEventListener('click', () => {
+      const hour = parseInt(hourInput.value) || 12;
+      const minute = String(parseInt(minuteInput.value) || 0).padStart(2, '0');
+      
+      // Convert to 24-hour format
+      let hour24 = hour;
+      if (currentPeriod === 'PM' && hour !== 12) {
+        hour24 = hour + 12;
+      } else if (currentPeriod === 'AM' && hour === 12) {
+        hour24 = 0;
+      }
+      
+      const timeString = `${String(hour24).padStart(2, '0')}:${minute}`;
+      
+      if (api && api.clock) {
+        api.clock.selectTime(timeString);
+      }
+    });
+
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (api && api.clock) {
+          api.clock.close();
+        }
+      }
+    });
+
+    // Focus hour input on load
+    setTimeout(() => {
+      hourInput.focus();
+      hourInput.select();
+    }, 100);
+  </script>
+</body>
+</html>

@@ -461,6 +461,7 @@
 
     // ── Global i18n Receiver ──
     async function applyLanguage(lang) {
+      console.log('[Settings] Applying language:', lang);
       const t = window.i18n[lang] || window.i18n['en']
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n')
@@ -469,14 +470,21 @@
     }
     
     (async () => {
-      if (api && api.settings) {
-        const settings = await api.settings.get()
-        applyLanguage(settings.language || 'en')
+      if (api && api.language) {
+        try {
+          const lang = await api.language.get();
+          console.log('[Settings] Initial language:', lang);
+          applyLanguage(lang || 'en');
+        } catch (err) {
+          console.error('[Settings] Failed to get language:', err);
+          applyLanguage('en');
+        }
       }
     })();
     
     if (api && api.language) {
       api.language.onChange((lang) => {
+        console.log('[Settings] Language changed to:', lang);
         applyLanguage(lang)
       })
     }

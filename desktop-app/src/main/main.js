@@ -938,6 +938,123 @@ ipcMain.handle('window:openChat', () => {
 })
 ipcMain.on('window:closeChat', () => chatWindow?.close())
 
+// ── IPC: Calendar Picker ─────────────────────────────────────
+let calendarWindow = null
+ipcMain.handle('calendar:open', (_, currentDate) => {
+  if (calendarWindow) { 
+    calendarWindow.focus()
+    return 
+  }
+  
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  
+  calendarWindow = new BrowserWindow({
+    width: 360,
+    height: 480,
+    x: Math.floor(width / 2 - 180),
+    y: Math.floor(height / 2 - 240),
+    frame: false,
+    transparent: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    hasShadow: true,
+    backgroundColor: '#FFFFFF',
+    parent: addTaskWindow || companionWindow,
+    modal: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    }
+  })
+  
+  const url = currentDate 
+    ? `${path.join(__dirname, '../renderer/pages/calendar-picker.html')}?date=${currentDate}`
+    : path.join(__dirname, '../renderer/pages/calendar-picker.html')
+  
+  calendarWindow.loadFile(path.join(__dirname, '../renderer/pages/calendar-picker.html'), {
+    query: currentDate ? { date: currentDate } : {}
+  })
+  
+  calendarWindow.on('closed', () => { calendarWindow = null })
+})
+
+ipcMain.on('calendar:selectDate', (_, date) => {
+  // Send selected date back to the parent window (add-task)
+  if (addTaskWindow && !addTaskWindow.isDestroyed()) {
+    addTaskWindow.webContents.send('calendar:dateSelected', date)
+  }
+  calendarWindow?.close()
+})
+
+ipcMain.on('calendar:close', () => {
+  calendarWindow?.close()
+})
+
+// ── IPC: Clock Picker ────────────────────────────────────────
+let clockWindow = null
+ipcMain.handle('clock:open', (_, currentTime) => {
+  if (clockWindow) { 
+    clockWindow.focus()
+    return 
+  }
+  
+  // Get add-task window position to position clock picker above it
+  let clockX, clockY
+  if (addTaskWindow && !addTaskWindow.isDestroyed()) {
+    const [addTaskX, addTaskY] = addTaskWindow.getPosition()
+    const addTaskBounds = addTaskWindow.getBounds()
+    // Center clock picker horizontally above add-task window
+    clockX = addTaskX + Math.floor((addTaskBounds.width - 360) / 2)
+    clockY = addTaskY + 80 // Position slightly below the top
+  } else {
+    // Fallback to center of screen
+    const { width, height } = screen.getPrimaryDisplay().workAreaSize
+    clockX = Math.floor(width / 2 - 180)
+    clockY = Math.floor(height / 2 - 140)
+  }
+  
+  clockWindow = new BrowserWindow({
+    width: 360,
+    height: 280,
+    x: clockX,
+    y: clockY,
+    frame: false,
+    transparent: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    hasShadow: true,
+    backgroundColor: '#FFFFFF',
+    parent: addTaskWindow || companionWindow,
+    modal: false, // Changed to false so it can be dragged
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    }
+  })
+  
+  clockWindow.loadFile(path.join(__dirname, '../renderer/pages/clock-picker.html'), {
+    query: currentTime ? { time: currentTime } : {}
+  })
+  
+  clockWindow.on('closed', () => { clockWindow = null })
+})
+
+ipcMain.on('clock:selectTime', (_, time) => {
+  // Send selected time back to the parent window (add-task)
+  if (addTaskWindow && !addTaskWindow.isDestroyed()) {
+    addTaskWindow.webContents.send('clock:timeSelected', time)
+  }
+  clockWindow?.close()
+})
+
+ipcMain.on('clock:close', () => {
+  clockWindow?.close()
+})
+
 
 
 // ── App lifecycle ────────────────────────────────────────────
