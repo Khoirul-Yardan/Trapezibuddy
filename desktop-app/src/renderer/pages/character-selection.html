@@ -225,6 +225,26 @@
       cursor: not-allowed;
       opacity: 0.6;
     }
+    /* Demo button (bypass lock) */
+    .demo-row {
+      display: flex;
+      justify-content: center;
+      padding: 12px 24px;
+      gap: 12px;
+    }
+
+    .btn-demo {
+      background: linear-gradient(90deg,#FF9800,#FF6D00);
+      color: white;
+      height: 40px;
+      padding: 8px 18px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(255,105,0,0.12);
+    }
+    .btn-demo:hover { transform: translateY(-1px); }
   </style>
 </head>
 <body>
@@ -269,6 +289,10 @@
           <div class="character-desc">Karakter petualang penuh gaya</div>
           <div class="checkmark">✓</div>
         </div>
+      </div>
+      <!-- Demo mode row: always visible, bypasses lock -->
+      <div class="demo-row">
+        <button id="btn-demo" class="btn-demo">🎮 Mode Demo: Buka Goldship</button>
       </div>
     </div>
 
@@ -341,6 +365,26 @@
         console.error('Error calling closeSettings:', err)
       }
     })
+
+    // ── Demo button handler: select Goldship card (bypass lock)
+    const btnDemo = document.getElementById('btn-demo')
+    if (btnDemo) {
+      btnDemo.addEventListener('click', () => {
+        console.log('Demo button clicked - selecting Goldship card')
+        const goldshipCard = document.querySelector('[data-character="goldship"]')
+        if (!goldshipCard) return console.warn('Goldship card not found')
+
+        // Remove locked state and mark selected
+        goldshipCard.classList.remove('locked')
+        cards.forEach(c => c.classList.remove('selected'))
+        goldshipCard.classList.add('selected')
+        selectedCharacter = 'goldship'
+        btnNext.disabled = false
+
+        // Scroll card into view if container scrolls
+        goldshipCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+    }
 
     console.log('character-selection.html loaded, API:', window.trapezi)
   </script>

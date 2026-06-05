@@ -91,6 +91,12 @@
           </span>
         </button>
         <div class="focus-idle-sub">Its Now or Never! &gt;:D</div>
+        <!-- Today's focus count -->
+        <div class="focus-count-display" id="focus-count-display" style="display:none">
+          <span class="focus-count-label">Hari ini sudah:</span>
+          <span class="focus-count-number" id="focus-count-number">0</span>
+          <span class="focus-count-unit">sesi fokus</span>
+        </div>
       </div>
 
       <!-- Running state -->
@@ -107,6 +113,22 @@
         </div>
         <div class="focus-timer" id="focus-timer">25:00</div>
         <div class="focus-sub" id="focus-sub">Deep Work in progress</div>
+      </div>
+
+      <!-- Finished state - shown after session completes -->
+      <div id="focus-finished" style="display:none">
+        <div class="focus-finished-icon">✨</div>
+        <div class="focus-finished-text">Session Selesai!</div>
+        <div class="focus-finished-subtitle" id="focus-finished-subtitle">Istirahat sebentar yuk! 🎉</div>
+        <button class="focus-reset-btn" id="btn-focus-reset" type="button">
+          Mulai Sesi Baru?
+        </button>
+        <!-- Today's updated count -->
+        <div class="focus-updated-count" id="focus-updated-count">
+          <span>Total hari ini:</span>
+          <span class="focus-updated-number" id="focus-updated-number">0</span>
+          <span>sesi</span>
+        </div>
       </div>
     </div>
 

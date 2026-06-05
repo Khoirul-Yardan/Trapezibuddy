@@ -511,6 +511,7 @@ ipcMain.on('window:closeSettings', () => {
   if (!companionWindow) app.quit()
 })
 
+
 ipcMain.on('window:startApp', (_, data) => {
   const size = data?.characterSize ?? 60
   settingsWindow?.close()
@@ -892,3 +893,5 @@ app.on('before-quit', () => {
 app.on('activate', () => {
   if (!companionWindow && !settingsWindow) createSettingsWindow()
 })
+
+// (no demo IPC; demo button selects Goldship card in renderer)
