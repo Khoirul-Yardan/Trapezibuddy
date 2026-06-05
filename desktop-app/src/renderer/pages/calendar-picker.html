@@ -47,6 +47,8 @@
       justify-content: space-between;
       margin-bottom: 24px;
       padding: 0 4px;
+      cursor: move;
+      -webkit-app-region: drag;
     }
 
     .calendar-month-year {
@@ -54,6 +56,7 @@
       font-weight: 700;
       color: var(--c-dark);
       user-select: none;
+      -webkit-app-region: drag;
     }
 
     .calendar-nav-btn {
@@ -69,6 +72,7 @@
       transition: all 0.2s;
       color: var(--c-thatch);
       flex-shrink: 0;
+      -webkit-app-region: no-drag;
     }
 
     .calendar-nav-btn:hover {
@@ -87,6 +91,7 @@
       grid-template-columns: repeat(7, 1fr);
       gap: 6px;
       margin-bottom: 12px;
+      -webkit-app-region: no-drag;
     }
 
     .calendar-weekday {
@@ -96,6 +101,7 @@
       color: var(--c-mid);
       padding: 10px 0;
       user-select: none;
+      -webkit-app-region: no-drag;
     }
 
     .calendar-days {
@@ -103,6 +109,7 @@
       grid-template-columns: repeat(7, 1fr);
       gap: 6px;
       margin-bottom: 20px;
+      -webkit-app-region: no-drag;
     }
 
     .calendar-day {
@@ -121,6 +128,7 @@
       position: relative;
       font-family: inherit;
       min-height: 42px;
+      -webkit-app-region: no-drag;
     }
 
     .calendar-day:hover:not(.disabled):not(.selected) {
@@ -166,6 +174,7 @@
       gap: 12px;
       padding-top: 20px;
       border-top: 1px solid var(--c-light);
+      -webkit-app-region: no-drag;
     }
 
     .calendar-btn {
@@ -178,6 +187,7 @@
       cursor: pointer;
       transition: all 0.2s;
       font-family: inherit;
+      -webkit-app-region: no-drag;
     }
 
     .calendar-btn-clear {

@@ -946,13 +946,26 @@ ipcMain.handle('calendar:open', (_, currentDate) => {
     return 
   }
   
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  // Get add-task window position to position calendar picker above it
+  let calendarX, calendarY
+  if (addTaskWindow && !addTaskWindow.isDestroyed()) {
+    const [addTaskX, addTaskY] = addTaskWindow.getPosition()
+    const addTaskBounds = addTaskWindow.getBounds()
+    // Center calendar picker horizontally above add-task window
+    calendarX = addTaskX + Math.floor((addTaskBounds.width - 360) / 2)
+    calendarY = addTaskY + 60 // Position slightly below the top
+  } else {
+    // Fallback to center of screen
+    const { width, height } = screen.getPrimaryDisplay().workAreaSize
+    calendarX = Math.floor(width / 2 - 180)
+    calendarY = Math.floor(height / 2 - 240)
+  }
   
   calendarWindow = new BrowserWindow({
     width: 360,
     height: 480,
-    x: Math.floor(width / 2 - 180),
-    y: Math.floor(height / 2 - 240),
+    x: calendarX,
+    y: calendarY,
     frame: false,
     transparent: false,
     alwaysOnTop: true,
@@ -961,17 +974,13 @@ ipcMain.handle('calendar:open', (_, currentDate) => {
     hasShadow: true,
     backgroundColor: '#FFFFFF',
     parent: addTaskWindow || companionWindow,
-    modal: true,
+    modal: false, // Changed to false so it can be dragged
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     }
   })
-  
-  const url = currentDate 
-    ? `${path.join(__dirname, '../renderer/pages/calendar-picker.html')}?date=${currentDate}`
-    : path.join(__dirname, '../renderer/pages/calendar-picker.html')
   
   calendarWindow.loadFile(path.join(__dirname, '../renderer/pages/calendar-picker.html'), {
     query: currentDate ? { date: currentDate } : {}
