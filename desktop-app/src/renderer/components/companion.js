@@ -178,21 +178,6 @@ function updateMoodCard() {
 
   moodSub.textContent   = `${done}/${total} Task`
   streakEl.textContent  = state.streak
-
-  // Update shield badge
-  if (window.shopAPI) {
-    const shields = window.shopAPI.getStreakShields()
-    if (shields > 0) {
-      shieldBadge.style.display = 'flex'
-      if (shields === 1) {
-        shieldCountEl.textContent = '1'
-      } else {
-        shieldCountEl.textContent = 'x' + shields
-      }
-    } else {
-      shieldBadge.style.display = 'none'
-    }
-  }
 }
 
 // ── Task Card ────────────────────────────────────────────────
@@ -374,18 +359,11 @@ function initConfirmModal() {
       await currentApi.tasks.complete(_confirmTaskId)
     }
 
-    // Award points for task completion
-    let pointsAwarded = 0
-    if (window.shopAPI) {
-      pointsAwarded = 10 // Task completion = 10 points
-      window.shopAPI.onTaskCompleted()
-    }
-
-    // Show congratulatory bubble with task name and points
+    // Show congratulatory bubble with task name
     const bubbleApi = getApi()
     if (bubbleApi && bubbleApi.bubble) {
-      const congratsMessage = `Selamat! "${_confirmTaskName}" +${pointsAwarded} ⭐`
-      bubbleApi.bubble.taskCompleted({ name: congratsMessage, emoji: '⭐' })
+      const congratsMessage = `Selamat! "${_confirmTaskName}" selesai! 🎉`
+      bubbleApi.bubble.taskCompleted({ name: congratsMessage, emoji: '✅' })
     }
 
     closeConfirm()
@@ -703,11 +681,6 @@ function startFocusInterval() {
       focusInterval = null
       document.getElementById('focus-dot').style.background = 'var(--c-done)'
       
-      // Award points for completing focus session
-      if (window.shopAPI) {
-        window.shopAPI.onFocusSessionCompleted()
-      }
-      
       console.log('Focus timer complete: Showing selected character and completion message')
       
       // When timer ends, show only the SELECTED character
@@ -733,7 +706,7 @@ function startFocusInterval() {
             setTimeout(() => {
               console.log('Focus: Showing completion message')
               if (api2.bubble && api2.bubble.taskCompleted) {
-                api2.bubble.taskCompleted({ name: 'Focus Selesai! +5 ⭐ Istirahat dulu ya! 🎉', emoji: '⭐' })
+                api2.bubble.taskCompleted({ name: 'Focus Selesai! Istirahat dulu ya! 🎉', emoji: '🎉' })
               }
             }, 500)
           }).catch(err => {
@@ -746,7 +719,7 @@ function startFocusInterval() {
             }
             setTimeout(() => {
               if (api2.bubble && api2.bubble.taskCompleted) {
-                api2.bubble.taskCompleted({ name: 'Focus Selesai! +5 ⭐ Istirahat dulu ya! 🎉', emoji: '⭐' })
+                api2.bubble.taskCompleted({ name: 'Focus Selesai! Istirahat dulu ya! 🎉', emoji: '🎉' })
               }
             }, 500)
           })

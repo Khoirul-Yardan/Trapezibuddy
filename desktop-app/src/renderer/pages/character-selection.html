@@ -137,33 +137,7 @@
       box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
     }
 
-    /* Locked state */
-    .character-card.locked {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background: #F5F5F5;
-    }
 
-    .character-card.locked:hover {
-      border-color: #E0E0E0;
-      box-shadow: none;
-      transform: none;
-    }
-
-    .character-card.locked .lock-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: #FF6B6B;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
 
     .character-icon {
       width: 80px;
@@ -290,10 +264,6 @@
 
         <!-- Character 2: Goldship -->
         <div class="character-card goldship" data-character="goldship">
-          <div class="lock-badge" id="goldship-lock-badge" style="display:none">
-            <span>🔒</span>
-            <span>500 ⭐</span>
-          </div>
           <div class="character-icon">🚢</div>
           <div class="character-name">Goldship</div>
           <div class="character-desc">Karakter petualang penuh gaya</div>
@@ -322,38 +292,6 @@
       }
     }
 
-    // ── Check shop data for character unlock status ──────────
-    function checkCharacterLockStatus() {
-      const goldshipCard = document.querySelector('[data-character="goldship"]')
-      const goldshipLock = document.getElementById('goldship-lock-badge')
-      
-      if (!goldshipCard || !goldshipLock) return
-
-      // Get shop data from localStorage
-      const shopData = localStorage.getItem('trapezibuddy_shop_data')
-      let isGoldshipUnlocked = false
-
-      if (shopData) {
-        try {
-          const parsed = JSON.parse(shopData)
-          isGoldshipUnlocked = parsed.character2Unlocked === true
-        } catch (e) {
-          console.error('Error parsing shop data:', e)
-        }
-      }
-
-      // Update UI based on lock status
-      if (isGoldshipUnlocked) {
-        // Unlocked
-        goldshipCard.classList.remove('locked')
-        goldshipLock.style.display = 'none'
-      } else {
-        // Locked
-        goldshipCard.classList.add('locked')
-        goldshipLock.style.display = 'flex'
-      }
-    }
-
     const cards = document.querySelectorAll('.character-card')
     const btnNext = document.getElementById('btn-next')
     const btnCancel = document.getElementById('btn-cancel')
@@ -362,21 +300,12 @@
     // ── Selection handler ────────────────────────────────────
     cards.forEach(card => {
       card.addEventListener('click', () => {
-        // Don't allow selecting locked cards
-        if (card.classList.contains('locked')) {
-          console.log('Card is locked, cannot select')
-          return
-        }
-
         cards.forEach(c => c.classList.remove('selected'))
         card.classList.add('selected')
         selectedCharacter = card.dataset.character
         btnNext.disabled = false
       })
     })
-
-    // ── Check lock status on load ────────────────────────────
-    checkCharacterLockStatus()
 
     // Select default on load
     document.querySelector('[data-character="agnes"]').click()

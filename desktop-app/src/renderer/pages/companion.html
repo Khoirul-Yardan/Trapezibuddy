@@ -8,7 +8,6 @@
   <title>TrapeziBuddy</title>
   <link rel="stylesheet" href="../assets/styles/global.css" />
   <link rel="stylesheet" href="../assets/styles/companion.css" />
-  <link rel="stylesheet" href="../assets/styles/shop.css" />
 </head>
 <body>
   <div id="app">
@@ -17,15 +16,6 @@
     <div class="panel-header" id="drag-region">
       <img src="../assets/styles/images/logo.svg" alt="TrapeziBuddy" class="panel-title" style="height: 16px; width: auto;" />
       <div class="header-actions">
-        <button class="icon-btn" id="btn-shop" title="Shop">
-          <!-- Shop SVG - Bag Icon -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="9" cy="21" r="1"/>
-            <circle cx="20" cy="21" r="1"/>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-          </svg>
-        </button>
         <button class="icon-btn" id="btn-settings" title="Pengaturan">
           <!-- Settings SVG -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -86,10 +76,6 @@
             5 3.5 8 0 4.97-4.03 9-9 9z"/>
         </svg>
         <span id="streak-count">12</span>
-      </div>
-      <div class="shield-badge" id="shield-badge" style="display:none">
-        <span class="shield-icon">🛡️</span>
-        <span class="shield-count" id="shield-count">1</span>
       </div>
     </div>
 
@@ -316,80 +302,6 @@
   </div>
 </div>
 
-  <!-- ── SHOP MODAL ────────────────────────────────────── -->
-  <div class="modal-overlay" id="shop-overlay" style="display:none">
-    <div class="modal shop-modal">
-      <!-- Header -->
-      <div class="modal-header">
-        <span class="modal-title">🏪 Toko</span>
-        <button class="icon-btn dark" id="btn-close-shop">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-
-      <!-- User Currency Display -->
-      <div class="shop-currency">
-        <div class="currency-item">
-          <span class="currency-icon">⭐</span>
-          <span class="currency-label">Poin</span>
-          <span class="currency-value" id="shop-points">0</span>
-        </div>
-      </div>
-
-      <!-- Shop Items -->
-      <div class="shop-body">
-        <div class="shop-section">
-          <h3 class="shop-section-title">Karakter</h3>
-          <div class="shop-items">
-            <!-- Character 2 Unlock -->
-            <div class="shop-item" id="item-character-2">
-              <div class="shop-item-icon">🎭</div>
-              <div class="shop-item-info">
-                <div class="shop-item-name">Buka Goldship</div>
-                <div class="shop-item-desc">Dapatkan karakter petualang penuh gaya</div>
-              </div>
-              <button class="shop-item-btn" data-item="character-2">
-                <span class="shop-item-price">500 ⭐</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="shop-section">
-          <h3 class="shop-section-title">Perlindungan</h3>
-          <div class="shop-items">
-            <!-- Streak Shield -->
-            <div class="shop-item" id="item-streak-shield">
-              <div class="shop-item-icon">🛡️</div>
-              <div class="shop-item-info">
-                <div class="shop-item-name">Streak Shield</div>
-                <div class="shop-item-desc">Lindungi streak jika terpaksa putus</div>
-                <div class="shop-item-owned" id="shield-count">Dimiliki: 0</div>
-              </div>
-              <button class="shop-item-btn" data-item="streak-shield">
-                <span class="shop-item-price">50 ⭐</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- How to earn points info -->
-      <div class="shop-footer">
-        <div class="shop-info-title">📈 Cara Mendapat Poin:</div>
-        <ul class="shop-info-list">
-          <li>✓ Selesaikan Task: <span>+10 ⭐</span></li>
-          <li>✓ Focus Session: <span>+5 ⭐</span></li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <script src="../components/shop.js"></script>
   <script src="../components/companion.js"></script>
 </body>
 </html>

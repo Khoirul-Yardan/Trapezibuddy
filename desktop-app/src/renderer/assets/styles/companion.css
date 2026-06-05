@@ -155,26 +155,6 @@
   color: white;
 }
 
-.shield-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: #4CAF50;
-  border-radius: 12px;
-  padding: 4px 10px;
-  flex-shrink: 0;
-}
-
-.shield-icon {
-  font-size: 14px;
-}
-
-.shield-count {
-  font-size: 11px;
-  font-weight: 700;
-  color: white;
-}
-
 /* ── Focus Card ─────────────────────────────────────────── */
 .focus-card {
   background: var(--c-zen-gray);
