@@ -4,17 +4,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'" />
   <title>TrapeziBuddy</title>
   <link rel="stylesheet" href="../assets/styles/global.css" />
   <link rel="stylesheet" href="../assets/styles/companion.css" />
+  <link rel="stylesheet" href="../assets/styles/custom-calendar.css" />
 </head>
 <body>
+  <script>
+    // Apply theme synchronously from URL param — runs before any async IPC call.
+    (function () {
+      try {
+        const c = new URLSearchParams(location.search).get('character') || 'agnesTachyon'
+        document.body.classList.add('theme-' + c)
+        // Patch sprite src immediately once DOM is parsed
+        document.addEventListener('DOMContentLoaded', function () {
+          const SPRITES = {
+            agnesTachyon: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+            goldship:  '../assets/styles/images/goldShip/goldship.png',
+          }
+          const LOGOS = {
+            agnesTachyon: '../assets/styles/images/agnesTachyon/logo.svg',
+            goldship:  '../assets/styles/images/goldShip/logo.svg',
+          }
+          const sprite = document.getElementById('companion-sprite')
+          if (sprite) sprite.src = SPRITES[c] || SPRITES.agnesTachyon
+          const logo = document.querySelector('.panel-title')
+          if (logo) logo.src = LOGOS[c] || LOGOS.agnesTachyon
+        }, { once: true })
+      } catch (_) {}
+    })()
+  </script>
   <div id="app">
 
     <!-- ── Drag region (header) ───────────────────────────── -->
     <div class="panel-header" id="drag-region">
-      <img src="../assets/styles/images/logo.svg" alt="TrapeziBuddy" class="panel-title" style="height: 16px; width: auto;" />
+      <img src="../assets/styles/images/agnesTachyon/logo.svg" alt="TrapeziBuddy" class="panel-title" style="height: 16px; width: auto;" />
       <div class="header-actions">
         <button class="icon-btn" id="btn-settings" title="Pengaturan">
           <!-- Settings SVG -->
@@ -34,7 +59,7 @@
               1.65 0 0 0-1.51 1z"/>
           </svg>
         </button>
-        <button class="icon-btn" id="btn-minimize" title="Sembunyikan">
+        <button class="icon-btn" id="btn-minimize" title="Sembunyikan" data-i18n-title="minimize">
           <!-- Minimize SVG -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round">
@@ -61,12 +86,12 @@
     <div class="mood-card">
       <div class="avatar">
         <!-- Nanti diganti sprite karakter -->
-        <img src="../assets/styles/images/gugugaga.png"
+        <img src="../assets/styles/images/agnesTachyon/agnesTahcyon.png"
              alt="companion" id="companion-sprite"
              onerror="this.style.display='none'" />
       </div>
       <div class="mood-info">
-        <span class="mood-label" id="mood-label">You're Almost Done</span>
+        <span class="mood-label" id="mood-label" data-i18n="almostDone">You're Almost Done</span>
         <span class="mood-sub" id="mood-sub">2/3 Task</span>
       </div>
       <div class="streak-badge" id="streak-badge">
@@ -86,11 +111,11 @@
         <button class="focus-start-btn focus-pushable" id="btn-focus-start" type="button">
           <span class="shadow"></span>
           <span class="edge"></span>
-          <span class="front">
+          <span class="front" data-i18n="startFocus">
             Start Focus Session?
           </span>
         </button>
-        <div class="focus-idle-sub">Its Now or Never! &gt;:D</div>
+        <div class="focus-idle-sub" data-i18n="nowOrNever">Its Now or Never! &gt;:D</div>
         <!-- Today's focus count -->
         <div class="focus-count-display" id="focus-count-display" style="display:none">
           <span class="focus-count-label">Hari ini sudah:</span>
@@ -108,11 +133,11 @@
           </svg>
         </button>
         <div class="focus-header">
-          <span class="focus-label" id="focus-label">Focus Session</span>
+          <span class="focus-label" id="focus-label" data-i18n="focusSession">Focus Session</span>
           <span class="focus-dot" id="focus-dot"></span>
         </div>
         <div class="focus-timer" id="focus-timer">25:00</div>
-        <div class="focus-sub" id="focus-sub">Deep Work in progress</div>
+        <div class="focus-sub" id="focus-sub" data-i18n="deepWork">Deep Work in progress</div>
       </div>
 
       <!-- Finished state - shown after session completes -->
@@ -143,7 +168,7 @@
             <rect x="10" y="7" width="4" height="14" rx="1"/>
             <rect x="17" y="3" width="4" height="18" rx="1"/>
           </svg>
-          Task
+          <span data-i18n="task">Task</span>
         </button>
         <button class="tab-btn" data-tab="finished">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -151,46 +176,177 @@
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          Finished
+          <span data-i18n="finished">Finished</span>
         </button>
       </div>
 
       <!-- Task List Header -->
       <div class="task-list-header">
-        <span class="task-list-title" id="task-list-title">Tugas Aktif</span>
-        <button class="add-task-btn" id="btn-add-task">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
+        <span class="task-list-title" id="task-list-title" data-i18n="activeTasks">Tugas Aktif</span>
+        <div class="header-buttons">
+          <button class="delete-history-btn" id="btn-delete-history" style="display:none" title="Hapus Riwayat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+          <button class="add-task-btn" id="btn-add-task">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Finished filters (shown only on Finished tab) -->
       <div class="finished-filters" id="finished-filters" style="display:none">
-        <button class="filter-chip active" data-filter="today">Today</button>
-        <button class="filter-chip" data-filter="last3">Last 3 days</button>
-        <button class="filter-chip" data-filter="week">This week</button>
-        <button class="filter-chip" data-filter="all">All</button>
+        <button class="filter-chip active" data-filter="today" data-i18n="today">Today</button>
+        <button class="filter-chip" data-filter="last3" data-i18n="last3days">Last 3 days</button>
+        <button class="filter-chip" data-filter="week" data-i18n="thisWeek">This week</button>
+        <button class="filter-chip" data-filter="all" data-i18n="all">All</button>
       </div>
 
       <!-- Task List -->
       <div class="task-list" id="task-list">
         <!-- Diisi oleh companion.js -->
-        <div class="task-empty" id="task-empty" style="display:none">
+        <div class="task-empty" id="task-empty" style="display:none" data-i18n="noTasks">
           Tidak ada tugas 🎉
         </div>
       </div>
 
     </div>
+
+    <!-- ── Streak Progress Bottom Sheet ────────────────────── -->
+    <div class="bottom-sheet-overlay" id="streak-overlay" style="display:none">
+      <div class="bottom-sheet" id="streak-sheet">
+        <!-- Handle bar for mobile-style bottom sheet aesthetic -->
+        <div class="bottom-sheet-handle"></div>
+        
+        <!-- Header -->
+        <div class="bottom-sheet-header">
+          <span class="bottom-sheet-title">
+            <span class="streak-title-icon">🔥</span>
+            <span data-i18n="streakProgress">Streak Progress</span>
+          </span>
+          <button class="bottom-sheet-close" id="btn-close-streak" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="bottom-sheet-body">
+          
+          <!-- Cards Grid -->
+          <div class="streak-cards-grid">
+            
+            <!-- Left Card: Current Streak (Toggleable between Normal/Frozen by clicking) -->
+            <div class="streak-card-stat current" id="current-streak-card" title="Click to toggle Normal/Frozen preview!">
+              <!-- Normal Mode State -->
+              <div class="streak-card-state-normal" id="streak-normal-state">
+                <span class="stat-card-title" data-i18n="currentStreak">Current streak</span>
+                <div class="stat-card-val-row">
+                  <span class="stat-card-val" id="current-streak-val-normal">0</span>
+                  <span class="stat-card-val-icon">🔥</span>
+                </div>
+                <span class="stat-card-sub" data-i18n="tasksOnTime">tasks on time</span>
+              </div>
+
+              <!-- Frozen Mode State (hidden by default) -->
+              <div class="streak-card-state-frozen" id="streak-frozen-state" style="display: none;">
+                <span class="stat-card-title" data-i18n="currentStreak">Current streak</span>
+                <div class="frozen-badge">
+                  <span data-i18n="frozen">FROZEN</span>
+                </div>
+                <div class="stat-card-val-row">
+                  <span class="stat-card-val" id="current-streak-val-frozen">0</span>
+                  <span class="stat-card-val-icon">❄️</span>
+                </div>
+                <div class="missed-deadline-box">
+                  <svg class="missed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span class="missed-text" data-i18n="missedDeadline">You miss the deadline :(</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Card: Longest Streak -->
+            <div class="streak-card-stat longest">
+              <span class="stat-card-title" data-i18n="longestStreak">Longest streak</span>
+              <div class="stat-card-val-row">
+                <span class="stat-card-val" id="longest-streak-val">0</span>
+                <span class="stat-card-val-icon">🏆</span>
+              </div>
+              <span class="stat-card-sub" data-i18n="personalBest">personal best</span>
+            </div>
+
+          </div>
+
+          <!-- On-time Rate section -->
+          <div class="on-time-section">
+            <div class="on-time-header">
+              <span class="on-time-title" data-i18n="onTimeRate">On-time rate</span>
+              <span class="on-time-fraction" id="on-time-fraction-label">18 / 24 tasks</span>
+            </div>
+            <div class="on-time-progress-bar">
+              <div class="on-time-progress-fill" id="on-time-progress-fill" style="width: 75%;"></div>
+            </div>
+            <div class="on-time-labels">
+              <span class="on-time-label-left" id="on-time-percent-label">75% on time</span>
+              <span class="on-time-label-right" id="on-time-missed-label">25% missed</span>
+            </div>
+          </div>
+
+          <!-- Freeze tokens section -->
+          <div class="freeze-tokens-section">
+            <div class="freeze-info">
+              <span class="freeze-title">
+                <span class="freeze-title-icon">❄️</span>
+                <span data-i18n="freezeTokens">Freeze tokens</span>
+              </span>
+              <span class="freeze-desc" data-i18n="protectsStreak">Protects streak from 1 miss</span>
+            </div>
+            <div class="freeze-buttons" id="freeze-tokens-container">
+              <!-- Rendered dynamically by companion.js based on shopAPI shields owned -->
+              <button class="freeze-token-btn active" id="freeze-btn-1">❄️</button>
+              <button class="freeze-token-btn" id="freeze-btn-2">❄️</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Unfreeze Confirmation Overlay inside Bottom Sheet -->
+        <div class="unfreeze-overlay" id="unfreeze-overlay" style="display:none">
+          <div class="unfreeze-modal">
+            <div class="unfreeze-modal-header">
+              <span class="unfreeze-modal-title" data-i18n="unfreezeTitle">Nyalakan Streak</span>
+            </div>
+            <div class="unfreeze-modal-body">
+              <p class="unfreeze-modal-text" data-i18n="unfreezeConfirm">Apakah yakin ingin menyalakan streak lagi?</p>
+            </div>
+            <div class="unfreeze-modal-footer">
+              <button class="btn-unfreeze-cancel" id="btn-unfreeze-cancel" data-i18n="no">Batal</button>
+              <button class="btn-unfreeze-confirm" id="btn-unfreeze-confirm" data-i18n="yes">Ya</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
   <!-- Add Task Modal -->
   <div class="modal-overlay" id="modal-overlay" style="display:none">
     <div class="modal" id="add-task-modal">
       <div class="modal-header">
-        <span class="modal-title">Tambah Tugas Baru</span>
+        <span class="modal-title" data-i18n="addNewTask">Tambah Tugas Baru</span>
         <button class="icon-btn dark" id="btn-close-modal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round">
@@ -201,22 +357,23 @@
       </div>
 
       <div class="modal-body">
-        <label class="field-label">Nama Tugas</label>
+        <label class="field-label" data-i18n="taskName">Nama Tugas</label>
         <input class="field-input" type="text" id="task-name"
+               data-i18n-placeholder="taskNamePlaceholder"
                placeholder="Mengerjakan laporan..." />
 
         <div class="field-row">
           <div class="field-group">
-            <label class="field-label">Tanggal Deadline</label>
+            <label class="field-label" data-i18n="deadlineDate">Tanggal Deadline</label>
             <input class="field-input" type="date" id="task-date" />
           </div>
           <div class="field-group">
-            <label class="field-label">Jam</label>
+            <label class="field-label" data-i18n="time">Jam</label>
             <input class="field-input" type="time" id="task-time" value="23:59" />
           </div>
         </div>
 
-        <label class="field-label">Kategori</label>
+        <label class="field-label" data-i18n="category">Kategori</label>
         <div class="category-row" id="category-row">
           <button class="cat-tag active" data-cat="Kuliah">Kuliah</button>
           <button class="cat-tag" data-cat="Project">Project</button>
@@ -224,17 +381,17 @@
           <button class="cat-tag add-cat" id="btn-add-cat">+</button>
         </div>
 
-        <label class="field-label">Prioritas</label>
+        <label class="field-label" data-i18n="priority">Prioritas</label>
         <div class="priority-row">
-          <button class="prio-btn high"   data-prio="Tinggi">Tinggi</button>
-          <button class="prio-btn medium active" data-prio="Sedang">Sedang</button>
-          <button class="prio-btn low"    data-prio="Rendah">Rendah</button>
+          <button class="prio-btn high"   data-prio="Tinggi" data-i18n="high">Tinggi</button>
+          <button class="prio-btn medium active" data-prio="Sedang" data-i18n="medium">Sedang</button>
+          <button class="prio-btn low"    data-prio="Rendah" data-i18n="low">Rendah</button>
         </div>
 
         <div class="reminder-row">
           <div>
-            <div class="reminder-title">Pengingat otomatis</div>
-            <div class="reminder-sub">Notifikasi 24 jam sebelum deadline</div>
+            <div class="reminder-title" data-i18n="autoReminder">Pengingat otomatis</div>
+            <div class="reminder-sub" data-i18n="reminderDesc">Notifikasi 24 jam sebelum deadline</div>
           </div>
           <label class="toggle-switch">
             <input type="checkbox" id="reminder-toggle" checked />
@@ -244,8 +401,8 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" id="btn-cancel-modal">Batal</button>
-        <button class="btn-save"   id="btn-save-task">Simpan Tugas</button>
+        <button class="btn-cancel" id="btn-cancel-modal" data-i18n="cancel">Batal</button>
+        <button class="btn-save"   id="btn-save-task" data-i18n="saveTask">Simpan Tugas</button>
       </div>
     </div>
   </div>
@@ -261,7 +418,7 @@
 
     <!-- Header -->
     <div class="modal-header">
-      <span class="modal-title">Konfirmasi Tugas</span>
+      <span class="modal-title" data-i18n="confirmTask">Konfirmasi Tugas</span>
       <button class="icon-btn dark" id="btn-close-confirm">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2.5" stroke-linecap="round">
@@ -277,17 +434,17 @@
       <!-- Document icon -->
       <div class="confirm-icon">
         <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="8" y="4" width="28" height="36" rx="3"
+          <rect class="icon-paper" x="8" y="4" width="28" height="36" rx="3"
                 fill="#C8DFC5" stroke="#A2B29F" stroke-width="1.5"/>
-          <rect x="8" y="4" width="20" height="10" rx="3"
+          <rect class="icon-header" x="8" y="4" width="20" height="10" rx="3"
                 fill="#A2B29F"/>
-          <path d="M28 4 L36 12" stroke="#A2B29F" stroke-width="1.5"
+          <path class="icon-corner-line" d="M28 4 L36 12" stroke="#A2B29F" stroke-width="1.5"
                 stroke-linecap="round"/>
-          <rect x="28" y="4" width="8" height="8" rx="1"
+          <rect class="icon-corner" x="28" y="4" width="8" height="8" rx="1"
                 fill="#EBF3EA" stroke="#A2B29F" stroke-width="1.5"/>
-          <line x1="14" y1="22" x2="30" y2="22"
+          <line class="icon-line" x1="14" y1="22" x2="30" y2="22"
                 stroke="#A2B29F" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="14" y1="28" x2="26" y2="28"
+          <line class="icon-line" x1="14" y1="28" x2="26" y2="28"
                 stroke="#A2B29F" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </div>
@@ -299,7 +456,7 @@
 
       <!-- Instruction -->
       <div class="confirm-instruction" id="confirm-instruction">
-        To confirm, type "<span id="confirm-task-hint"></span>" below
+        <span data-i18n="toConfirm">To confirm, type</span> "<span id="confirm-task-hint"></span>" <span data-i18n="below">below</span>
       </div>
 
       <!-- Input -->
@@ -307,23 +464,126 @@
         class="confirm-input"
         type="text"
         id="confirm-input"
+        data-i18n-placeholder="confirmInputPlaceholder"
         placeholder="Type Here . . ."
         autocomplete="off"
       />
 
       <!-- Error message (hidden by default) -->
-      <div class="confirm-error" id="confirm-error" style="display:none">
-        Nama tugas tidak cocok. Coba lagi.
+      <div class="confirm-error" id="confirm-error" style="display:none" data-i18n="errorConfirm">
+        Task name does not match. Please try again.
       </div>
 
       <!-- Confirm button -->
-      <button class="btn-confirm" id="btn-confirm-task">
+      <button class="btn-confirm" id="btn-confirm-task" data-i18n="confirmThisTask">
         Confirm This Task
       </button>
+
     </div>
   </div>
 </div>
 
+  <script src="../i18n.js"></script>
+  <script src="../components/custom-calendar.js"></script>
   <script src="../components/companion.js"></script>
+  <script>
+    const CHAR_SPRITES = {
+      agnesTachyon: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+      goldship:  '../assets/styles/images/goldShip/goldship.png',
+    };
+
+    const CHAR_LOGOS = {
+      agnesTachyon: '../assets/styles/images/agnesTachyon/logo.svg',
+      goldship:  '../assets/styles/images/goldShip/logo.svg',
+    };
+
+    function applyTheme(theme) {
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
+      document.body.classList.add('theme-' + theme);
+      const sprite = document.getElementById('companion-sprite');
+      if (sprite) sprite.src = CHAR_SPRITES[theme] ?? CHAR_SPRITES.agnesTachyon;
+      const logo = document.querySelector('.panel-title');
+      if (logo) logo.src = CHAR_LOGOS[theme] ?? CHAR_LOGOS.agnesTachyon;
+    }
+
+    (async () => {
+      try {
+        const s = await window.trapezi?.settings?.get();
+        applyTheme(s?.character || 'agnesTachyon');
+      } catch (_) { applyTheme('agnesTachyon'); }
+    })();
+
+    window.trapezi?.onThemeApply?.((theme) => applyTheme(theme));
+
+    // ── Global i18n Receiver ──
+    window.currentLang = 'en';
+
+    async function applyLanguage(lang) {
+      console.log('[Companion] Applying language:', lang);
+      console.log('[Companion] window.i18n available?', !!window.i18n);
+      console.log('[Companion] window.i18n keys:', window.i18n ? Object.keys(window.i18n) : 'none');
+      
+      window.currentLang = lang;
+      
+      // Wait for i18n to be available
+      if (!window.i18n) {
+        console.error('[Companion] window.i18n not available yet, retrying...');
+        setTimeout(() => applyLanguage(lang), 100);
+        return;
+      }
+      
+      const t = window.i18n[lang] || window.i18n['en'];
+      console.log('[Companion] Using translations for:', lang, 'Sample key "task":', t.task);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) {
+          console.log(`[Companion] Translating ${key}: ${el.textContent} -> ${t[key]}`);
+          el.textContent = t[key];
+        }
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (t[key] !== undefined) el.title = t[key];
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key] !== undefined) el.placeholder = t[key];
+      });
+      // Re-render companion dynamic text to reflect new language
+      if (typeof updateMoodCard === 'function') {
+        console.log('[Companion] Calling updateMoodCard()');
+        updateMoodCard();
+      }
+      if (typeof renderTaskList === 'function') {
+        console.log('[Companion] Calling renderTaskList()');
+        renderTaskList();
+      }
+    }
+
+    // Initialize language on load
+    (async () => {
+      const api = window.trapezi;
+      if (api && api.language) {
+        try {
+          const lang = await api.language.get();
+          console.log('[Companion] Initial language:', lang);
+          applyLanguage(lang || 'en');
+        } catch (err) {
+          console.error('[Companion] Failed to get language:', err);
+          applyLanguage('en');
+        }
+      }
+    })();
+
+    // Listen for language changes
+    const api = window.trapezi;
+    if (api && api.language) {
+      api.language.onChange((lang) => {
+        console.log('[Companion] Language changed to:', lang);
+        applyLanguage(lang);
+      });
+    }
+  </script>
 </body>
 </html>

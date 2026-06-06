@@ -119,8 +119,27 @@ try {
 try {
   if (typeof require !== 'undefined') {
     const { ipcRenderer: ipc } = require('electron')
+    
+    ipc.on('bubble:setText', (_, text) => {
+      showBubble(text)
+    })
+    
+    ipc.on('bubble:taskAdded', (_, task) => {
+      const msg = `Tugas baru ditambahkan: "${task.name}"`
+      showBubble(msg, '📝')
+    })
+    
+    ipc.on('bubble:taskCompleted', (_, task) => {
+      const msg = task.name || 'Tugas selesai!'
+      showBubble(msg, task.emoji || '✅')
+    })
+
     ipc.on('bubble:show', (_, data) => {
-      showBubble(data.text || '', data.emoji || '')
+      if (typeof data === 'string') {
+        showBubble(data)
+      } else {
+        showBubble(data.text || '', data.emoji || '')
+      }
     })
     ipc.on('bubble:hide', () => {
       hideBubble()

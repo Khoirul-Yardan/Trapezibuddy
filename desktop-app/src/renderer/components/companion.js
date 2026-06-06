@@ -10,6 +10,12 @@ function getApi() {
   return api
 }
 
+// i18n helper — reads current language set by the HTML page
+function t(key) {
+  const lang = window.currentLang || 'en'
+  return window.i18n?.[lang]?.[key] ?? window.i18n?.en?.[key] ?? key
+}
+
 // ── State ────────────────────────────────────────────────────
 let state = {
   tasks:       [],
@@ -37,12 +43,19 @@ function calcDeadlineLabel(deadline_date, deadline_time) {
   const now      = new Date()
   const diffMs   = deadline - now
   const diffHrs  = diffMs / (1000 * 60 * 60)
+  const lang     = window.currentLang || 'en'
 
-  if (diffMs < 0)        return 'Overdue!'
-  if (diffHrs < 1)       return `${Math.floor(diffMs / 60000)} minutes left`
-  if (diffHrs < 24)      return `${Math.floor(diffHrs)} hours left`
-  if (diffHrs < 48)      return 'Tomorrow'
-  return `${Math.floor(diffHrs / 24)} days left`
+  if (diffMs < 0)   return t('overdue')
+  if (diffHrs < 1)  return lang === 'id'
+    ? `${Math.floor(diffMs / 60000)} menit lagi`
+    : `${Math.floor(diffMs / 60000)} minutes left`
+  if (diffHrs < 24) return lang === 'id'
+    ? `${Math.floor(diffHrs)} jam lagi`
+    : `${Math.floor(diffHrs)} hours left`
+  if (diffHrs < 48) return t('tomorrow')
+  return lang === 'id'
+    ? `${Math.floor(diffHrs / 24)} hari lagi`
+    : `${Math.floor(diffHrs / 24)} days left`
 }
 
 function safeDate(value) {
@@ -148,7 +161,11 @@ const SVG_SPARK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 
 // ── Day Strip ────────────────────────────────────────────────
 function renderDayStrip() {
-  const days      = ['M','T','W','T','F','S','S']
+  const lang = window.currentLang || 'en'
+  const daysEn = ['M','T','W','T','F','S','S']
+  const daysId = ['S','S','R','K','J','S','M']
+  const days = lang === 'id' ? daysId : daysEn
+  
   const todayIdx  = (new Date().getDay() + 6) % 7  // 0=Mon
   const container = document.getElementById('day-strip')
   container.innerHTML = days.map((d, i) => `
@@ -165,15 +182,14 @@ function updateMoodCard() {
   const moodLabel = document.getElementById('mood-label')
   const moodSub   = document.getElementById('mood-sub')
   const streakEl  = document.getElementById('streak-count')
-  const shieldBadge = document.getElementById('shield-badge')
-  const shieldCountEl = document.getElementById('shield-count')
+  const streakIcon = document.querySelector('.streak-icon')
 
   if (active === 0 && total > 0) {
-    moodLabel.textContent = 'All Done! 🎉'
+    moodLabel.textContent = t('allDone')
   } else if (active > 0) {
-    moodLabel.textContent = "You're Almost Done"
+    moodLabel.textContent = t('almostDone')
   } else {
-    moodLabel.textContent = 'No tasks yet'
+    moodLabel.textContent = t('noTasksYet')
   }
 
   moodSub.textContent   = `${done}/${total} Task`
@@ -188,6 +204,11 @@ function createTaskCard(task) {
     : calcDeadlineLabel(task.deadline_date, task.deadline_time)
   const icon = task.is_done ? SVG_SPARK : SVG_CLOCK
 
+  // Categories HTML
+  const catsHtml = (task.categories || []).map(cat => `
+    <span class="task-cat-tag cat-${cat.toLowerCase()}">${cat}</span>
+  `).join('')
+
   const card = document.createElement('div')
   card.className = 'task-card'
   card.dataset.id = task.id
@@ -201,9 +222,12 @@ function createTaskCard(task) {
       </button>
       <div class="task-text">
         <span class="task-name ${task.is_done ? 'done' : ''}">${task.name}</span>
-        <div class="task-deadline ${urgency}">
-          ${icon}
-          <span>${dlLabel}</span>
+        <div class="task-meta">
+          <div class="task-deadline ${urgency}">
+            ${icon}
+            <span>${dlLabel}</span>
+          </div>
+          <div class="task-cats">${catsHtml}</div>
         </div>
       </div>
     </div>
@@ -217,12 +241,25 @@ function createTaskCard(task) {
   return card
 }
 
+// ── Translate DOM ─────────────────────────────────────────────
+// Re-applies data-i18n translations after dynamic renders (no re-render loop).
+function translateDOM() {
+  const lang = window.currentLang || 'en'
+  const dict = window.i18n?.[lang] || window.i18n?.en
+  if (!dict) return
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n')
+    if (dict[key] !== undefined) el.textContent = dict[key]
+  })
+}
+
 // ── Task List ────────────────────────────────────────────────
 function renderTaskList() {
   const list  = document.getElementById('task-list')
   const empty = document.getElementById('task-empty')
   const title = document.getElementById('task-list-title')
   const filtersEl = document.getElementById('finished-filters')
+  const deleteHistoryBtn = document.getElementById('btn-delete-history')
 
   // Clear existing cards (preserve empty placeholder)
   list.querySelectorAll('.task-card').forEach(c => c.remove())
@@ -246,8 +283,9 @@ function renderTaskList() {
           return doneAt >= rangeStart
         })
 
-  title.textContent = state.activeTab === 'active' ? 'Tugas Aktif' : 'Selesai'
+  title.textContent = state.activeTab === 'active' ? t('activeTasks') : t('finished')
   if (filtersEl) filtersEl.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
+  if (deleteHistoryBtn) deleteHistoryBtn.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
 
   if (filtered.length === 0) {
     empty.style.display = 'block'
@@ -257,6 +295,9 @@ function renderTaskList() {
       list.appendChild(createTaskCard(task))
     })
   }
+
+  // Re-apply translations to all data-i18n elements (tabs, filters, title, empty state)
+  translateDOM()
 }
 
 // ── Task Check — buka confirm modal ──────────────────────────
@@ -352,11 +393,12 @@ function initConfirmModal() {
 
     // Sukses — tandai selesai
     confirmBtn.disabled = true
-    confirmBtn.textContent = 'Menyimpan...'
+    confirmBtn.textContent = t('saving')
 
     const currentApi = getApi()
     if (currentApi) {
       await currentApi.tasks.complete(_confirmTaskId)
+      await handleStreakOnTaskComplete()
     }
 
     // Show congratulatory bubble with task name
@@ -399,7 +441,15 @@ async function loadSettings() {
   const currentApi = getApi()
   if (currentApi) {
     const settings = await currentApi.settings.get()
-    state.streak   = settings.streak ?? 0
+    state.streak = settings.streak ?? 0
+    state.longestStreak = settings.longest_streak ?? 0
+    state.freezeTokens = settings.freezeTokens ?? 2
+    state.lastTaskDate = settings.lastTaskDate ?? null
+    state.focusTimer = settings.focusTimer ?? 25
+    state.doNotDisturb = settings.doNotDisturb ?? false
+    focusSeconds = state.focusTimer * 60
+    // Set language before first render so t() returns correct translations
+    if (settings.language) window.currentLang = settings.language
   }
 }
 
@@ -462,6 +512,20 @@ function initModal() {
     })
   })
 
+  // Initialize custom calendar for embedded add task modal
+  const taskDateInput = document.getElementById('task-date')
+  if (taskDateInput && typeof CustomCalendar !== 'undefined') {
+    // Only for Agnes Tachyon theme
+    if (!document.body.classList.contains('theme-goldship')) {
+      new CustomCalendar(taskDateInput, {
+        disablePast: true,
+        onChange: (date) => {
+          console.log('Date selected in embedded modal:', date);
+        }
+      })
+    }
+  }
+
   // Save task
   saveBtn.addEventListener('click', async () => {
     const name = document.getElementById('task-name').value.trim()
@@ -487,17 +551,6 @@ function initModal() {
       reminder,
     })
 
-    // Show bubble notification on Python character
-    const bubbleApi = getApi()
-    if (bubbleApi && bubbleApi.bubble) {
-      bubbleApi.bubble.taskAdded({
-        name,
-        deadline_date: date || new Date().toISOString().split('T')[0],
-        deadline_time: time || '23:59',
-        categories: cats,
-        priority: prio,
-      })
-    }
 
     closeModal()
     await loadTasks()
@@ -513,11 +566,11 @@ function initModal() {
 // ── Window controls ──────────────────────────────────────────
 function initWindowControls() {
   document.getElementById('btn-settings')
-    ?.addEventListener('click', () => api?.window?.minimize())
+    ?.addEventListener('click', () => api.window.restore('settings'))
   document.getElementById('btn-minimize')
-    ?.addEventListener('click', () => api?.window?.minimize())
+    ?.addEventListener('click', () => api.window.minimize())
   document.getElementById('btn-exit')
-    ?.addEventListener('click', () => api?.window?.exitApp())
+    ?.addEventListener('click', () => api.window.close())
 }
 
 // ── Focus Timer ──────────────────────────────────────────────
@@ -548,24 +601,30 @@ function showTaskAcknowledgment() {
 function checkDeadlineReminders() {
   const tasks = state.tasks
   const now = new Date()
+  const lang = window.currentLang || 'en'
   
   const urgentTasks = tasks.filter(t => {
     if (t.is_done) return false
+    if (!t.reminder) return false // Check if reminder is enabled for this task
+    
     const deadline = new Date(`${t.deadline_date}T${t.deadline_time}`)
     const diffHrs = (deadline - now) / (1000 * 60 * 60)
-    return diffHrs < 1 && diffHrs > -1
+    // Remind if deadline is within 24 hours (as per description) 
+    // and hasn't been reminded recently (we can just use the 1-hour window for bubble spam prevention)
+    return diffHrs < 24 && diffHrs > 0
   })
   
   if (urgentTasks.length > 0) {
-    const reminderMessages = [
-      'Hei! Deadline task mu tinggal 1 jam! ⏰',
-      'Jangan lupa, task mu mau deadline! ⚠️',
-      'Cepat selesaiin, deadline mepet! 🔥',
-      'Setengah jam lagi deadline! 😅',
-    ]
+    const task = urgentTasks[0] // Just remind for the first one found
+    const msgEn = `Reminder: Task "${task.name}" is due in less than 24 hours! ⏰`
+    const msgId = `Pengingat: Tugas "${task.name}" akan segera deadline dalam kurang dari 24 jam! ⏰`
     
-    const msg = reminderMessages[Math.floor(Math.random() * reminderMessages.length)]
-    console.log('[Deadline Reminder]:', msg)
+    const msg = lang === 'id' ? msgId : msgEn
+    
+    const currentApi = getApi()
+    if (currentApi && currentApi.bubble && currentApi.bubble.show) {
+      currentApi.bubble.show(msg)
+    }
   }
 }
 
@@ -616,7 +675,7 @@ function stopFocusTimer() {
       console.log(`Focus: Selected character is: ${character}`)
       if (character === 'goldship' && currentApi.goldship) {
         currentApi.goldship.showCharacter()
-      } else if (character === 'agnes' && currentApi.agnes) {
+      } else if (character === 'agnesTachyon' && currentApi.agnes) {
         currentApi.agnes.showCharacter()
       }
     }).catch(err => {
@@ -671,7 +730,7 @@ function startFocusTimer() {
 }
 
 function startFocusInterval() {
-  focusSeconds = 25 * 60
+  focusSeconds = (state.focusTimer || 25) * 60
   const timerEl = document.getElementById('focus-timer')
   if (timerEl) timerEl.textContent = formatFocusTime(focusSeconds)
 
@@ -682,6 +741,9 @@ function startFocusInterval() {
       document.getElementById('focus-dot').style.background = 'var(--c-done)'
       
       console.log('Focus timer complete: Showing selected character and completion message')
+      
+      // Reset view to show "Start Focus" button again
+      setFocusView(false)
       
       // When timer ends, show only the SELECTED character
       const api2 = getApi()
@@ -698,7 +760,7 @@ function startFocusInterval() {
             
             if (character === 'goldship' && api2.goldship) {
               api2.goldship.showCharacter()
-            } else if (character === 'agnes' && api2.agnes) {
+            } else if (character === 'agnesTachyon' && api2.agnes) {
               api2.agnes.showCharacter()
             }
             
@@ -733,9 +795,113 @@ function startFocusInterval() {
   }, 1000)
 }
 
+// ── Streak Logic ──────────────────────────────────────────────
+async function checkStreak() {
+  const now = new Date()
+  const todayStr = now.toISOString().split('T')[0]
+  
+  if (!state.lastTaskDate) {
+    // First time, nothing to check
+    return
+  }
+
+  const lastDate = new Date(state.lastTaskDate)
+  const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24))
+
+  if (diffDays <= 1) {
+    // Either today or yesterday, streak is safe
+    return
+  }
+
+  // User missed one or more days
+  let missedDays = diffDays - 1
+  
+  let tokensToUse = Math.min(missedDays, state.freezeTokens)
+  
+  if (tokensToUse > 0) {
+    state.freezeTokens -= tokensToUse
+    missedDays -= tokensToUse
+    // Streak preserved for the frozen days
+    console.log(`[Streak] Used ${tokensToUse} automatic freeze tokens. Remaining: ${state.freezeTokens}`)
+    
+    if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+      window.trapezi.bubble.show({
+        text: `Kamu tidak aktif beberapa hari! ${tokensToUse} Token Beku digunakan untuk melindungi streak-mu.`,
+        emoji: '❄️'
+      })
+    }
+  }
+
+  if (missedDays > 0) {
+    // Still have missed days after using tokens, or no tokens left
+    console.log(`[Streak] Streak reset! Missed days: ${missedDays}`)
+    state.streak = 0
+    if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+      window.trapezi.bubble.show({
+        text: 'Yah, streak kamu terputus karena sudah lama tidak aktif. Ayo mulai lagi!',
+        emoji: '💔'
+      })
+    }
+  }
+
+  // Update lastTaskDate to "yesterday" so they have today to complete a task and continue
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  state.lastTaskDate = yesterday.toISOString().split('T')[0]
+  
+  await saveStreakSettings()
+}
+
+async function handleStreakOnTaskComplete() {
+  const now = new Date()
+  const todayStr = now.toISOString().split('T')[0]
+
+  if (state.lastTaskDate === todayStr) {
+    // Already counted today
+    return
+  }
+
+  state.streak++
+  state.lastTaskDate = todayStr
+
+  // Update longest streak
+  if (state.streak > state.longestStreak) {
+    state.longestStreak = state.streak
+  }
+
+  // Regain freeze token every 5 streak
+  if (state.streak % 5 === 0) {
+    state.freezeTokens = Math.min(state.freezeTokens + 1, 2)
+    if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+      window.trapezi.bubble.show({
+        text: 'Hebat! Kamu dapat 1 Token Beku baru setiap 5 streak!',
+        emoji: '❄️'
+      })
+    }
+  }
+
+  await saveStreakSettings()
+  updateMoodCard()
+}
+
+async function saveStreakSettings() {
+  const currentApi = getApi()
+  if (currentApi) {
+    const existing = await currentApi.settings.get() || {}
+    await currentApi.settings.set({
+      ...existing,
+      streak: state.streak,
+      longest_streak: state.longestStreak,
+      freezeTokens: state.freezeTokens,
+      lastTaskDate: state.lastTaskDate,
+    })
+  }
+}
+
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
   await loadSettings()
+  await checkStreak()
   await loadTasks()
 
   renderDayStrip()
@@ -746,12 +912,35 @@ async function init() {
   initModal()
   initConfirmModal()
   initWindowControls()
+  initStreakBottomSheet()
   // Focus timer starts only on user action
   setFocusView(false)
   const startBtn = document.getElementById('btn-focus-start')
   const stopBtn  = document.getElementById('btn-focus-stop')
+  const deleteHistoryBtn = document.getElementById('btn-delete-history')
+
   startBtn?.addEventListener('click', () => startFocusTimer())
   stopBtn?.addEventListener('click', () => stopFocusTimer())
+  
+  deleteHistoryBtn?.addEventListener('click', async () => {
+    const lang = window.currentLang || 'en'
+    const confirmMsg = lang === 'id' 
+      ? 'Hapus semua riwayat tugas yang sudah selesai? (Tidak mempengaruhi streak)' 
+      : 'Delete all finished task history? (Does not affect streak)'
+    
+    if (confirm(confirmMsg)) {
+      const finishedTasks = state.tasks.filter(t => t.is_done)
+      const currentApi = getApi()
+      if (currentApi) {
+        for (const task of finishedTasks) {
+          await currentApi.tasks.delete(task.id)
+        }
+        await loadTasks()
+        renderTaskList()
+        updateMoodCard()
+      }
+    }
+  })
 
   // Listen untuk refresh dari modal windows
   const currentApi = getApi()
@@ -772,6 +961,17 @@ async function init() {
     checkDeadlineReminders()
   }, 5 * 60 * 1000)
 
+  // Listen for language changes
+  const langApi = getApi()
+  if (langApi && langApi.language && langApi.language.onChange) {
+    langApi.language.onChange((lang) => {
+      window.currentLang = lang
+      renderDayStrip()
+      updateMoodCard()
+      renderTaskList()
+    })
+  }
+
   // Listen to navigation requests from main (e.g. restore with target page)
   const navApi = getApi()
   if (navApi && navApi.window && navApi.window.onNavigate) {
@@ -784,13 +984,190 @@ async function init() {
       } else if (page === 'add-task') {
         const addApi = getApi()
         if (addApi) addApi.window.openAddTask()
+      } else if (page === 'chat') {
+        const chatApi = getApi()
+        if (chatApi) chatApi.window.openChat()
       }
     })
   }
 }
 
+const THEME_SPRITES = {
+  agnesTachyon: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+  goldship: '../assets/styles/images/goldShip/goldship.png',
+}
+const THEME_LOGOS = {
+  agnesTachyon: '../assets/styles/images/agnesTachyon/logo.svg',
+  goldship: '../assets/styles/images/goldShip/logo.svg',
+}
+
+function applyThemeAssets(theme) {
+  const logo = document.querySelector('.panel-title, img[alt="TrapeziBuddy"]')
+  const avatar = document.querySelector('#companion-sprite, .avatar img')
+  if (logo) logo.src = THEME_LOGOS[theme] ?? THEME_LOGOS.agnesTachyon
+  if (avatar) avatar.src = THEME_SPRITES[theme] ?? THEME_SPRITES.agnesTachyon
+}
+
+// Theme listener — registered at load time so broadcasts from any window are handled immediately
+window.trapezi?.onThemeApply?.((theme) => {
+  document.body.classList.remove('theme-agnesTachyon', 'theme-goldship')
+  document.body.classList.add(`theme-${theme}`)
+  applyThemeAssets(theme)
+})
+
+// ── Streak Progress Bottom Sheet Controller ──────────────────
+function renderStreakProgress() {
+  const overlay = document.getElementById('streak-overlay')
+  const currentCard = document.getElementById('current-streak-card')
+  const normalState = document.getElementById('streak-normal-state')
+  const frozenState = document.getElementById('streak-frozen-state')
+  
+  if (!overlay || !currentCard || !normalState || !frozenState) return
+
+  // Set current streak values
+  const valNormal = document.getElementById('current-streak-val-normal')
+  const valFrozen = document.getElementById('current-streak-val-frozen')
+  if (valNormal) valNormal.textContent = state.streak
+  if (valFrozen) valFrozen.textContent = state.streak
+
+  // Set longest streak
+  const longestValEl = document.getElementById('longest-streak-val')
+  if (longestValEl) {
+    longestValEl.textContent = state.longestStreak
+  }
+
+  // Calculate On-time Rate
+  const finishedTasks = state.tasks.filter(t => t.is_done)
+  const totalFinished = finishedTasks.length
+  let onTimeCount = 0
+
+  finishedTasks.forEach(t => {
+    const doneAt = getTaskCompletedAt(t)
+    const deadline = safeDate(`${t.deadline_date}T${t.deadline_time}`)
+    if (!deadline || (deadline - doneAt >= 0)) {
+      onTimeCount++
+    }
+  })
+
+  // Missed tasks are active tasks past deadline
+  let missedCount = state.tasks.filter(t => {
+    if (t.is_done) return false
+    const deadline = safeDate(`${t.deadline_date}T${t.deadline_time}`)
+    return deadline && (deadline - new Date() < 0)
+  }).length
+
+  const totalForRatio = totalFinished + missedCount
+  const onTimePercent = totalForRatio > 0 ? Math.round((onTimeCount / totalForRatio) * 100) : 0
+  const missedPercent = totalForRatio > 0 ? 100 - onTimePercent : 0
+
+  const fractionLabel = document.getElementById('on-time-fraction-label')
+  const progressFill = document.getElementById('on-time-progress-fill')
+  const percentLabel = document.getElementById('on-time-percent-label')
+  const missedLabel = document.getElementById('on-time-missed-label')
+
+  if (fractionLabel) {
+    const taskText = t('tasks') || 'tasks'
+    fractionLabel.textContent = `${onTimeCount} / ${totalForRatio} ${taskText}`
+  }
+  if (progressFill) {
+    progressFill.style.width = `${onTimePercent}%`
+  }
+  if (percentLabel) {
+    const onTimeText = t('onTime') || 'on time'
+    percentLabel.textContent = `${onTimePercent}% ${onTimeText}`
+  }
+  if (missedLabel) {
+    const missedText = t('missed') || 'missed'
+    missedLabel.textContent = `${missedPercent}% ${missedText}`
+  }
+
+  // Render Freeze Tokens
+  const tokensContainer = document.getElementById('freeze-tokens-container')
+  if (tokensContainer) {
+    tokensContainer.innerHTML = ''
+    for (let i = 1; i <= 2; i++) {
+      const btn = document.createElement('button')
+      btn.className = 'freeze-token-btn'
+      btn.textContent = '❄'
+
+      // Token is "active" (available) if state.freezeTokens >= i
+      let isAvailable = (state.freezeTokens >= i)
+
+      if (isAvailable) {
+        btn.classList.add('active')
+      }
+
+      // Interaction
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        if (isAvailable) {
+          if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+            window.trapezi.bubble.show({
+              text: 'Token beku aktif melindungi streak kamu secara otomatis jika kamu lupa! 🛡️',
+              emoji: '❄️'
+            })
+          }
+        } else {
+          if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
+            window.trapezi.bubble.show({
+              text: 'Token beku belum tersedia. Selesaikan 5 streak untuk mendapatkan 1 token!',
+              emoji: '❄️'
+            })
+          }
+        }
+      })
+
+      tokensContainer.appendChild(btn)
+    }
+  }
+
+  // Toggle card state classes
+  currentCard.classList.remove('frozen')
+  normalState.style.display = 'block'
+  frozenState.style.display = 'none'
+}
+
+function initStreakBottomSheet() {
+  const badge = document.getElementById('streak-badge')
+  const overlay = document.getElementById('streak-overlay')
+  const closeBtn = document.getElementById('btn-close-streak')
+
+  if (!badge || !overlay || !closeBtn) return
+
+  // Click to open sheet
+  badge.addEventListener('click', () => {
+    overlay.style.display = 'block'
+    setTimeout(() => {
+      overlay.classList.add('active')
+      renderStreakProgress()
+    }, 20)
+  })
+
+  // Click to close sheet
+  const closeSheet = () => {
+    overlay.classList.remove('active')
+    setTimeout(() => {
+      overlay.style.display = 'none'
+    }, 300)
+  }
+
+  closeBtn.addEventListener('click', closeSheet)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeSheet()
+    }
+  })
+}
+
 // Set today's date as default on date input
 document.addEventListener('DOMContentLoaded', () => {
+  ;(async () => {
+    try {
+      const s = await window.trapezi?.settings?.get()
+      applyThemeAssets(s?.character || 'agnesTachyon')
+    } catch (_) { applyThemeAssets('agnesTachyon') }
+  })()
+
   const today = new Date().toISOString().split('T')[0]
   const dateInput = document.getElementById('task-date')
   if (dateInput) dateInput.value = today

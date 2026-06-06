@@ -5,310 +5,354 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TrapeziBuddy Settings</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --c-bg:       #F8EDE3;
-      --c-white:    #FFFFFF;
-      --c-thatch:   #798777;
-      --c-coconut:  #A2B29F;
-      --c-zen-gray: #BDD2B6;
-      --c-dark:     #3B3B3A;
-      --c-mid:      #757676;
-      --c-light:    #F3F4F4;
-      --c-section:  #2C2C2B;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--c-white);
-      color: var(--c-dark);
-      -webkit-user-select: none;
-      user-select: none;
+      background: #FBF9F8;
+      color: #3B3B3A;
+      width: 100%;
       height: 100%;
-      overflow: hidden;
-    }
-
-    /* ── Titlebar ── */
-    .titlebar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--c-section);
-      padding: 12px 16px;
-      -webkit-app-region: drag;
-    }
-
-    .titlebar-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #CCCCCC;
-    }
-
-    .btn-close-title {
-      width: 24px;
-      height: 24px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #AAAAAA;
-      border-radius: 4px;
-      transition: background 0.15s, color 0.15s;
-      -webkit-app-region: no-drag;
-      padding: 4px;
-    }
-    .btn-close-title:hover { background: #C62828; color: white; }
-    .btn-close-title svg { width: 100%; height: 100%; }
-
-    /* ── Main content ── */
-    .content {
-      padding: 28px 28px 0;
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      justify-content: space-between;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
-    /* ── App header ── */
-    .app-header {
+    /* ── Header ── */
+    .header {
+      background: #2C2C2B;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 18px;
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+    }
+    .header-logo {
+      height: 18px;
+      width: auto;
+      display: block;
+    }
+    .branding-text {
+      font-size: 20px;
+      font-weight: 800;
+      color: #7B3F00;
+      letter-spacing: -0.3px;
+    }
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      cursor: pointer;
+      -webkit-app-region: no-drag !important;
       display: flex;
       align-items: center;
-      gap: 16px;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .btn-close:hover { color: white; background: rgba(255,255,255,0.12); }
+    .btn-close svg { width: 16px; height: 16px; }
+
+    /* ── Content Area ── */
+    .content-area {
+      flex-shrink: 0;
+      overflow: hidden;
+      padding: 16px 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #FBF9F8;
     }
 
-    .app-avatar {
-      width: 60px;
-      height: 60px;
+    /* ── Branding ── */
+    .branding {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+    .branding-avatar {
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
-      background: var(--c-zen-gray);
+      background: #FFE8D6;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
       flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
+    .branding-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .app-avatar img {
-      width: 52px;
-      height: 52px;
-      object-fit: contain;
-    }
-
-    /* Placeholder avatar kalau gambar tidak ada */
-    .app-avatar-placeholder {
-      font-size: 28px;
-    }
-
-    .app-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--c-dark);
-      letter-spacing: -0.3px;
-    }
-
-    /* ── Size card ── */
-    .size-card {
-      background: var(--c-bg);
-      border-radius: 16px;
-      padding: 20px 22px 22px;
+    /* ── Section Cards ── */
+    .section-card {
+      background: #F5F3F3;
+      border-radius: 12px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
+      flex-shrink: 0;
+      width: 100%;
+      overflow: hidden;
     }
-
-    .size-card-header {
+    .section-header {
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-
-    .size-card-header svg {
-      width: 18px;
-      height: 18px;
-      color: var(--c-thatch);
-      flex-shrink: 0;
-    }
-
-    .size-card-title {
-      font-size: 15px;
       font-weight: 700;
-      color: var(--c-dark);
+      font-size: 14px;
+      color: #3B3B3A;
     }
+    .section-header svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-    .size-desc {
-      font-size: 13px;
-      color: var(--c-mid);
-      line-height: 1.5;
-    }
-
-    /* Slider wrapper */
-    .slider-row {
+    /* ── Character Options ── */
+    .char-options {
       display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .slider-wrap {
-      flex: 1;
-      position: relative;
-      height: 20px;
-      display: flex;
-      align-items: center;
-    }
-
-    /* Track */
-    .slider-wrap input[type="range"] {
-      -webkit-appearance: none;
-      appearance: none;
+      gap: 10px;
       width: 100%;
-      height: 4px;
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
-      background: linear-gradient(
-        to right,
-        var(--c-thatch) 0%,
-        var(--c-thatch) var(--val, 20%),
-        #D9CFC7 var(--val, 20%),
-        #D9CFC7 100%
-      );
     }
-
-    /* Thumb */
-    .slider-wrap input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--c-thatch);
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      transition: transform 0.1s;
-    }
-    .slider-wrap input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.15);
-    }
-
-    .slider-value {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--c-dark);
-      min-width: 42px;
-      text-align: right;
-    }
-
-    /* Labels */
-    .slider-labels {
+    .char-card {
+      flex: 1;
+      min-width: 0;
+      background: #FFFFFF;
+      border: 1px solid #E0E0E0;
+      border-radius: 10px;
+      padding: 12px 8px 10px;
       display: flex;
-      justify-content: space-between;
-      margin-top: 2px;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.18s;
+      -webkit-app-region: no-drag !important;
+    }
+    .char-card:hover {
+      background: rgba(213, 232, 207, 0.3);
+      border: 2px solid #52634F;
+    }
+    .char-card.active {
+      background: rgba(213, 232, 207, 0.3);
+      border: 2px solid #52634F;
+    }
+    .char-img-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+    }
+    .char-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .char-name {
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      color: #3B3B3A;
+      line-height: 1.3;
     }
 
-    .slider-labels span {
-      font-size: 11px;
-      color: var(--c-mid);
+    /* ── Language Options ── */
+    .lang-label {
+      font-size: 12px;
+      color: #3B3B3A;
+    }
+    .lang-options {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    .lang-btn {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 6px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid #E0E0E0;
+      background: #FFFFFF;
+      color: #3B3B3A;
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      -webkit-app-region: no-drag !important;
+    }
+    .lang-btn:hover { background: #f5f5f5; }
+    .lang-btn.active[data-lang="en"] {
+      border: 2px solid #3B3B3A;
+      background: #FFFFFF;
+    }
+    .lang-btn.active[data-lang="id"] {
+      background: #F4A9A9;
+      border: 1px solid #F4A9A9;
+      color: #3B3B3A;
+      font-weight: 700;
     }
 
     /* ── Footer ── */
     .footer {
-      background: var(--c-section);
-      padding: 28px 28px 34px;
-      margin-top: 16px;
+      background: #2C2C2B;
+      padding: 20px 18px;
+      flex-shrink: 0;
     }
-
     .btn-start {
       width: 100%;
-      height: 58px;
-      border-radius: 14px;
-      border: none;
-      background: var(--c-thatch);
+      padding: 15px;
+      background: #A2B29F;
       color: white;
-      font-size: 15px;
-      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-      font-family: inherit;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      transition: background 0.15s, transform 0.1s;
+      gap: 8px;
+      transition: filter 0.2s, transform 0.1s;
+      -webkit-app-region: no-drag !important;
+      font-family: inherit;
       letter-spacing: 0.1px;
     }
-
-    .btn-start:hover  { background: var(--c-coconut); }
+    .btn-start:hover { filter: brightness(1.08); }
     .btn-start:active { transform: scale(0.98); }
+    .btn-start svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-    .btn-start svg {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
+    /* ── GoldShip theme overrides ── */
+    body.theme-goldship {
+      background: #E8E2D8;
+    }
+    body.theme-goldship .content-area {
+      background: #E8E2D8;
+    }
+    body.theme-goldship .header {
+      background: #A5A5A5;
+    }
+    body.theme-goldship .header-title {
+      color: #1A1714;
+    }
+    body.theme-goldship .btn-close {
+      color: #1A1714;
+    }
+    body.theme-goldship .btn-close:hover {
+      background: rgba(26, 23, 20, 0.1);
+      color: #1A1714;
+    }
+    body.theme-goldship .branding-avatar {
+      background: #9E8EC6;
+    }
+    body.theme-goldship .branding-text {
+      color: #1A1714;
+    }
+    body.theme-goldship .section-card {
+      background: #F3EFE9;
+    }
+    body.theme-goldship .section-header {
+      color: #1A1714;
+    }
+    body.theme-goldship .char-card {
+      background: #F3EFE9;
+      border-color: #D0C8D8;
+    }
+    body.theme-goldship .char-card.active {
+      background: rgba(198, 184, 227, 0.3);
+      border: 2px solid #9E8EC6;
+    }
+    body.theme-goldship .char-card:hover {
+      background: rgba(198, 184, 227, 0.2);
+      border: 2px solid #9E8EC6;
+    }
+    body.theme-goldship .char-name,
+    body.theme-goldship .lang-label {
+      color: #1A1714;
+    }
+    body.theme-goldship .lang-btn.active[data-lang="en"] {
+      border: 2px solid #9E8EC6;
+    }
+    body.theme-goldship .footer {
+      background: #A5A5A5;
+    }
+    body.theme-goldship .btn-start {
+      background: #9E8EC6;
     }
   </style>
 </head>
 <body>
 
-  <!-- Titlebar -->
-  <div class="titlebar">
-    <div class="titlebar-title" style="display: flex; align-items: center; gap: 6px;">
-      <img src="../assets/styles/images/logo.svg" alt="TrapeziBuddy" style="height: 14px; width: auto;" />
-      <span>Settings</span>
-    </div>
-    <button class="btn-close-title" id="btn-close">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.5" stroke-linecap="round">
-        <line x1="18" y1="6" x2="6" y2="18"/>
-        <line x1="6" y1="6" x2="18" y2="18"/>
+  <!-- Header -->
+  <div class="header">
+    <img id="header-logo" class="header-logo"
+         src="../assets/styles/images/agnesTachyon/logo.svg"
+         alt="TrapeziBuddy">
+    <button class="btn-close" id="btn-close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
     </button>
   </div>
 
   <!-- Content -->
-  <div class="content">
+  <div class="content-area">
 
-    <!-- App header -->
-    <div class="app-header">
-      <div class="app-avatar">
-        <img src="../assets/styles/images/gugugaga.png"
-             alt="TrapeziBuddy"
-             onerror="this.parentElement.innerHTML='<span class=\'app-avatar-placeholder\'>🐧</span>'"/>
+    <!-- Branding -->
+    <div class="branding">
+      <div class="branding-avatar">
+        <img src="../assets/styles/images/agnesTachyon/agnesTahcyon.png" onerror="this.style.display='none'">
       </div>
-      <div class="app-title" style="display: flex; align-items: center; gap: 8px;">
-        <img src="../assets/styles/images/logo.svg" alt="TrapeziBuddy" style="height: 24px; width: auto;" />
-        <span>Settings</span>
-      </div>
+      <div class="branding-text">TrapeziBuddy</div>
     </div>
 
-    <!-- Character size card -->
-    <div class="size-card">
-      <div class="size-card-header">
-        <!-- Monitor icon -->
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2"/>
-          <line x1="8" y1="21" x2="16" y2="21"/>
-          <line x1="12" y1="17" x2="12" y2="21"/>
+    <!-- Section 1: Character Options -->
+    <div class="section-card">
+      <div class="section-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
         </svg>
-        <span class="size-card-title">Character Size</span>
+        <span data-i18n="characterOptions" id="label-char-opt">Character Options</span>
       </div>
 
-      <div class="size-desc">Adjust the character display size:</div>
-
-      <div>
-        <div class="slider-row">
-          <div class="slider-wrap">
-            <input type="range" id="size-slider"
-                   min="30" max="200" value="60"
-                   oninput="updateSlider(this.value)"/>
+      <div class="char-options">
+        <div class="char-card active" data-char="agnesTachyon">
+          <div class="char-img-wrap">
+            <img src="../assets/styles/images/agnesTachyon/agnesTahcyon.png" onerror="this.style.display='none'">
           </div>
-          <span class="slider-value" id="size-value">60%</span>
+          <div class="char-name">Agnes Tachyon</div>
         </div>
-        <div class="slider-labels">
-          <span>Small = 50%</span>
-          <span>Normal = 100%</span>
-          <span>Large = 150%+</span>
+        <div class="char-card" data-char="goldship">
+          <div class="char-img-wrap">
+            <img src="../assets/styles/images/goldShip/goldship.png" onerror="this.style.display='none'">
+          </div>
+          <div class="char-name">GoldShip</div>
         </div>
+      </div>
+
+    </div>
+
+    <!-- Section 2: Language -->
+    <div class="section-card">
+      <div class="section-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
+        </svg>
+        <span data-i18n="language" id="label-lang">Language (Bahasa)</span>
+      </div>
+
+      <div class="lang-label" data-i18n="selectLanguage" id="label-select-lang">Select your preferred language:</div>
+      <div class="lang-options">
+        <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
+        <button class="lang-btn" data-lang="id">Indonesia</button>
       </div>
     </div>
 
@@ -317,49 +361,145 @@
   <!-- Footer -->
   <div class="footer">
     <button class="btn-start" id="btn-start">
-      <!-- Checkmark circle icon -->
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
         <polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
-      Start Application
+      <span data-i18n="startApp" id="label-start">Start Application</span>
     </button>
   </div>
 
+  <script src="../i18n.js"></script>
   <script>
-    const api = window.trapezi
+    const api = window.trapezi;
 
-    // ── Slider logic ──────────────────────────────────────
-    function updateSlider(val) {
-      const pct = ((val - 30) / (200 - 30)) * 100
-      const slider = document.getElementById('size-slider')
-      slider.style.setProperty('--val', pct + '%')
-      // Update gradient manually for Electron
-      slider.style.background = `linear-gradient(
-        to right,
-        #798777 0%,
-        #798777 ${pct}%,
-        #D9CFC7 ${pct}%,
-        #D9CFC7 100%
-      )`
-      document.getElementById('size-value').textContent = val + '%'
+    let state = {
+      character: 'agnesTachyon',
+      language: 'en'
+    };
+
+    const BRANDING_IMGS = {
+      agnesTachyon: '../assets/styles/images/agnesTachyon/agnesTahcyon.png',
+      goldship:  '../assets/styles/images/goldShip/goldship.png',
+    };
+
+    const BRANDING_LOGOS = {
+      agnesTachyon: '../assets/styles/images/agnesTachyon/logo.svg',
+      goldship:  '../assets/styles/images/goldShip/logo.svg',
+    };
+
+    function applyThemePreview(character) {
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
+      document.body.classList.add('theme-' + character);
+      const avatar = document.querySelector('.branding-avatar img');
+      if (avatar) avatar.src = BRANDING_IMGS[character] ?? BRANDING_IMGS.agnesTachyon;
+      const logo = document.getElementById('header-logo');
+      if (logo) logo.src = BRANDING_LOGOS[character] ?? BRANDING_LOGOS.agnesTachyon;
     }
 
-    // Init slider on load
-    const slider = document.getElementById('size-slider')
-    updateSlider(slider.value)
+    // Removed local updateLanguageText() as it's handled by the global i18n script
 
-    // ── Close ─────────────────────────────────────────────
+    function updateUI() {
+      document.querySelectorAll('.char-card').forEach(el => {
+        el.classList.toggle('active', el.dataset.char === state.character);
+      });
+      document.querySelectorAll('.lang-btn').forEach(el => {
+        el.classList.toggle('active', el.dataset.lang === state.language);
+      });
+      // Note: text translation is now handled reactively by the global i18n script.
+    }
+
+    async function loadSettings() {
+      if (api && api.settings) {
+        const stored = await api.settings.get();
+        if (stored) {
+          if (stored.character) state.character = stored.character;
+          if (stored.language)  state.language  = stored.language;
+        }
+      }
+      applyThemePreview(state.character);
+      updateUI();
+    }
+
+    // Character selection
+    document.querySelectorAll('.char-card').forEach(card => {
+      card.addEventListener('click', () => {
+        state.character = card.dataset.char;
+        applyThemePreview(state.character);
+        updateUI();
+        window.trapezi?.theme?.apply(state.character);
+      });
+    });
+
+    // Language selection
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.language = btn.dataset.lang;
+        updateUI();
+        if (api && api.language) {
+          api.language.set(state.language);
+        }
+      });
+    });
+
+    // Close
     document.getElementById('btn-close').addEventListener('click', () => {
-      api.window.closeSettings()
-    })
+      if (api && api.window) api.window.closeSettings();
+    });
 
-    // ── Start ─────────────────────────────────────────────
-    document.getElementById('btn-start').addEventListener('click', () => {
-      const size = parseInt(document.getElementById('size-slider').value)
-      api.window.startApp({ characterSize: size })
-    })
+    // Start
+    document.getElementById('btn-start').addEventListener('click', async () => {
+      if (api && api.settings && api.window) {
+        const existing = await api.settings.get() || {};
+        await api.settings.set({ ...existing, ...state });
+        window.trapezi?.theme?.apply(state.character);
+        api.window.startApp(state);
+      }
+    });
+
+    loadSettings();
+
+    // ── Global i18n Receiver ──
+    async function applyLanguage(lang) {
+      console.log('[Settings] Applying language:', lang);
+      const t = window.i18n[lang] || window.i18n['en']
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n')
+        if (t[key]) el.textContent = t[key]
+      })
+    }
+    
+    (async () => {
+      if (api && api.language) {
+        try {
+          const lang = await api.language.get();
+          console.log('[Settings] Initial language:', lang);
+          applyLanguage(lang || 'en');
+        } catch (err) {
+          console.error('[Settings] Failed to get language:', err);
+          applyLanguage('en');
+        }
+      }
+    })();
+    
+    if (api && api.language) {
+      api.language.onChange((lang) => {
+        console.log('[Settings] Language changed to:', lang);
+        applyLanguage(lang)
+      })
+    }
+  </script>
+  <script>
+    (async () => {
+      try {
+        const s = await window.trapezi?.settings?.get();
+        document.body.classList.add('theme-' + (s?.character || 'agnesTachyon'));
+      } catch (_) { document.body.classList.add('theme-agnesTachyon'); }
+    })();
+    window.trapezi?.onThemeApply?.((theme) => {
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
+      document.body.classList.add('theme-' + theme);
+    });
   </script>
 </body>
 </html>

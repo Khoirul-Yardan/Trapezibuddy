@@ -16,36 +16,10 @@ contextBridge.exposeInMainWorld('trapezi', {
     get: ()       => ipcRenderer.invoke('settings:get'),
     set: (data)   => ipcRenderer.invoke('settings:set', data),
   },
-  // ── Character Selection ────────────────────────────
-  character: {
-    select: (character) => ipcRenderer.send('character:select', character),
-  },
 
-  // ── Agnes Character Control ──────────────────────────────
-  agnes: {
-    hideCharacter: () => ipcRenderer.send('agnes:hideCharacter'),
-    showCharacter: () => ipcRenderer.send('agnes:showCharacter'),
-  },
-
-  // ── GoldShip Character Control ────────────────────────────
-  goldship: {
-    hideCharacter: () => ipcRenderer.send('goldship:hideCharacter'),
-    showCharacter: () => ipcRenderer.send('goldship:showCharacter'),
-  },
-
-  // ── Python Character Control (DEPRECATED - use agnes/goldship) ──────────────────────────────
-  python: {
-    showBubble:    (text, duration) => ipcRenderer.send('bubble:taskAdded', { text, duration }),
-    hideCharacter: () => ipcRenderer.send('agnes:hideCharacter'), // Try Agnes first
-    showCharacter: () => ipcRenderer.send('agnes:showCharacter'),
-  },
-
-  // ── Bubble Notifications (task events) ────────────────────
-  bubble: {
-    show:          (text) => ipcRenderer.send('bubble:show', { text }),
-    taskAdded:     (data) => ipcRenderer.send('bubble:taskAdded', data),
-    taskCompleted: (data) => ipcRenderer.send('bubble:taskCompleted', data),
-    hide:          ()     => ipcRenderer.send('bubble:hide'),
+  // ── Chat ─────────────────────────────────────────────────
+  chat: {
+    sendMessage: (message) => ipcRenderer.invoke('chat:sendMessage', message),
   },
 
   // ── Window ────────────────────────────────────────────────
@@ -54,7 +28,6 @@ contextBridge.exposeInMainWorld('trapezi', {
     minimize:         ()             => ipcRenderer.send('window:minimize'),
     hide:             ()             => ipcRenderer.send('window:hide'),
     restore:          (page)         => ipcRenderer.send('window:restore', page),
-    getSelectedCharacter: ()         => ipcRenderer.invoke('window:getSelectedCharacter'),
 
     // Add Task modal
     openAddTask:      ()             => ipcRenderer.invoke('modal:openAddTask'),
@@ -71,10 +44,68 @@ contextBridge.exposeInMainWorld('trapezi', {
     // Navigation listener from main
     onNavigate:       (cb)           => ipcRenderer.on('navigate', (_, page) => cb(page)),
 
+    // Chat window
+    openChat:         ()             => ipcRenderer.invoke('window:openChat'),
+    closeChat:        ()             => ipcRenderer.send('window:closeChat'),
+
     // Settings window
     closeSettings:    ()             => ipcRenderer.send('window:closeSettings'),
     startApp:         (data)         => ipcRenderer.send('window:startApp', data),
-    exitApp:          ()             => ipcRenderer.send('window:exitApp'),
+
+    // Benar-benar keluar aplikasi
+    close:            ()             => ipcRenderer.send('window:forceQuit'),
+    exitApp:          ()             => ipcRenderer.send('window:forceQuit'),
+
+    // Get current character
+    getSelectedCharacter: () => ipcRenderer.invoke('settings:get').then(s => s.character || 'agnesTachyon'),
+  },
+
+  // ── Character Control ──────────────────────────────────────
+  agnes: {
+    showCharacter: () => ipcRenderer.send('character:show', 'agnesTachyon'),
+    hideCharacter: () => ipcRenderer.send('character:hide', 'agnesTachyon'),
+  },
+  goldship: {
+    showCharacter: () => ipcRenderer.send('character:show', 'goldship'),
+    hideCharacter: () => ipcRenderer.send('character:hide', 'goldship'),
+  },
+
+  // ── Bubble ────────────────────────────────────────────────
+  bubble: {
+    show: (text) => ipcRenderer.send('bubble:show', text),
+    hide: () => ipcRenderer.send('bubble:hide'),
+    taskAdded: (data) => ipcRenderer.send('bubble:taskAdded', data),
+    taskCompleted: (data) => ipcRenderer.send('bubble:taskCompleted', data),
+  },
+
+  // ── Theme ─────────────────────────────────────────────────
+  theme: {
+    apply: (theme) => ipcRenderer.send('theme:apply', theme),
+  },
+
+  onThemeApply: (cb) => ipcRenderer.on('theme:apply', (_, theme) => cb(theme)),
+
+  // ── Language ──────────────────────────────────────────────
+  language: {
+    get: () => ipcRenderer.invoke('language:get'),
+    set: (lang) => ipcRenderer.send('language:set', lang),
+    onChange: (cb) => ipcRenderer.on('language:changed', (_, lang) => cb(lang))
+  },
+
+  // ── Calendar ──────────────────────────────────────────────
+  calendar: {
+    open: (currentDate) => ipcRenderer.invoke('calendar:open', currentDate),
+    selectDate: (date) => ipcRenderer.send('calendar:selectDate', date),
+    close: () => ipcRenderer.send('calendar:close'),
+    onDateSelected: (cb) => ipcRenderer.on('calendar:dateSelected', (_, date) => cb(date))
+  },
+
+  // ── Clock ─────────────────────────────────────────────────
+  clock: {
+    open: (currentTime) => ipcRenderer.invoke('clock:open', currentTime),
+    selectTime: (time) => ipcRenderer.send('clock:selectTime', time),
+    close: () => ipcRenderer.send('clock:close'),
+    onTimeSelected: (cb) => ipcRenderer.on('clock:timeSelected', (_, time) => cb(time))
   },
 
 })

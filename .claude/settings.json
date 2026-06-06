@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"d:\\\\Dev\\\\Projects\\\\Trapezibuddy\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(head -100)",
+      "Bash(ls \"C:\\\\Users\\\\UNKNOWN\\\\.claude\\\\projects\\\\d--Dev-Projects-Trapezibuddy\\\\\" 2>/dev/null || echo \"dir missing\")",
+      "Read(//c/Users/UNKNOWN/.claude/projects/d--Dev-Projects-Trapezibuddy\" 2>/dev/**)",
+      "Read(//c/Users/UNKNOWN/AppData/Roaming/Electron/**)",
+      "Read(//c/Users/UNKNOWN/AppData/Roaming/electron/**)",
+      "PowerShell($path = \"$env:APPDATA\\\\trapezibuddy\\\\config.json\"; if \\(Test-Path $path\\) { Get-Content $path } else { \"not found at $path\" })",
+      "Bash(Get-ChildItem -Recurse -Filter \"*.exe\" -Path \"d:\\\\Dev\\\\Projects\\\\Trapezibuddy\" -ErrorAction SilentlyContinue)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\UNKNOWN\\.claude\\projects\\d--Dev-Projects-Trapezibuddy"
+    ]
+  }
+}
