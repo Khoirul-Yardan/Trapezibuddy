@@ -1042,7 +1042,8 @@ body.theme-goldship .tab-btn:hover:not(.active) svg {
 }
 
 .streak-title-icon {
-  font-size: 16px;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .bottom-sheet-close {
@@ -1149,7 +1150,8 @@ body.theme-goldship .tab-btn:hover:not(.active) svg {
 }
 
 .stat-card-val-icon {
-  font-size: 18px;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .stat-card-sub {
@@ -1296,12 +1298,11 @@ body.theme-goldship .tab-btn:hover:not(.active) svg {
 }
 
 .freeze-token-btn {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: #E0E7EE;
-  color: #8C9FB3;
-  font-size: 12px;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1310,10 +1311,19 @@ body.theme-goldship .tab-btn:hover:not(.active) svg {
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
+.freeze-token-btn img {
+  /* inactive: gray snowflake */
+  filter: brightness(0) invert(0.55);
+}
+
 .freeze-token-btn.active {
-  background: #1D579C;
-  color: #FFFFFF;
-  box-shadow: 0 2px 6px rgba(29, 87, 156, 0.25);
+  background: #2D7DD2;
+  box-shadow: 0 2px 8px rgba(45, 125, 210, 0.35);
+}
+
+.freeze-token-btn.active img {
+  /* active: white snowflake */
+  filter: brightness(0) invert(1);
 }
 
 .freeze-token-btn:hover {
@@ -1346,23 +1356,6 @@ body.theme-goldship .on-time-section {
   border-color: rgba(26, 23, 20, 0.08);
 }
 
-body.theme-goldship .freeze-tokens-section {
-  background: rgba(158, 142, 198, 0.12);
-  border-color: rgba(158, 142, 198, 0.25);
-}
-
-body.theme-goldship .freeze-title {
-  color: #7B6BA8;
-}
-
-body.theme-goldship .freeze-desc {
-  color: rgba(26, 23, 20, 0.7);
-}
-
-body.theme-goldship .freeze-token-btn.active {
-  background: #7B6BA8;
-  box-shadow: 0 2px 6px rgba(123, 107, 168, 0.25);
-}
 
 /* ── Unfreeze Confirmation Overlay inside Bottom Sheet ──── */
 .unfreeze-overlay {

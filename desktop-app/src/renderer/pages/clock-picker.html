@@ -38,11 +38,21 @@
 
     .clock-picker-container {
       width: 100%;
-      padding: 16px 20px;
+      padding: 0 20px 16px;
       background: white;
       display: flex;
       flex-direction: column;
       align-items: center;
+    }
+
+    .clock-picker-drag-zone {
+      width: 100%;
+      padding: 14px 0 10px;
+      cursor: move;
+      -webkit-app-region: drag;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .clock-picker-header {
@@ -50,16 +60,13 @@
       font-weight: 700;
       letter-spacing: 1.5px;
       color: #AAAAAA;
-      margin-bottom: 16px;
       text-align: center;
-      cursor: move;
       -webkit-app-region: drag;
-      padding: 4px 0;
     }
 
     .clock-picker-time-input {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       gap: 12px;
       margin-bottom: 16px;
@@ -123,26 +130,6 @@
       margin: 0;
     }
 
-    .clock-picker-cursor {
-      position: absolute;
-      width: 2px;
-      height: 48px;
-      background: var(--c-primary);
-      animation: blink 1s infinite;
-      opacity: 0;
-      pointer-events: none;
-      -webkit-app-region: no-drag;
-    }
-
-    .clock-picker-input-box.focused .clock-picker-cursor {
-      opacity: 1;
-    }
-
-    @keyframes blink {
-      0%, 49% { opacity: 1; }
-      50%, 100% { opacity: 0; }
-    }
-
     .clock-picker-input-label {
       font-size: 12px;
       font-weight: 500;
@@ -154,14 +141,15 @@
       font-size: 42px;
       font-weight: 700;
       color: var(--c-mid);
-      margin-top: -32px;
+      line-height: 90px;
+      margin-top: 0;
     }
 
     .clock-picker-period {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-top: -32px;
+      margin-top: 0;
     }
 
     .clock-picker-period-btn {
@@ -239,14 +227,15 @@
 </head>
 <body>
   <div class="clock-picker-container">
-    <div class="clock-picker-header">ENTER TIME</div>
+    <div class="clock-picker-drag-zone">
+      <div class="clock-picker-header">ENTER TIME</div>
+    </div>
     
     <div class="clock-picker-time-input">
       <!-- Hour -->
       <div class="clock-picker-input-group">
         <div class="clock-picker-input-box" data-field="hour">
           <input type="number" id="clock-hour" min="1" max="12" value="11" />
-          <div class="clock-picker-cursor"></div>
         </div>
         <div class="clock-picker-input-label">Hour</div>
       </div>
@@ -258,7 +247,6 @@
       <div class="clock-picker-input-group">
         <div class="clock-picker-input-box" data-field="minute">
           <input type="number" id="clock-minute" min="0" max="59" value="59" />
-          <div class="clock-picker-cursor"></div>
         </div>
         <div class="clock-picker-input-label">Minute</div>
       </div>

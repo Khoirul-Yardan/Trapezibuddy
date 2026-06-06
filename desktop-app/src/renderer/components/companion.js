@@ -824,10 +824,10 @@ function renderStreakProgress() {
   const tokensContainer = document.getElementById('freeze-tokens-container')
   if (tokensContainer) {
     tokensContainer.innerHTML = ''
-    for (let i = 1; i <= 2; i++) {
+    for (let i = 1; i <= 3; i++) {
       const btn = document.createElement('button')
       btn.className = 'freeze-token-btn'
-      btn.textContent = '❄'
+      btn.innerHTML = '<img src="../assets/styles/images/icons/frozen.svg" alt="" width="16" height="18">'
 
       // Force mock state in Frozen preview mode to match design mockup:
       // (Right card has 1 token active/blue and 1 token used/greyed out)

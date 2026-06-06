@@ -123,17 +123,6 @@
     .input-with-icon .field-input {
       padding-right: 36px;
     }
-    .input-with-icon .field-icon {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 16px;
-      height: 16px;
-      color: var(--c-mid);
-      pointer-events: none;
-    }
-    
     /* Time display field (not editable, clickable via button) */
     .time-display {
       cursor: default;
@@ -614,13 +603,14 @@
           <label class="field-label" data-i18n="deadlineDate">Tanggal Deadline</label>
           <div class="input-with-icon">
             <input class="field-input" type="date" id="task-date"/>
-            <svg class="field-icon" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
+            <button class="field-icon-btn" id="btn-calendar-picker" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </button>
           </div>
           <div class="error-text" id="error-date" data-i18n="errorDate">Deadline tidak boleh sebelum hari ini</div>
         </div>
@@ -738,6 +728,21 @@
       });
     }
     
+    // Calendar icon button handler
+    const btnCalendarPicker = document.getElementById('btn-calendar-picker');
+    if (btnCalendarPicker) {
+      btnCalendarPicker.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isAgnesTachyon = !document.body.classList.contains('theme-goldship');
+        if (isAgnesTachyon && api && api.calendar) {
+          api.calendar.open(taskDateInput.value || null);
+        } else {
+          try { taskDateInput.showPicker(); } catch (_) { taskDateInput.click(); }
+        }
+      });
+    }
+
     // For Agnes Tachyon theme: open custom calendar modal instead of native picker
     function setupCalendarHandler() {
       const isAgnesTachyon = !document.body.classList.contains('theme-goldship');
