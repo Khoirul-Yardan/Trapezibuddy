@@ -614,13 +614,15 @@
           <label class="field-label" data-i18n="deadlineDate">Tanggal Deadline</label>
           <div class="input-with-icon">
             <input class="field-input" type="date" id="task-date"/>
-            <svg class="field-icon" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
+            <button class="field-icon-btn" id="btn-calendar-picker" type="button">
+              <svg viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </button>
           </div>
           <div class="error-text" id="error-date" data-i18n="errorDate">Deadline tidak boleh sebelum hari ini</div>
         </div>
@@ -720,6 +722,7 @@
     // Time picker button handler - opens popup window
     const timeDisplay = document.getElementById('task-time-display');
     const btnTimePicker = document.getElementById('btn-time-picker');
+    const btnCalendarPicker = document.getElementById('btn-calendar-picker');
     
     if (btnTimePicker && timeDisplay && api && api.clock) {
       btnTimePicker.addEventListener('click', (e) => {
@@ -734,6 +737,26 @@
         if (time) {
           timeDisplay.textContent = time;
           console.log('Time selected from clock picker:', time);
+        }
+      });
+    }
+
+    if (btnCalendarPicker) {
+      btnCalendarPicker.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!document.body.classList.contains('theme-goldship') && api && api.calendar) {
+          const currentDate = taskDateInput.value;
+          api.calendar.open(currentDate || null);
+          return;
+        }
+
+        if (taskDateInput.showPicker) {
+          taskDateInput.showPicker();
+        } else {
+          taskDateInput.focus();
+          taskDateInput.click();
         }
       });
     }
