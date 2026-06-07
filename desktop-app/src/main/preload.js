@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('trapezi', {
   tasks: {
     getAll:   ()     => ipcRenderer.invoke('tasks:getAll'),
     add:      (task) => ipcRenderer.invoke('tasks:add', task),
+    update:   (id, data) => ipcRenderer.invoke('tasks:update', id, data),
     complete: (id)   => ipcRenderer.invoke('tasks:complete', id),
     delete:   (id)   => ipcRenderer.invoke('tasks:delete', id),
   },
@@ -76,6 +77,14 @@ contextBridge.exposeInMainWorld('trapezi', {
     hide: () => ipcRenderer.send('bubble:hide'),
     taskAdded: (data) => ipcRenderer.send('bubble:taskAdded', data),
     taskCompleted: (data) => ipcRenderer.send('bubble:taskCompleted', data),
+    
+    // Listeners for the bubble window
+    onSetText: (cb) => ipcRenderer.on('bubble:setText', (_, text) => cb(text)),
+    onShow: (cb) => ipcRenderer.on('bubble:show', (_, data) => cb(data)),
+    onHide: (cb) => ipcRenderer.on('bubble:hide', () => cb()),
+    onClear: (cb) => ipcRenderer.on('bubble:clear', () => cb()),
+    onTaskAdded: (cb) => ipcRenderer.on('bubble:taskAdded', (_, data) => cb(data)),
+    onTaskCompleted: (cb) => ipcRenderer.on('bubble:taskCompleted', (_, data) => cb(data)),
   },
 
   // ── Theme ─────────────────────────────────────────────────

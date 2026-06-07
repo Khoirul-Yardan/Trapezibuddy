@@ -194,10 +194,24 @@ function updateMoodCard() {
 
   moodSub.textContent   = `${done}/${total} Task`
   streakEl.textContent  = state.streak
+
+  // Update streak icon color based on freeze status
+  if (streakIcon) {
+    // If frozen, use blue color, else orange
+    streakIcon.style.fill = state.freezeActive ? '#4FC3F7' : '#FF7043'
+  }
 }
 
 // ── Task Card ────────────────────────────────────────────────
 function createTaskCard(task) {
+  // Use priority for indicator bar color, but deadline for the label color
+  const priorityClass = (() => {
+    const p = (task.priority || 'Sedang').toLowerCase()
+    if (p === 'tinggi') return 'urgent'
+    if (p === 'sedang') return 'soon'
+    return 'normal'
+  })()
+
   const urgency  = calcUrgency(task.deadline_date, task.deadline_time, task.is_done)
   const dlLabel  = task.is_done
     ? getDoneSubtitle(task)
@@ -214,7 +228,7 @@ function createTaskCard(task) {
   card.dataset.id = task.id
 
   card.innerHTML = `
-    <div class="task-bar ${urgency}"></div>
+    <div class="task-bar ${priorityClass}"></div>
     <div class="task-content">
       <button class="task-check ${task.is_done ? 'checked' : ''}"
               data-id="${task.id}">
@@ -235,7 +249,7 @@ function createTaskCard(task) {
 
   // Check button click
   card.querySelector('.task-check').addEventListener('click', () => {
-    handleTaskCheck(task.id, task.name)
+    handleTaskCheck(task)
   })
 
   return card
@@ -255,64 +269,81 @@ function translateDOM() {
 
 // ── Task List ────────────────────────────────────────────────
 function renderTaskList() {
-  const list  = document.getElementById('task-list')
-  const empty = document.getElementById('task-empty')
-  const title = document.getElementById('task-list-title')
-  const filtersEl = document.getElementById('finished-filters')
-  const deleteHistoryBtn = document.getElementById('btn-delete-history')
+  try {
+    const list  = document.getElementById('task-list')
+    const empty = document.getElementById('task-empty')
+    const title = document.getElementById('task-list-title')
+    const filtersEl = document.getElementById('finished-filters')
+    const deleteHistoryBtn = document.getElementById('btn-delete-history')
 
-  // Clear existing cards (preserve empty placeholder)
-  list.querySelectorAll('.task-card').forEach(c => c.remove())
+    if (!list || !empty || !title) {
+      console.warn('[Companion] Task list elements not found in DOM');
+      return;
+    }
 
-  const now = new Date()
-  const rangeStart = (() => {
-    if (state.finishedFilter === 'all') return null
-    if (state.finishedFilter === 'today') return startOfDay(now)
-    if (state.finishedFilter === 'last3') return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
-    if (state.finishedFilter === 'week') return startOfWeek(now)
-    return startOfDay(now)
-  })()
+    // Clear existing cards (preserve empty placeholder)
+    list.querySelectorAll('.task-card').forEach(c => c.remove())
 
-  const filtered = state.activeTab === 'active'
-    ? state.tasks.filter(t => !t.is_done)
-    : state.tasks
-        .filter(t => t.is_done)
-        .filter(t => {
-          if (!rangeStart) return true
-          const doneAt = getTaskCompletedAt(t)
-          return doneAt >= rangeStart
-        })
+    const now = new Date()
+    const rangeStart = (() => {
+      if (state.finishedFilter === 'all') return null
+      if (state.finishedFilter === 'today') return startOfDay(now)
+      if (state.finishedFilter === 'last3') return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+      if (state.finishedFilter === 'week') return startOfWeek(now)
+      return startOfDay(now)
+    })()
 
-  title.textContent = state.activeTab === 'active' ? t('activeTasks') : t('finished')
-  if (filtersEl) filtersEl.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
-  if (deleteHistoryBtn) deleteHistoryBtn.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
+    const filtered = state.activeTab === 'active'
+      ? state.tasks.filter(t => !t.is_done)
+      : state.tasks
+          .filter(t => t.is_done)
+          .filter(t => {
+            if (!rangeStart) return true
+            const doneAt = getTaskCompletedAt(t)
+            return doneAt >= rangeStart
+          })
 
-  if (filtered.length === 0) {
-    empty.style.display = 'block'
-  } else {
-    empty.style.display = 'none'
-    filtered.forEach(task => {
-      list.appendChild(createTaskCard(task))
-    })
+    title.textContent = state.activeTab === 'active' ? t('activeTasks') : t('finished')
+    if (filtersEl) filtersEl.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
+    if (deleteHistoryBtn) deleteHistoryBtn.style.display = state.activeTab === 'finished' ? 'flex' : 'none'
+
+    if (filtered.length === 0) {
+      empty.style.display = 'block'
+    } else {
+      empty.style.display = 'none'
+      filtered.forEach(task => {
+        try {
+          list.appendChild(createTaskCard(task))
+        } catch (e) {
+          console.error('[Companion] Failed to create card for task:', task, e)
+        }
+      })
+    }
+
+    // Re-apply translations to all data-i18n elements (tabs, filters, title, empty state)
+    translateDOM()
+  } catch (err) {
+    console.error('[Companion] Error rendering task list:', err);
   }
-
-  // Re-apply translations to all data-i18n elements (tabs, filters, title, empty state)
-  translateDOM()
 }
 
 // ── Task Check — buka confirm modal ──────────────────────────
-function handleTaskCheck(taskId, taskName) {
-  openConfirmModal(taskId, taskName)
+function handleTaskCheck(task) {
+  openConfirmModal(task)
 }
 
 // ── Confirm Modal ────────────────────────────────────────────
 // State confirm modal
 let _confirmTaskId   = null
 let _confirmTaskName = null
+let _confirmTaskDeadlineDate = null
+let _confirmTaskDeadlineTime = null
 
-function openConfirmModal(taskId, taskName) {
-  _confirmTaskId   = taskId
-  _confirmTaskName = taskName
+function openConfirmModal(task) {
+  _confirmTaskId   = task.id
+  _confirmTaskName = task.name
+  _confirmTaskDeadlineDate = task.deadline_date
+  _confirmTaskDeadlineTime = task.deadline_time
 
   const nameEl = document.getElementById('confirm-task-name')
   const hintEl = document.getElementById('confirm-task-hint')
@@ -330,8 +361,8 @@ function openConfirmModal(taskId, taskName) {
   }
 
   // Set teks
-  nameEl.textContent = taskName
-  hintEl.textContent = taskName
+  nameEl.textContent = task.name
+  hintEl.textContent = task.name
   hintEl.style.fontWeight = 'bold' // ensure it's bold as originally intended by the innerHTML overwrite
 
   // Reset state
@@ -354,14 +385,28 @@ function initConfirmModal() {
   const confirmBtn = document.getElementById('btn-confirm-task')
   const errorEl    = document.getElementById('confirm-error')
 
+  if (!overlay || !closeBtn || !input || !confirmBtn || !errorEl) {
+    console.error('[Confirm] Modal elements missing in DOM')
+    return
+  }
+
   // Tutup modal
   const closeConfirm = () => {
     overlay.style.display = 'none'
     _confirmTaskId   = null
     _confirmTaskName = null
+    _confirmTaskDeadlineDate = null
+    _confirmTaskDeadlineTime = null
   }
 
   closeBtn.addEventListener('click', closeConfirm)
+  
+  // Also support clicking a "Cancel" button if it exists in different UI versions
+  const cancelBtn = document.getElementById('btn-cancel-confirm')
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', closeConfirm)
+  }
+
   overlay.addEventListener('click', e => {
     if (e.target === overlay) closeConfirm()
   })
@@ -378,43 +423,76 @@ function initConfirmModal() {
     confirmBtn.disabled = val.length === 0
   })
 
-  // Handle confirm
-  confirmBtn.addEventListener('click', async () => {
-    const val      = input.value.trim()
-    const expected = _confirmTaskName?.trim()
+    // Handle confirm
+    confirmBtn.addEventListener('click', async () => {
+      try {
+        const val      = input.value.trim()
+        const expected = _confirmTaskName?.trim()
 
-    // Validasi: harus persis sama (case-insensitive)
-    if (val.toLowerCase() !== expected?.toLowerCase()) {
-      input.classList.add('error')
-      errorEl.style.display = 'block'
-      input.focus()
-      return
-    }
+        console.log(`[Confirm] Input: "${val}", Expected: "${expected}"`)
 
-    // Sukses — tandai selesai
-    confirmBtn.disabled = true
-    confirmBtn.textContent = t('saving')
+        // Validasi: harus persis sama (case-insensitive)
+        if (val.toLowerCase() !== expected?.toLowerCase()) {
+          input.classList.add('error')
+          errorEl.style.display = 'block'
+          input.focus()
+          return
+        }
 
-    const currentApi = getApi()
-    if (currentApi) {
-      await currentApi.tasks.complete(_confirmTaskId)
-      await handleStreakOnTaskComplete()
-    }
+        // Sukses — tandai selesai
+        confirmBtn.disabled = true
+        confirmBtn.textContent = t('saving') || 'Saving...'
 
-    // Show congratulatory bubble with task name
-    const bubbleApi = getApi()
-    if (bubbleApi && bubbleApi.bubble) {
-      const congratsMessage = `Selamat! "${_confirmTaskName}" selesai! 🎉`
-      bubbleApi.bubble.taskCompleted({ name: congratsMessage, emoji: '✅' })
-    }
+        const currentApi = getApi()
+        if (!currentApi) {
+          throw new Error('API not available')
+        }
 
-    closeConfirm()
+        console.log(`[Confirm] Completing task ID: ${_confirmTaskId}`)
+        const task = await currentApi.tasks.complete(_confirmTaskId)
+        if (task) {
+          console.log('[Confirm] Task completed successfully on backend, updating streak')
+          await handleStreakOnTaskComplete(task)
+        } else {
+          console.warn('[Confirm] Task completion returned null task')
+        }
 
-    // Refresh UI
-    await loadTasks()
-    updateMoodCard()
-    renderTaskList()
-  })
+        // Show congratulatory bubble with task name
+        if (currentApi.bubble) {
+          const lang = window.currentLang || 'en'
+          const dateStr = _confirmTaskDeadlineDate || ''
+          const timeStr = _confirmTaskDeadlineTime || ''
+          const deadline = safeDate(`${dateStr}T${timeStr}`)
+          const isLate = deadline && (new Date() - deadline > 0)
+          
+          let congratsMessage = ''
+          if (isLate) {
+            congratsMessage = lang === 'id'
+              ? `Selamat! "${_confirmTaskName}" selesai (walaupun terlambat)! 🎉`
+              : `Congrats! "${_confirmTaskName}" is done (even if late)! 🎉`
+          } else {
+            congratsMessage = lang === 'id'
+              ? `Selamat! "${_confirmTaskName}" selesai tepat waktu! 🎉`
+              : `Congrats! "${_confirmTaskName}" completed on time! 🎉`
+          }
+          
+          console.log(`[Confirm] Showing bubble: "${congratsMessage}"`)
+          currentApi.bubble.taskCompleted({ name: congratsMessage, emoji: '✅' })
+        }
+
+        closeConfirm()
+
+        // Refresh UI
+        await loadTasks()
+        updateMoodCard()
+        renderTaskList()
+      } catch (err) {
+        console.error('[Confirm] Error confirming task:', err)
+        confirmBtn.disabled = false
+        confirmBtn.textContent = t('confirm') || 'Confirm'
+        alert('Error: ' + err.message)
+      }
+    })
 
   // Enter key shortcut
   input.addEventListener('keydown', e => {
@@ -444,7 +522,9 @@ async function loadSettings() {
     state.streak = settings.streak ?? 0
     state.longestStreak = settings.longest_streak ?? 0
     state.freezeTokens = settings.freezeTokens ?? 2
+    state.freezeActive = settings.freezeActive ?? false
     state.lastTaskDate = settings.lastTaskDate ?? null
+    state.lastTokenRecoveryDate = settings.lastTokenRecoveryDate ?? null
     state.focusTimer = settings.focusTimer ?? 25
     state.doNotDisturb = settings.doNotDisturb ?? false
     focusSeconds = state.focusTimer * 60
@@ -455,8 +535,11 @@ async function loadSettings() {
 
 // ── Tab Bar ──────────────────────────────────────────────────
 function initTabBar() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  const tabs = document.querySelectorAll('.tab-btn');
+  console.log(`[Companion] Found ${tabs.length} tab buttons.`);
+  tabs.forEach(btn => {
     btn.addEventListener('click', () => {
+      console.log('[Companion] Tab clicked:', btn.dataset.tab);
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
       btn.classList.add('active')
       state.activeTab = btn.dataset.tab
@@ -467,9 +550,15 @@ function initTabBar() {
 
 function initFinishedFilters() {
   const el = document.getElementById('finished-filters')
-  if (!el) return
-  el.querySelectorAll('.filter-chip').forEach(btn => {
+  if (!el) {
+    console.warn('[Companion] Finished filters container not found');
+    return
+  }
+  const chips = el.querySelectorAll('.filter-chip');
+  console.log(`[Companion] Found ${chips.length} filter chips.`);
+  chips.forEach(btn => {
     btn.addEventListener('click', () => {
+      console.log('[Companion] Filter clicked:', btn.dataset.filter);
       el.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'))
       btn.classList.add('active')
       state.finishedFilter = btn.dataset.filter || 'today'
@@ -499,18 +588,22 @@ function initModal() {
     if (e.target === overlay) closeModal()
   })
 
-  // Category tags
-  document.querySelectorAll('.cat-tag:not(.add-cat)').forEach(tag => {
-    tag.addEventListener('click', () => tag.classList.toggle('active'))
-  })
-
-  // Priority buttons
-  document.querySelectorAll('.prio-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.prio-btn').forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
+    // Category tags
+    document.querySelectorAll('.cat-tag:not(.add-cat)').forEach(tag => {
+      tag.removeEventListener('click', tag._clickRef); // Prevent duplicate listeners
+      tag._clickRef = () => tag.classList.toggle('active');
+      tag.addEventListener('click', tag._clickRef);
     })
-  })
+
+    // Priority buttons
+    document.querySelectorAll('.prio-btn').forEach(btn => {
+      btn.removeEventListener('click', btn._clickRef);
+      btn._clickRef = () => {
+        document.querySelectorAll('.prio-btn').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+      };
+      btn.addEventListener('click', btn._clickRef);
+    })
 
   // Initialize custom calendar for embedded add task modal
   const taskDateInput = document.getElementById('task-date')
@@ -598,6 +691,8 @@ function showTaskAcknowledgment() {
 }
 
 // ── Deadline Reminders ───────────────────────────────────────
+const remindedTasks = new Set()
+
 function checkDeadlineReminders() {
   const tasks = state.tasks
   const now = new Date()
@@ -605,19 +700,21 @@ function checkDeadlineReminders() {
   
   const urgentTasks = tasks.filter(t => {
     if (t.is_done) return false
-    if (!t.reminder) return false // Check if reminder is enabled for this task
+    if (!t.reminder) return false
+    if (remindedTasks.has(t.id)) return false // Don't spam
     
     const deadline = new Date(`${t.deadline_date}T${t.deadline_time}`)
     const diffHrs = (deadline - now) / (1000 * 60 * 60)
-    // Remind if deadline is within 24 hours (as per description) 
-    // and hasn't been reminded recently (we can just use the 1-hour window for bubble spam prevention)
-    return diffHrs < 24 && diffHrs > 0
+    // Remind if deadline is within 1 hour
+    return diffHrs < 1 && diffHrs > 0
   })
   
   if (urgentTasks.length > 0) {
-    const task = urgentTasks[0] // Just remind for the first one found
-    const msgEn = `Reminder: Task "${task.name}" is due in less than 24 hours! ⏰`
-    const msgId = `Pengingat: Tugas "${task.name}" akan segera deadline dalam kurang dari 24 jam! ⏰`
+    const task = urgentTasks[0]
+    remindedTasks.add(task.id) // Mark as reminded
+    
+    const msgEn = `Task "${task.name}" is almost out of time, let's speed up progress friend! ⏰`
+    const msgId = `Tugas "${task.name}" hampir kehabisan waktu, ayo percepat progres kawan! ⏰`
     
     const msg = lang === 'id' ? msgId : msgEn
     
@@ -798,90 +895,121 @@ function startFocusInterval() {
 // ── Streak Logic ──────────────────────────────────────────────
 async function checkStreak() {
   const now = new Date()
-  const todayStr = now.toISOString().split('T')[0]
+  const activeTasks = state.tasks.filter(t => !t.is_done)
   
-  if (!state.lastTaskDate) {
-    // First time, nothing to check
-    return
+  let usedTokenCount = 0
+  let resetStreak = false
+  let tasksToUpdate = []
+
+  // ── Weekly Freeze Token Recovery ──────────────────────────
+  const lastRecovery = state.lastTokenRecoveryDate ? new Date(state.lastTokenRecoveryDate) : null
+  const oneWeek = 7 * 24 * 60 * 60 * 1000
+  
+  if (!lastRecovery || (now - lastRecovery >= oneWeek)) {
+    if (state.freezeTokens < 2) {
+      state.freezeTokens = Math.min(state.freezeTokens + 1, 2)
+      state.lastTokenRecoveryDate = now.toISOString()
+      console.log(`[Streak] Weekly recovery: +1 token. Total: ${state.freezeTokens}`)
+      
+      const currentApi = getApi()
+      if (currentApi && currentApi.bubble && currentApi.bubble.show) {
+        const lang = window.currentLang || 'en'
+        const msg = lang === 'id'
+          ? 'Persediaan Token Beku mingguanmu sudah datang! +1 ❄️'
+          : 'Your weekly Freeze Token supply has arrived! +1 ❄️'
+        currentApi.bubble.show(msg)
+      }
+    } else {
+      // If tokens are already full, just update the date so we don't spam check
+      state.lastTokenRecoveryDate = now.toISOString()
+    }
   }
 
-  const lastDate = new Date(state.lastTaskDate)
-  const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24))
-
-  if (diffDays <= 1) {
-    // Either today or yesterday, streak is safe
-    return
-  }
-
-  // User missed one or more days
-  let missedDays = diffDays - 1
-  
-  let tokensToUse = Math.min(missedDays, state.freezeTokens)
-  
-  if (tokensToUse > 0) {
-    state.freezeTokens -= tokensToUse
-    missedDays -= tokensToUse
-    // Streak preserved for the frozen days
-    console.log(`[Streak] Used ${tokensToUse} automatic freeze tokens. Remaining: ${state.freezeTokens}`)
+  for (const task of activeTasks) {
+    const deadline = safeDate(`${task.deadline_date}T${task.deadline_time}`)
     
-    if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
-      window.trapezi.bubble.show({
-        text: `Kamu tidak aktif beberapa hari! ${tokensToUse} Token Beku digunakan untuk melindungi streak-mu.`,
-        emoji: '❄️'
-      })
+    // Check if task is past deadline and hasn't been penalized yet
+    if (deadline && (now - deadline > 0) && !task.streak_penalty_handled) {
+      if (state.streak > 0 || state.freezeTokens > 0) {
+        if (state.freezeTokens > 0) {
+          state.freezeTokens--
+          state.freezeActive = true // Enter Frozen state
+          usedTokenCount++
+          task.streak_penalty_handled = true
+          tasksToUpdate.push(task)
+          console.log(`[Streak] Task "${task.name}" past deadline. Used token. Tokens left: ${state.freezeTokens}`)
+        } else {
+          resetStreak = true
+          task.streak_penalty_handled = true
+          tasksToUpdate.push(task)
+          console.log(`[Streak] Task "${task.name}" past deadline. No tokens left. Resetting streak.`)
+        }
+      } else {
+        // Streak is already 0 and no tokens, just mark task as handled to avoid repeated checks
+        task.streak_penalty_handled = true
+        tasksToUpdate.push(task)
+      }
     }
   }
 
-  if (missedDays > 0) {
-    // Still have missed days after using tokens, or no tokens left
-    console.log(`[Streak] Streak reset! Missed days: ${missedDays}`)
+  if (resetStreak) {
     state.streak = 0
-    if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
-      window.trapezi.bubble.show({
-        text: 'Yah, streak kamu terputus karena sudah lama tidak aktif. Ayo mulai lagi!',
-        emoji: '💔'
-      })
-    }
+    state.freezeActive = false
   }
 
-  // Update lastTaskDate to "yesterday" so they have today to complete a task and continue
-  const yesterday = new Date(now)
-  yesterday.setDate(yesterday.getDate() - 1)
-  state.lastTaskDate = yesterday.toISOString().split('T')[0]
-  
-  await saveStreakSettings()
+  if (tasksToUpdate.length > 0 || resetStreak) {
+    const currentApi = getApi()
+    if (currentApi) {
+      // Update tasks to mark penalty as handled
+      for (const t of tasksToUpdate) {
+        await currentApi.tasks.update(t.id, t)
+      }
+      
+      if (usedTokenCount > 0 && currentApi.bubble && currentApi.bubble.show) {
+        const lang = window.currentLang || 'en'
+        const msg = lang === 'id' 
+          ? `Deadline terlewati! ${usedTokenCount} Token Beku digunakan. Streak aman! ❄️` 
+          : `Deadline missed! ${usedTokenCount} Freeze Token used. Streak safe! ❄️`
+        currentApi.bubble.show(msg)
+      } else if (resetStreak && currentApi.bubble && currentApi.bubble.show) {
+        const lang = window.currentLang || 'en'
+        const msg = lang === 'id'
+          ? 'Yah, streak kamu reset karena ada tugas yang melewati deadline. Ayo mulai lagi! 💔'
+          : 'Oh no, your streak reset because a task passed its deadline. Let\'s start over! 💔'
+        currentApi.bubble.show(msg)
+      }
+      
+      await saveStreakSettings()
+      updateMoodCard()
+      renderStreakProgress()
+    }
+  }
 }
 
-async function handleStreakOnTaskComplete() {
+async function handleStreakOnTaskComplete(task) {
   const now = new Date()
   const todayStr = now.toISOString().split('T')[0]
 
-  if (state.lastTaskDate === todayStr) {
-    // Already counted today
-    return
-  }
+  // If task was already past deadline when completed, don't increase streak
+  const deadline = safeDate(`${task.deadline_date}T${task.deadline_time}`)
+  const isLate = deadline && (now - deadline > 0)
 
-  state.streak++
-  state.lastTaskDate = todayStr
-
-  // Update longest streak
-  if (state.streak > state.longestStreak) {
-    state.longestStreak = state.streak
-  }
-
-  // Regain freeze token every 5 streak
-  if (state.streak % 5 === 0) {
-    state.freezeTokens = Math.min(state.freezeTokens + 1, 2)
-    if (window.trapezi && window.trapezi.bubble && window.trapezi.bubble.show) {
-      window.trapezi.bubble.show({
-        text: 'Hebat! Kamu dapat 1 Token Beku baru setiap 5 streak!',
-        emoji: '❄️'
-      })
+  if (!isLate) {
+    state.streak++
+    state.lastTaskDate = todayStr
+    
+    // Update longest streak
+    if (state.streak > state.longestStreak) {
+      state.longestStreak = state.streak
     }
   }
 
+  // Exit Frozen state on task completion (even if late)
+  state.freezeActive = false
+
   await saveStreakSettings()
   updateMoodCard()
+  renderStreakProgress()
 }
 
 async function saveStreakSettings() {
@@ -893,102 +1021,126 @@ async function saveStreakSettings() {
       streak: state.streak,
       longest_streak: state.longestStreak,
       freezeTokens: state.freezeTokens,
+      freezeActive: state.freezeActive,
       lastTaskDate: state.lastTaskDate,
+      lastTokenRecoveryDate: state.lastTokenRecoveryDate,
     })
   }
 }
 
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
-  await loadSettings()
-  await checkStreak()
-  await loadTasks()
+  console.log('[Companion] Initializing...');
+  try {
+    await loadSettings()
+    await loadTasks()
+    await checkStreak()
 
-  renderDayStrip()
-  updateMoodCard()
-  renderTaskList()
-  initTabBar()
-  initFinishedFilters()
-  initModal()
-  initConfirmModal()
-  initWindowControls()
-  initStreakBottomSheet()
-  // Focus timer starts only on user action
-  setFocusView(false)
-  const startBtn = document.getElementById('btn-focus-start')
-  const stopBtn  = document.getElementById('btn-focus-stop')
-  const deleteHistoryBtn = document.getElementById('btn-delete-history')
-
-  startBtn?.addEventListener('click', () => startFocusTimer())
-  stopBtn?.addEventListener('click', () => stopFocusTimer())
-  
-  deleteHistoryBtn?.addEventListener('click', async () => {
-    const lang = window.currentLang || 'en'
-    const confirmMsg = lang === 'id' 
-      ? 'Hapus semua riwayat tugas yang sudah selesai? (Tidak mempengaruhi streak)' 
-      : 'Delete all finished task history? (Does not affect streak)'
+    renderDayStrip()
+    updateMoodCard()
     
-    if (confirm(confirmMsg)) {
-      const finishedTasks = state.tasks.filter(t => t.is_done)
-      const currentApi = getApi()
-      if (currentApi) {
-        for (const task of finishedTasks) {
-          await currentApi.tasks.delete(task.id)
-        }
-        await loadTasks()
-        renderTaskList()
-        updateMoodCard()
-      }
-    }
-  })
+    // Initialize tabs first to ensure menu navigation works
+    initTabBar()
+    initFinishedFilters()
+    
+    renderTaskList()
+    
+    initModal()
+    initConfirmModal()
+    initWindowControls()
+    initStreakBottomSheet()
+    
+    // Focus timer starts only on user action
+    setFocusView(false)
+    
+    const startBtn = document.getElementById('btn-focus-start')
+    const stopBtn  = document.getElementById('btn-focus-stop')
+    const deleteHistoryBtn = document.getElementById('btn-delete-history')
 
-  // Listen untuk refresh dari modal windows
-  const currentApi = getApi()
-  if (currentApi && currentApi.window && currentApi.window.onRefreshTasks) {
-    currentApi.window.onRefreshTasks(async () => {
-      await loadTasks()
-      updateMoodCard()
-      renderTaskList()
+    startBtn?.addEventListener('click', () => startFocusTimer())
+    stopBtn?.addEventListener('click', () => stopFocusTimer())
+    
+    deleteHistoryBtn?.addEventListener('click', async () => {
+      const lang = window.currentLang || 'en'
+      const confirmMsg = lang === 'id' 
+        ? 'Hapus semua riwayat tugas yang sudah selesai? (Tidak mempengaruhi streak)' 
+        : 'Delete all finished task history? (Does not affect streak)'
       
-      // Show task acknowledgment message
-      showTaskAcknowledgment()
-    })
-  }
-
-  // Check deadline reminders every 5 minutes
-  checkDeadlineReminders()
-  setInterval(() => {
-    checkDeadlineReminders()
-  }, 5 * 60 * 1000)
-
-  // Listen for language changes
-  const langApi = getApi()
-  if (langApi && langApi.language && langApi.language.onChange) {
-    langApi.language.onChange((lang) => {
-      window.currentLang = lang
-      renderDayStrip()
-      updateMoodCard()
-      renderTaskList()
-    })
-  }
-
-  // Listen to navigation requests from main (e.g. restore with target page)
-  const navApi = getApi()
-  if (navApi && navApi.window && navApi.window.onNavigate) {
-    navApi.window.onNavigate((page) => {
-      if (!page) return
-      if (page === 'active' || page === 'finished') {
-        state.activeTab = page
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === page))
-        renderTaskList()
-      } else if (page === 'add-task') {
-        const addApi = getApi()
-        if (addApi) addApi.window.openAddTask()
-      } else if (page === 'chat') {
-        const chatApi = getApi()
-        if (chatApi) chatApi.window.openChat()
+      if (confirm(confirmMsg)) {
+        const finishedTasks = state.tasks.filter(t => t.is_done)
+        const currentApi = getApi()
+        if (currentApi) {
+          for (const task of finishedTasks) {
+            await currentApi.tasks.delete(task.id)
+          }
+          await loadTasks()
+          renderTaskList()
+          updateMoodCard()
+        }
       }
     })
+
+    // Listen untuk refresh dari modal windows
+    const currentApi = getApi()
+    if (currentApi && currentApi.window && currentApi.window.onRefreshTasks) {
+      currentApi.window.onRefreshTasks(async () => {
+        await loadTasks()
+        await checkStreak()
+        updateMoodCard()
+        renderTaskList()
+        
+        // Show task acknowledgment message
+        showTaskAcknowledgment()
+      })
+    }
+
+    // Check streak periodically (every 1 minute)
+    setInterval(() => {
+      checkStreak()
+    }, 60 * 1000)
+
+    // Check deadline reminders periodically (every 1 minute)
+    checkDeadlineReminders()
+    setInterval(() => {
+      checkDeadlineReminders()
+    }, 60 * 1000)
+
+    // Listen for language changes
+    const langApi = getApi()
+    if (langApi && langApi.language && langApi.language.onChange) {
+      langApi.language.onChange((lang) => {
+        window.currentLang = lang
+        renderDayStrip()
+        updateMoodCard()
+        renderTaskList()
+      })
+    }
+
+    // Listen to navigation requests from main (e.g. restore with target page)
+    const navApi = getApi()
+    if (navApi && navApi.window && navApi.window.onNavigate) {
+      navApi.window.onNavigate((page) => {
+        console.log('[Companion] Navigation request:', page);
+        if (!page) return
+        if (page === 'active' || page === 'finished') {
+          state.activeTab = page
+          document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tab === page)
+          })
+          renderTaskList()
+        } else if (page === 'add-task') {
+          const addApi = getApi()
+          if (addApi) addApi.window.openAddTask()
+        } else if (page === 'chat') {
+          const chatApi = getApi()
+          if (chatApi) chatApi.window.openChat()
+        }
+      })
+    }
+
+    console.log('[Companion] Initialization complete.');
+  } catch (err) {
+    console.error('[Companion] Initialization error:', err);
   }
 }
 

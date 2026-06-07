@@ -23,10 +23,10 @@ class BubbleDialog(QWidget):
         self.bubble_width = 250
         self.bubble_height = 100
         self.corner_radius = 15
-        self.pointer_height = 20  # Increased for better visibility
-        self.pointer_width = 25
+        self.pointer_height = 0  # Set to 0 for top-center positioning
+        self.pointer_width = 0
         
-        # Position tracking for following character
+        # Position tracking for following character (disabled for top-center)
         self.follow_target_x = None
         self.follow_target_y = None
         self.is_following = False
@@ -85,25 +85,13 @@ class BubbleDialog(QWidget):
         total_height = self.bubble_height + self.pointer_height + 5
         self.setFixedSize(self.bubble_width + 50, total_height + 15)
         
-        # Position bubble - LEBIH DEKAT ke character
-        # Place directly above character (reduce distance further)
-        window_x = x - self.width() // 2
-        window_y = y - total_height - 5  # Lebih dekat! (was -10 before)
+        # Position bubble at top center
+        self.update_position()
         
-        # Clamp to screen bounds
-        screen_geometry = self.screen().availableGeometry() if self.screen() else QRect(0, 0, 1920, 1080)
-        window_x = max(0, min(window_x, screen_geometry.width() - self.width()))
-        window_y = max(10, min(window_y, screen_geometry.height() - self.height()))
-        
-        self.move(window_x, window_y)
-        
-        # Track position for following
+        # Track position (though not strictly following anymore)
         self.follow_target_x = x
         self.follow_target_y = y
-        self.is_following = True
-        
-        # Start following position updates
-        self.follow_timer.start(50)  # Update every 50ms
+        self.is_following = False # Disable following to keep it at top center
         
         # Show bubble
         self.show()
@@ -129,21 +117,19 @@ class BubbleDialog(QWidget):
         self.dialog_closed.emit()
         logger.debug("Bubble hidden")
     
-    def update_position(self, x: int, y: int):
+    def update_position(self, x: int = 0, y: int = 0):
         """
-        Update bubble position (for following character movement)
+        Update bubble position to be at the top center of the screen
         
         Args:
-            x, y: Center screen coordinates of character
+            x, y: Ignored (formerly character coordinates)
         """
-        total_height = self.bubble_height + self.pointer_height + 5
-        new_x = x - self.width() // 2
-        new_y = y - total_height - 5  # Lebih dekat! (was -10 before)
-        
-        # Clamp to screen
+        # Get screen geometry
         screen_geometry = self.screen().availableGeometry() if self.screen() else QRect(0, 0, 1920, 1080)
-        new_x = max(0, min(new_x, screen_geometry.width() - self.width()))
-        new_y = max(10, min(new_y, screen_geometry.height() - self.height()))
+        
+        # Calculate top center position
+        new_x = (screen_geometry.width() - self.width()) // 2
+        new_y = 30 # 30px from top
         
         self.move(new_x, new_y)
     
@@ -195,19 +181,6 @@ class BubbleDialog(QWidget):
             self.bubble_width, self.bubble_height,
             self.corner_radius, self.corner_radius
         )
-        
-        # Add pointer (triangle at bottom center)
-        pointer_x = bubble_x + self.bubble_width // 2
-        pointer_y = bubble_y + self.bubble_height
-        
-        pointer_path = QPainterPath()
-        pointer_path.moveTo(pointer_x - self.pointer_width // 2, pointer_y)
-        pointer_path.lineTo(pointer_x + self.pointer_width // 2, pointer_y)
-        pointer_path.lineTo(pointer_x, pointer_y + self.pointer_height)
-        pointer_path.closeSubpath()
-        
-        # Combine paths
-        path.addPath(pointer_path)
         
         # Draw bubble fill with gradient (improved)
         gradient = QLinearGradient(bubble_x, bubble_y, bubble_x, bubble_y + self.bubble_height)

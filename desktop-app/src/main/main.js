@@ -548,6 +548,17 @@ ipcMain.handle('tasks:complete', (_, taskId) => {
   return tasks[idx] ?? null
 })
 
+ipcMain.handle('tasks:update', (_, taskId, taskData) => {
+  const tasks = store.get('tasks')
+  const idx = tasks.findIndex(t => t.id === taskId)
+  if (idx !== -1) {
+    tasks[idx] = { ...tasks[idx], ...taskData }
+    store.set('tasks', tasks)
+    return tasks[idx]
+  }
+  return null
+})
+
 ipcMain.handle('tasks:delete', (_, taskId) => {
   store.set('tasks', store.get('tasks').filter(t => t.id !== taskId))
   return true
@@ -899,9 +910,12 @@ ipcMain.on('character:hide', () => {
 function ensureBubbleWindow() {
   if (bubbleWindow && !bubbleWindow.isDestroyed()) return bubbleWindow
 
+  const { width } = screen.getPrimaryDisplay().workAreaSize
   bubbleWindow = new BrowserWindow({
     width: 300,
     height: 150,
+    x: Math.floor(width / 2 - 150),
+    y: 30, // Position at top center
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -921,7 +935,13 @@ function ensureBubbleWindow() {
 
 ipcMain.on('bubble:show', (_, text) => {
   const win = ensureBubbleWindow()
-  win.webContents.send('bubble:setText', text)
+  if (win.webContents.isLoading()) {
+    win.webContents.once('did-finish-load', () => {
+      win.webContents.send('bubble:setText', text)
+    })
+  } else {
+    win.webContents.send('bubble:setText', text)
+  }
   win.show()
 })
 
@@ -931,13 +951,25 @@ ipcMain.on('bubble:hide', () => {
 
 ipcMain.on('bubble:taskAdded', (_, data) => {
   const win = ensureBubbleWindow()
-  win.webContents.send('bubble:taskAdded', data)
+  if (win.webContents.isLoading()) {
+    win.webContents.once('did-finish-load', () => {
+      win.webContents.send('bubble:taskAdded', data)
+    })
+  } else {
+    win.webContents.send('bubble:taskAdded', data)
+  }
   win.show()
 })
 
 ipcMain.on('bubble:taskCompleted', (_, data) => {
   const win = ensureBubbleWindow()
-  win.webContents.send('bubble:taskCompleted', data)
+  if (win.webContents.isLoading()) {
+    win.webContents.once('did-finish-load', () => {
+      win.webContents.send('bubble:taskCompleted', data)
+    })
+  } else {
+    win.webContents.send('bubble:taskCompleted', data)
+  }
   win.show()
 })
 

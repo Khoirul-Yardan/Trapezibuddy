@@ -1,16 +1,18 @@
 // bubble.js — Speech bubble overlay logic
 // Receives text via IPC from main process, shows with typewriter animation
 
-const { ipcRenderer } = require('electron')
-
 let typeTimer = null
 let autoHideTimer = null
 
 // ── Show bubble text with typewriter effect ──────────────────
 function showBubble(text, emoji) {
+  console.log('[Bubble] showBubble called with:', text, emoji);
   const textEl = document.getElementById('bubble-text')
   const card = document.getElementById('bubble-card')
-  if (!textEl || !card) return
+  if (!textEl || !card) {
+    console.error('[Bubble] textEl or card missing');
+    return
+  }
 
   // Clear previous timers
   if (typeTimer) clearInterval(typeTimer)
@@ -100,56 +102,45 @@ function clearBubble() {
 }
 
 // ── Listen for messages from main process ────────────────────
-// Note: contextIsolation is OFF for this window since it needs direct ipcRenderer
-try {
-  // Try preload API first
-  if (window.trapezi && window.trapezi.bubble) {
-    window.trapezi.bubble.onShow((data) => {
-      showBubble(data.text || '', data.emoji || '')
-    })
-    window.trapezi.bubble.onHide(() => {
-      hideBubble()
-    })
-  }
-} catch (e) {
-  console.log('Bubble: waiting for IPC via webContents.send')
-}
-
-// Fallback: listen via ipcRenderer directly (if nodeIntegration enabled)
-try {
-  if (typeof require !== 'undefined') {
-    const { ipcRenderer: ipc } = require('electron')
-    
-    ipc.on('bubble:setText', (_, text) => {
-      showBubble(text)
-    })
-    
-    ipc.on('bubble:taskAdded', (_, task) => {
-      const msg = `Tugas baru ditambahkan: "${task.name}"`
-      showBubble(msg, '📝')
-    })
-    
-    ipc.on('bubble:taskCompleted', (_, task) => {
-      const msg = task.name || 'Tugas selesai!'
-      showBubble(msg, task.emoji || '✅')
-    })
-
-    ipc.on('bubble:show', (_, data) => {
-      if (typeof data === 'string') {
-        showBubble(data)
-      } else {
-        showBubble(data.text || '', data.emoji || '')
-      }
-    })
-    ipc.on('bubble:hide', () => {
-      hideBubble()
-    })
-    ipc.on('bubble:clear', () => {
-      clearBubble()
-    })
-  }
-} catch (e) {
-  // nodeIntegration not available, use preload
+// Note: contextIsolation is ON, using preload API
+console.log('[Bubble] Initializing listeners...');
+if (window.trapezi && window.trapezi.bubble) {
+  const b = window.trapezi.bubble
+  console.log('[Bubble] trapezi.bubble API found');
+  
+  b.onSetText((text) => {
+    console.log('[Bubble] onSetText received:', text);
+    showBubble(text)
+  })
+  
+  b.onShow((data) => {
+    console.log('[Bubble] onShow received:', data);
+    if (typeof data === 'string') showBubble(data)
+    else showBubble(data.text || '', data.emoji || '')
+  })
+  
+  b.onHide(() => {
+    console.log('[Bubble] onHide received');
+    hideBubble()
+  })
+  b.onClear(() => {
+    console.log('[Bubble] onClear received');
+    clearBubble()
+  })
+  
+  b.onTaskAdded((task) => {
+    console.log('[Bubble] onTaskAdded received:', task);
+    const msg = `Tugas baru ditambahkan: "${task.name}"`
+    showBubble(msg, '📝')
+  })
+  
+  b.onTaskCompleted((task) => {
+    console.log('[Bubble] onTaskCompleted received:', task);
+    const msg = task.name || 'Tugas selesai!'
+    showBubble(msg, task.emoji || '✅')
+  })
+} else {
+  console.error('[Bubble] trapezi.bubble API NOT found!');
 }
 
 // Ensure bubble starts completely empty
