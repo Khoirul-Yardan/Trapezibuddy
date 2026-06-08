@@ -58,10 +58,6 @@ loadData()
 api?.onThemeApply?.((theme) => applyTheme(theme))
 
 /* ── Button actions */
-document.getElementById('btn-home')?.addEventListener('click', () => {
-  api.window.restore('active')
-})
-
 document.getElementById('btn-settings')?.addEventListener('click', () => {
   api.window.restore('settings')
 })

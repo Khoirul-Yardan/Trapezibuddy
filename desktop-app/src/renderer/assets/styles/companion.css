@@ -508,26 +508,10 @@
   padding: 0 14px;
   max-height: 280px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-width: none;
 }
 
-.task-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.task-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.task-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-}
-
-.task-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
+.task-list::-webkit-scrollbar { display: none; }
 
 .task-empty {
   text-align: center;
@@ -649,13 +633,17 @@
 }
 
 .task-cat-tag {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 9px;
-  padding: 1px 6px;
-  border-radius: 4px;
+  font-weight: 700;
   background: var(--c-zen-gray);
   color: var(--c-mid);
-  font-weight: 600;
-  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .task-cat-tag.cat-kuliah { background: #E3F2FD; color: #1976D2; }

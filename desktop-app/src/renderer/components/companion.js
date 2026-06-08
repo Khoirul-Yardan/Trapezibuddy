@@ -174,6 +174,22 @@ function renderDayStrip() {
 }
 
 // ── Mood Card ────────────────────────────────────────────────
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function hasOverdue() {
+  const now = new Date()
+  return state.tasks.some(task => {
+    if (task.is_done) return false
+    if (!task.deadline_date) return false
+    const deadlineStr = task.deadline_time
+      ? `${task.deadline_date}T${task.deadline_time}`
+      : `${task.deadline_date}T23:59:59`
+    return new Date(deadlineStr) < now
+  })
+}
+
 function updateMoodCard() {
   const total    = state.tasks.length
   const done     = state.tasks.filter(t => t.is_done).length
@@ -184,14 +200,22 @@ function updateMoodCard() {
   const streakEl  = document.getElementById('streak-count')
   const streakIcon = document.querySelector('.streak-icon')
 
-  if (active === 0 && total > 0) {
-    moodLabel.textContent = t('allDone')
-  } else if (active > 0) {
-    moodLabel.textContent = t('almostDone')
+  let label
+  if (total === 0) {
+    label = pickRandom(["No tasks yet", "Add something to do!"])
+  } else if (hasOverdue()) {
+    label = pickRandom(["I'm disappointed...", "You're late!", "Fix it NOW 😤"])
+  } else if (active === 0) {
+    label = pickRandom(["Well Done!", "You crushed it!", "All clear! 🎉"])
+  } else if (done === 0) {
+    label = pickRandom(["Let's get started!", "Time to grind!", "You got this!"])
+  } else if (done >= Math.ceil(total / 2)) {
+    label = pickRandom(["C'mon, a lil bit more!", "Almost there!", "I believe in you!"])
   } else {
-    moodLabel.textContent = t('noTasksYet')
+    label = pickRandom(["You're Almost Done", "Keep going!", "One step at a time"])
   }
 
+  moodLabel.textContent = label
   moodSub.textContent   = `${done}/${total} Task`
   streakEl.textContent  = state.streak
 
@@ -220,7 +244,7 @@ function createTaskCard(task) {
 
   // Categories HTML
   const catsHtml = (task.categories || []).map(cat => `
-    <span class="task-cat-tag cat-${cat.toLowerCase()}">${cat}</span>
+    <span class="task-cat-tag cat-${cat.toLowerCase()}" title="${cat}">${cat.charAt(0).toUpperCase()}</span>
   `).join('')
 
   const card = document.createElement('div')

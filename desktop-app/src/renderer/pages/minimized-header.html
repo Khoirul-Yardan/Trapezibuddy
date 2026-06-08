@@ -157,16 +157,6 @@
       transform: scale(0.92);
     }
 
-    /* Expand button — slightly more prominent */
-    .icon-btn.expand {
-      background: rgba(255, 255, 255, 0.10);
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .icon-btn.expand:hover {
-      background: rgba(255, 255, 255, 0.22);
-      color: #fff;
-    }
 
     /* ── GoldShip theme overrides ──────────────────────────── */
     body.theme-goldship .header-bar {
@@ -194,14 +184,7 @@
       background: rgba(26, 23, 20, 0.1);
       color: #1A1714;
     }
-    body.theme-goldship .icon-btn.expand {
-      background: rgba(26, 23, 20, 0.08);
-      color: #1A1714;
-    }
-    body.theme-goldship .icon-btn.expand:hover {
-      background: rgba(26, 23, 20, 0.15);
-      color: #1A1714;
-    }
+
     body.theme-goldship .divider {
       background: rgba(26, 23, 20, 0.2);
     }
@@ -240,15 +223,6 @@
 
 
 
-    <!-- Home / restore icon -->
-    <button class="icon-btn" id="btn-home" title="Show panel" data-i18n-title="showPanel">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-    </button>
-
     <!-- Settings icon -->
     <button class="icon-btn" id="btn-settings" title="Settings" data-i18n-title="openSettings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -269,7 +243,7 @@
     </button>
 
     <!-- Expand (restore companion panel) -->
-    <button class="icon-btn expand" id="btn-expand" title="Expand to full panel" data-i18n-title="expandPanel">
+    <button class="icon-btn" id="btn-expand" title="Expand to full panel" data-i18n-title="expandPanel">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 3 21 3 21 9"/>
