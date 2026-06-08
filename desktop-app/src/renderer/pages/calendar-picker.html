@@ -212,6 +212,70 @@
       background: #D9D9D9;
       cursor: not-allowed;
     }
+
+    /* ── GoldShip theme overrides ── */
+    body.theme-goldship {
+      --c-bg:      #EEE9F5;
+      --c-white:   #FFFFFF;
+      --c-thatch:  #7B6BA8;
+      --c-coconut: #9E8EC6;
+      --c-dark:    #1A1714;
+      --c-mid:     rgba(26, 23, 20, 0.6);
+      --c-light:   #E0D8F0;
+    }
+
+    body.theme-goldship .calendar-container {
+      background: #FFFFFF;
+      box-shadow: 0 8px 32px rgba(158, 142, 198, 0.18);
+    }
+
+    body.theme-goldship .calendar-nav-btn {
+      border: 1px solid #E0D8F0;
+      background: #F5F2FB;
+      color: #7B6BA8;
+    }
+
+    body.theme-goldship .calendar-nav-btn:hover {
+      background: #9E8EC6;
+      border-color: #9E8EC6;
+      color: #FFFFFF;
+    }
+
+    body.theme-goldship .calendar-day.today {
+      color: #9E8EC6;
+      font-weight: 700;
+    }
+
+    body.theme-goldship .calendar-day:hover:not(.disabled):not(.selected) {
+      background: #EEE9F5;
+    }
+
+    body.theme-goldship .calendar-day.selected {
+      background: #9E8EC6;
+      color: #FFFFFF;
+    }
+
+    body.theme-goldship .calendar-day.selected:hover {
+      background: #7B6BA8;
+    }
+
+    body.theme-goldship .calendar-btn-clear {
+      background: #EEE9F5;
+      color: #7B6BA8;
+    }
+
+    body.theme-goldship .calendar-btn-clear:hover {
+      background: #E0D8F0;
+    }
+
+    body.theme-goldship .calendar-btn-select {
+      background: #9E8EC6;
+      color: #FFFFFF;
+    }
+
+    body.theme-goldship .calendar-btn-select:hover {
+      background: #7B6BA8;
+    }
   </style>
 </head>
 <body>
@@ -459,9 +523,23 @@
       }
     });
 
+    // Apply theme
+    (async () => {
+      if (api && api.settings) {
+        try {
+          const s = await api.settings.get();
+          document.body.classList.add('theme-' + (s?.character || 'agnesTachyon'));
+        } catch (_) { document.body.classList.add('theme-agnesTachyon'); }
+      }
+    })();
+    api?.onThemeApply?.((theme) => {
+      document.body.classList.remove('theme-agnesTachyon', 'theme-goldship');
+      document.body.classList.add('theme-' + theme);
+    });
+
     // Initial render
     renderCalendar();
-    
+
     // Enable select button if date already selected
     if (selectedDate) {
       document.getElementById('btn-select').disabled = false;

@@ -579,6 +579,10 @@
     body.theme-goldship .toggle input:checked + .toggle-track {
       background: #9E8EC6;
     }
+    body.theme-goldship .field-icon-btn:hover {
+      background: rgba(158, 142, 198, 0.15);
+      color: #9E8EC6;
+    }
   </style>
 </head>
 <body>
@@ -746,7 +750,7 @@
         e.preventDefault();
         e.stopPropagation();
 
-        if (!document.body.classList.contains('theme-goldship') && api && api.calendar) {
+        if (api && api.calendar) {
           const currentDate = taskDateInput.value;
           api.calendar.open(currentDate || null);
           return;
@@ -761,32 +765,21 @@
       });
     }
     
-    // For Agnes Tachyon theme: open custom calendar modal instead of native picker
+    // Open custom calendar modal for all themes
     function setupCalendarHandler() {
-      const isAgnesTachyon = !document.body.classList.contains('theme-goldship');
-      
-      if (isAgnesTachyon) {
-        // Remove native date picker behavior, open custom calendar modal
-        taskDateInput.addEventListener('click', (e) => {
-          e.preventDefault();
-          const currentDate = taskDateInput.value;
-          api.calendar.open(currentDate || null);
-        });
-        
-        // Prevent native picker from opening
-        taskDateInput.addEventListener('mousedown', (e) => {
-          if (!document.body.classList.contains('theme-goldship')) {
-            e.preventDefault();
-          }
-        });
-        
-        // Hide keyboard on focus for touch devices
-        taskDateInput.addEventListener('focus', (e) => {
-          if (!document.body.classList.contains('theme-goldship')) {
-            e.target.blur();
-          }
-        });
-      }
+      taskDateInput.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentDate = taskDateInput.value;
+        api.calendar.open(currentDate || null);
+      });
+
+      taskDateInput.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+      });
+
+      taskDateInput.addEventListener('focus', (e) => {
+        e.target.blur();
+      });
     }
     
     // Listen for date selection from calendar modal
