@@ -1264,7 +1264,7 @@ function renderStreakProgress() {
     for (let i = 1; i <= 2; i++) {
       const btn = document.createElement('button')
       btn.className = 'freeze-token-btn'
-      btn.textContent = '❄'
+      btn.innerHTML = '<img src="../assets/styles/images/icons/freeze.svg" width="14" height="14" style="pointer-events:none">'
 
       // Token is "active" (available) if state.freezeTokens >= i
       let isAvailable = (state.freezeTokens >= i)

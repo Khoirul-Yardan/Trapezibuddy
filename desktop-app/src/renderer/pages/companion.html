@@ -227,7 +227,7 @@
         <!-- Header -->
         <div class="bottom-sheet-header">
           <span class="bottom-sheet-title">
-            <span class="streak-title-icon">🔥</span>
+            <img class="streak-title-icon" src="../assets/styles/images/icons/streak.svg">
             <span data-i18n="streakProgress">Streak Progress</span>
           </span>
           <button class="bottom-sheet-close" id="btn-close-streak" aria-label="Close">
@@ -251,7 +251,7 @@
                 <span class="stat-card-title" data-i18n="currentStreak">Current streak</span>
                 <div class="stat-card-val-row">
                   <span class="stat-card-val" id="current-streak-val-normal">0</span>
-                  <span class="stat-card-val-icon">🔥</span>
+                  <img class="stat-card-val-icon" src="../assets/styles/images/icons/streak.svg">
                 </div>
                 <span class="stat-card-sub" data-i18n="tasksOnTime">tasks on time</span>
               </div>
@@ -264,7 +264,7 @@
                 </div>
                 <div class="stat-card-val-row">
                   <span class="stat-card-val" id="current-streak-val-frozen">0</span>
-                  <span class="stat-card-val-icon">❄️</span>
+                  <img class="stat-card-val-icon" src="../assets/styles/images/icons/freeze.svg">
                 </div>
                 <div class="missed-deadline-box">
                   <svg class="missed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -281,7 +281,7 @@
               <span class="stat-card-title" data-i18n="longestStreak">Longest streak</span>
               <div class="stat-card-val-row">
                 <span class="stat-card-val" id="longest-streak-val">0</span>
-                <span class="stat-card-val-icon">🏆</span>
+                <img class="stat-card-val-icon" src="../assets/styles/images/icons/trophy.svg">
               </div>
               <span class="stat-card-sub" data-i18n="personalBest">personal best</span>
             </div>
@@ -307,15 +307,14 @@
           <div class="freeze-tokens-section">
             <div class="freeze-info">
               <span class="freeze-title">
-                <span class="freeze-title-icon">❄️</span>
+                <img class="freeze-title-icon" src="../assets/styles/images/icons/freeze.svg">
                 <span data-i18n="freezeTokens">Freeze tokens</span>
               </span>
               <span class="freeze-desc" data-i18n="protectsStreak">Protects streak from 1 miss</span>
             </div>
             <div class="freeze-buttons" id="freeze-tokens-container">
               <!-- Rendered dynamically by companion.js based on shopAPI shields owned -->
-              <button class="freeze-token-btn active" id="freeze-btn-1">❄️</button>
-              <button class="freeze-token-btn" id="freeze-btn-2">❄️</button>
+              <!-- Rendered dynamically by renderStreakProgress() -->
             </div>
           </div>
 

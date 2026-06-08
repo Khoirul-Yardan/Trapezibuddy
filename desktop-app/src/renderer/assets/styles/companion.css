@@ -506,7 +506,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 0 14px;
-  max-height: 280px;
+  max-height: 236px;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -1089,6 +1089,13 @@ body.theme-goldship .tab-btn:hover:not(.active) svg {
 
 .streak-title-icon {
   font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.streak-title-icon img {
+  width: 18px;
+  height: 18px;
 }
 
 .bottom-sheet-close {
@@ -1196,6 +1203,13 @@ body.theme-goldship .tab-btn:hover:not(.active) svg {
 
 .stat-card-val-icon {
   font-size: 18px;
+  display: flex;
+  align-items: center;
+}
+
+.stat-card-val-icon img {
+  width: 22px;
+  height: 22px;
 }
 
 .stat-card-sub {
@@ -1328,6 +1342,21 @@ body.theme-goldship .tab-btn:hover:not(.active) svg {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.freeze-title-icon img {
+  width: 14px;
+  height: 14px;
+}
+
+.freeze-token-btn img {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) saturate(0) invert(0.55);
+}
+
+.freeze-token-btn.active img {
+  filter: brightness(0) invert(1);
 }
 
 .freeze-desc {
