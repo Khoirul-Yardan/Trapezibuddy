@@ -1,6 +1,6 @@
 {
   "name": "trapezibuddy",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Desktop companion interaktif untuk produktivitas",
   "main": "src/main/main.js",
   "scripts": {
