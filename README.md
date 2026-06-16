@@ -1,104 +1,112 @@
-# TrapeziBuddy
+<div align="center">
 
-Desktop productivity companion with a 2D character, task management, streak system, and focus timer — built with Electron.
+# 🦴 TrapeziBuddy
+
+**A 2D desktop companion that keeps university students on track.**
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blueviolet) ![Platform](https://img.shields.io/badge/platform-Windows-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Electron](https://img.shields.io/badge/electron-41-47848F)
 
----
+</div>
 
-## Overview
 
-TrapeziBuddy is a Windows desktop overlay app that lives on top of your screen as an interactive 2D character companion. It helps you track tasks with deadlines, maintain a daily task-completion streak, and run focus sessions — all without leaving your workflow.
+## ✨ What is TrapeziBuddy?
 
-Two characters are available, each with their own visual theme:
+TrapeziBuddy is a desktop productivity companion app built for university students, powered by Electron.js. It lives on your screen as a friendly 2D animated character, helping you manage tasks with deadlines, run focus sessions, and build a daily productivity streak — all without ever needing an account.
+
+
+## 📸 Screenshots
+
+<div align="center">
+
+<!-- Add screenshots here -->
+
+</div>
+
+
+## 🚀 Features
+
+- **Task Management** — create tasks with deadlines, automatically classified as Overdue / Urgent / Soon / Normal
+- **Focus Session Timer** — built-in 25-minute focus timer to help you lock in
+- **Daily Streak System** — build a streak by completing tasks on time, with Freeze Tokens to protect it from a missed deadline
+- **Two Selectable Characters** — Agnes Tachyon & GoldShip, each with full dynamic theming across the entire app
+- **Bilingual UI** — full English and Indonesian support, switchable anytime from Settings
+- **Minimized Header Mode** — a compact always-on-top bar for when you just need the essentials
+- **Local-First Data Storage** — everything is saved on your device, no account or sign-up required
+
+
+## 🎭 Characters
 
 | Character | Theme | Accent Color |
-|-----------|-------|--------------|
-| **Agnes Tachyon** | Warm earth tones | `#A2B29F` — coconut green |
-| **GoldShip** | Lavender luxury | `#9E8EC6` — soft purple |
+|-----------|-------|---------------|
+| **Agnes Tachyon** | Warm, earthy sage tones | `#A2B29F` |
+| **GoldShip** | Lavender luxury purple | `#9E8EC6` |
 
----
+Pick your companion from Settings — the entire UI adapts to match their theme.
 
-## Features
+<details>
+<summary>🐎 Agnes Tachyon — Color Palette</summary>
+<br>
+<img width="720" alt="Agnes Tachyon Color Palette & Typography" src="https://github.com/user-attachments/assets/2178632b-627f-4667-affe-aa913214430c" />
+</details>
 
-**Task Management**
-- Add tasks with name, deadline date & time, category tags, and priority level
-- Urgency indicators: Overdue / Urgent (< 24h) / Soon (< 72h) / Normal
-- Complete tasks with a confirmation flow (type the task name to confirm)
-- Active and Finished tabs; finished tasks filterable by Today / Last 3 days / This week / All
+<details>
+<summary>🐎 GoldShip — Color Palette</summary>
+<br>
+<img width="720" alt="Image" src="https://github.com/user-attachments/assets/f0501729-9dc1-4179-a1a7-7be211627a06" />
+</details>
 
-**Streak System**
-- Daily streak tracked each time tasks are completed on time
-- Freeze Tokens — spend a token to protect your streak from a missed deadline
-- Streak Progress bottom sheet: current streak, longest streak, on-time rate, freeze token management
 
-**Focus Session**
-- Built-in 25-minute focus timer on the companion panel
-- Start / stop with a single click
+## 🛠️ Tech Stack
 
-**Minimized Header Mode**
-- Compact always-on-top bar showing streak count, task progress (X/Y), and date/time
-- Quick access to Settings and Exit from the header
+| Layer | Technology |
+|-------|-----------|
+| Runtime | [Electron.js](https://www.electronjs.org/) |
+| Frontend | Vanilla JavaScript, HTML5, CSS3 |
+| Persistence | [electron-store](https://github.com/sindresorhus/electron-store) |
+| Packaging | [electron-builder](https://www.electron.build/) |
 
-**Bilingual UI**
-- Full English and Indonesian translation
-- Switch language from Settings; all windows update instantly without reload
 
-**System Integration**
-- System tray icon with Open / Exit menu
-- Always-on-top transparent frameless windows
-- Desktop and Start Menu shortcuts created on install
+## 🏁 Getting Started
 
----
+### Prerequisites
 
-## Screenshots
+- [Node.js](https://nodejs.org/) 18+ and npm
+- Windows 10 / 11 (64-bit)
 
-<img width="720" alt="Color Palette & Typography" src="https://github.com/user-attachments/assets/2178632b-627f-4667-affe-aa913214430c" />
-
----
-
-## Installation
-
-### Option A — Installer (recommended)
-
-1. Download `TrapeziBuddy Setup 1.0.0.exe` from [Releases](../../releases)
-2. Run the installer — choose install directory, then Finish
-3. Launch **TrapeziBuddy** from the desktop or Start Menu
-
-**Requirements:** Windows 10 / 11 (64-bit)
-
-### Option B — Run from Source
-
-**Prerequisites:** Node.js 18+ and npm
+### Install
 
 ```bash
 git clone <repo-url>
 cd trapezibuddy/desktop-app
 npm install
-npm start
 ```
 
-For development mode (DevTools enabled):
+### Run in development
+
 ```bash
 npm run dev
 ```
 
 Target a specific page during development:
+
 ```bash
 npm run dev:companion
 npm run dev:add-task
 npm run dev:confirm-task
 ```
 
-Build the Windows installer:
+### Build the installer
+
 ```bash
 npm run build
 # Output: desktop-app/dist/TrapeziBuddy Setup 1.0.0.exe
 ```
 
----
+> Prefer not to build from source? Download the ready-made `TrapeziBuddy Setup 1.0.0.exe` from [Releases](../../releases) and run the installer instead.
 
-## Project Structure
+
+<details>
+<summary>📁 Project Structure</summary>
 
 ```
 trapezibuddy/
@@ -137,9 +145,10 @@ trapezibuddy/
                         └── icons/          ← SVG icons (streak, freeze, trophy, …)
 ```
 
----
+</details>
 
-## Data Model
+<details>
+<summary>🗃️ Data Model</summary>
 
 **Task**
 ```js
@@ -171,24 +180,35 @@ trapezibuddy/
 }
 ```
 
----
+</details>
 
-## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Runtime | [Electron](https://www.electronjs.org/) 41 |
-| Frontend | HTML5 + CSS3 + Vanilla JavaScript |
-| Persistence | [electron-store](https://github.com/sindresorhus/electron-store) 8 |
-| Installer | electron-builder — Windows NSIS |
-| i18n | Custom `window.i18n` object + `[data-i18n]` DOM attributes |
+## 💝 Credits & Attribution
 
----
+TrapeziBuddy wouldn't exist without these people and works.
 
-## License
+**Character Assets**
+
+> Uma Musume character assets (**Agnes Tachyon** & **GoldShip**) are used courtesy of **DesktopGremlin**. These assets are fan-made and used strictly for non-commercial purposes. All rights to the original characters belong to **Cygames / Uma Musume Pretty Derby**.
+
+**The Team**
+
+| Role | Contributor(s) |
+|------|-----------------|
+| UI/UX Design | Hawwin, Pius |
+| Character & Animation | Fito |
+| Backend | Yardan |
+| UI Development | Bagus, Aldino |
+| Testing | Husain |
+
+
+## 📄 License
 
 MIT — free to use and modify.
 
----
+
+<div align="center">
 
 **TrapeziBuddy v1.0.0**
+
+</div>
