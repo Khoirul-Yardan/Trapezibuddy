@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🦴 TrapeziBuddy
+<img width="124" alt="Image" src="https://github.com/user-attachments/assets/8522a8a9-042f-4ebf-a4a7-7a15616edef1" />
 
 **A 2D desktop companion that keeps university students on track.**
 
@@ -18,7 +18,9 @@ TrapeziBuddy is a desktop productivity companion app built for university studen
 
 <div align="center">
 
-<!-- Add screenshots here -->
+<img width="566" alt="Image" src="https://github.com/user-attachments/assets/8e7621c0-fb2c-4363-830b-7dcc178f6c68" />
+
+<img width="632" alt="Image" src="https://github.com/user-attachments/assets/4b92e02c-c924-472b-9c51-e978c2bbe927" />
 
 </div>
 
