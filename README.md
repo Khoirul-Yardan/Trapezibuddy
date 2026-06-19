@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="124" alt="Image" src="https://github.com/user-attachments/assets/8522a8a9-042f-4ebf-a4a7-7a15616edef1" />
+<img width="256" alt="Image" src="https://github.com/user-attachments/assets/8522a8a9-042f-4ebf-a4a7-7a15616edef1" />
 
 **A 2D desktop companion that keeps university students on track.**
 
@@ -18,9 +18,9 @@ TrapeziBuddy is a desktop productivity companion app built for university studen
 
 <div align="center">
 
-<img width="566" alt="Image" src="https://github.com/user-attachments/assets/8e7621c0-fb2c-4363-830b-7dcc178f6c68" />
-
 <img width="632" alt="Image" src="https://github.com/user-attachments/assets/4b92e02c-c924-472b-9c51-e978c2bbe927" />
+
+<img width="566" alt="Image" src="https://github.com/user-attachments/assets/8e7621c0-fb2c-4363-830b-7dcc178f6c68" />
 
 </div>
 
@@ -60,6 +60,12 @@ Pick your companion from Settings — the entire UI adapts to match their theme.
 
 ## 🛠️ Tech Stack
 
+<div align="center">
+
+[![My Skills](https://skillicons.dev/icons?i=electron,css,html,js)](https://skillicons.dev)
+
+</div>
+
 | Layer | Technology |
 |-------|-----------|
 | Runtime | [Electron.js](https://www.electronjs.org/) |
@@ -78,7 +84,7 @@ Pick your companion from Settings — the entire UI adapts to match their theme.
 ### Install
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Khoirul-Yardan/Trapezibuddy.git
 cd trapezibuddy/desktop-app
 npm install
 ```
@@ -191,18 +197,8 @@ TrapeziBuddy wouldn't exist without these people and works.
 
 **Character Assets**
 
-> Uma Musume character assets (**Agnes Tachyon** & **GoldShip**) are used courtesy of **DesktopGremlin**. These assets are fan-made and used strictly for non-commercial purposes. All rights to the original characters belong to **Cygames / Uma Musume Pretty Derby**.
-
-**The Team**
-
-| Role | Contributor(s) |
-|------|-----------------|
-| UI/UX Design | Hawwin, Pius |
-| Character & Animation | Fito |
-| Backend | Yardan |
-| UI Development | Bagus, Aldino |
-| Testing | Husain |
-
+> [!NOTE]
+> Uma Musume character assets (**Agnes Tachyon** & **GoldShip**) are used courtesy of [**DesktopGremlin**](https://github.com/Kritzkingvoid/Desktop_Gremlin). These assets are fan-made and used strictly for non-commercial purposes. All rights to the original characters belong to **Cygames / Uma Musume Pretty Derby**.
 
 ## 📄 License
 
