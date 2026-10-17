@@ -29,33 +29,21 @@ function updateClock() {
 updateClock()
 setInterval(updateClock, 30_000)
 
-/* ── Theme */
-function applyTheme(theme) {
-  document.body.classList.remove('theme-agnesTachyon', 'theme-goldship')
-  document.body.classList.add('theme-' + theme)
-}
-
 /* ── Load streak & task counts */
 async function loadData() {
   try {
-    const [tasks, settings] = await Promise.all([
-      api.tasks.getAll(),
-      api.settings.get(),
-    ])
+    const [tasks, settings] = await Promise.all([api.tasks.getAll(), api.settings.get()])
 
     const done   = tasks.filter(t => t.is_done).length
     const total  = tasks.length
     document.getElementById('task-progress').textContent = `${done}/${total}`
     document.getElementById('streak-count').textContent  = settings.streak ?? 0
-    applyTheme(settings?.character || 'agnesTachyon')
   } catch (err) {
     console.error('Failed to load data:', err)
   }
 }
 
 loadData()
-
-api?.onThemeApply?.((theme) => applyTheme(theme))
 
 /* ── Button actions */
 document.getElementById('btn-settings')?.addEventListener('click', () => {
@@ -67,7 +55,4 @@ document.getElementById('btn-expand')?.addEventListener('click', () => {
 })
 
 /* ── Refresh when tasks change */
-api.window.onRefreshTasks?.(() => loadData())
-
-/* Expose for debugging if needed */
-window.__minimizedHeader = { loadData }
+api.window.onRefreshTasks(loadData)

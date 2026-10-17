@@ -1,0 +1,173 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --c-bg:           #FBF9F8;
+  --c-primary:      #A2B29F;
+  --c-thatch:       #798777;
+  --c-dark:         #3B3B3A;
+  --c-mid:          #757676;
+  --c-cal-bg:       #FDF2E8;
+}
+
+html, body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: white;
+  color: var(--c-dark);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.clock-picker-container {
+  width: 100%;
+  padding: 0 20px 16px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.clock-picker-drag-zone {
+  width: 100%;
+  cursor: move;
+  -webkit-app-region: drag;
+  padding: 16px 0 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.clock-picker-header {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #AAAAAA;
+  text-align: center;
+  -webkit-app-region: drag;
+}
+
+.clock-picker-time-input {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.clock-picker-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.clock-picker-input-box {
+  width: 96px;
+  height: 96px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: var(--c-cal-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--c-dark);
+  cursor: text;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.clock-picker-input-box:hover {
+  background: #FFF9F0;
+}
+
+.clock-picker-input-box.focused {
+  border-color: var(--c-primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(162, 178, 159, 0.15);
+}
+
+.clock-picker-input-box input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 44px;
+  font-weight: 700;
+  color: inherit;
+  text-align: center;
+  outline: none;
+  font-family: inherit;
+  padding: 0;
+  caret-color: transparent;
+  -moz-appearance: textfield;
+  -webkit-app-region: no-drag;
+}
+
+.clock-picker-input-box input::-webkit-outer-spin-button,
+.clock-picker-input-box input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.clock-picker-input-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #BBBBBB;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.clock-picker-colon {
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--c-mid);
+  margin-bottom: 28px;
+  line-height: 1;
+}
+
+.clock-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.clock-picker-actions {
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.clock-picker-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--c-primary);
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 8px;
+  transition: background 0.15s, transform 0.1s;
+  font-family: inherit;
+  text-transform: uppercase;
+  -webkit-app-region: no-drag;
+}
+
+.clock-picker-btn:hover {
+  background: rgba(162, 178, 159, 0.12);
+}
+
+.clock-picker-btn:active {
+  transform: scale(0.95);
+}
