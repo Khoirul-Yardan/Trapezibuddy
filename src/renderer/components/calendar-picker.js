@@ -2,7 +2,7 @@ const api = window.trapezi;
 
 let viewDate = new Date();
 let selectedDate = null;
-let disablePast = true;
+const disablePast = true;
 let currentLang = 'en';
 
 const monthNames = {

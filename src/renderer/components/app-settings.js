@@ -2,7 +2,7 @@ const api = window.trapezi;
 
 // savedState = nilai dari store (untuk revert jika user tekan ←)
 // state      = nilai sementara selama session ini
-let savedState = { character: 'agnesTachyon', focusTimer: 25, doNotDisturb: true, language: 'en' };
+const savedState = { character: 'agnesTachyon', focusTimer: 25, doNotDisturb: true, language: 'en' };
 let state      = { ...savedState };
 
 function updateStepperButtons() {

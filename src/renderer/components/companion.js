@@ -511,7 +511,7 @@ function recoverFreezeToken(now) {
 // Each task that passes its deadline costs a Freeze Token, or resets the streak when none are left.
 async function checkStreak() {
   const now = new Date()
-  let changed = recoverFreezeToken(now)
+  const changed = recoverFreezeToken(now)
   let tokensUsed = 0
   let reset = false
   const penalised = []
