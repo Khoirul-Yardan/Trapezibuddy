@@ -8,7 +8,6 @@
     "dev": "electron . --dev",
     "dev:companion": "electron . --dev --page=companion",
     "dev:add-task": "electron . --dev --page=add-task",
-    "dev:confirm-task": "electron . --dev --page=confirm-task",
     "build": "electron-builder"
   },
   "keywords": [
@@ -47,7 +46,6 @@
       "createStartMenuShortcut": true,
       "shortcutName": "TrapeziBuddy"
     },
-
     "directories": {
       "output": "dist"
     }

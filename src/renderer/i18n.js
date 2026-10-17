@@ -261,3 +261,27 @@ const i18n = {
 }
 
 window.i18n = i18n
+
+// ── Runtime shared by every page ─────────────────────────────
+
+window.currentLang = 'en'
+
+// Applies the current language to every static [data-i18n*] element.
+function translateDOM() {
+  const dict = window.i18n[window.currentLang] || window.i18n.en
+  const apply = (attr, set) => document.querySelectorAll(`[${attr}]`).forEach((el) => {
+    const value = dict[el.getAttribute(attr)]
+    if (value !== undefined) set(el, value)
+  })
+  apply('data-i18n', (el, v) => { el.textContent = v })
+  apply('data-i18n-title', (el, v) => { el.title = v })
+  apply('data-i18n-placeholder', (el, v) => { el.placeholder = v })
+}
+
+// Main pushes the saved language when a page loads and again whenever it changes.
+// Pages with dynamic text listen for 'trapezi:language' to re-render it.
+window.trapezi?.language.onChange((lang) => {
+  window.currentLang = lang
+  translateDOM()
+  document.dispatchEvent(new CustomEvent('trapezi:language', { detail: lang }))
+})
