@@ -28,6 +28,13 @@
   "build": {
     "appId": "com.trapezibuddy.app",
     "productName": "TrapeziBuddy",
+    "files": [
+      "src/**/*"
+    ],
+    "extraResources": [
+      "assets/**/*",
+      "build/icons/**/*"
+    ],
     "win": {
       "target": "nsis",
       "icon": "build/icons/gugugaga.ico",
