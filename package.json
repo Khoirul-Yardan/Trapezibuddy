@@ -8,6 +8,7 @@
     "dev": "electron . --dev",
     "dev:companion": "electron . --dev --page=companion",
     "dev:add-task": "electron . --dev --page=add-task",
+    "test": "node --test \"test/**/*.test.js\"",
     "build": "electron-builder"
   },
   "keywords": [
