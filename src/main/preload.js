@@ -1,120 +1,78 @@
-// src/main/preload.js
+// Secure bridge: the only way renderer pages reach the main process (window.trapezi).
 const { contextBridge, ipcRenderer } = require('electron')
 
+const send = (channel) => (...args) => ipcRenderer.send(channel, ...args)
+const invoke = (channel) => (...args) => ipcRenderer.invoke(channel, ...args)
+// Subscribe to a main-process event; the callback receives only the payload.
+const listen = (channel) => (cb) => ipcRenderer.on(channel, (_, payload) => cb(payload))
+
 contextBridge.exposeInMainWorld('trapezi', {
-
-  // ── Tasks ─────────────────────────────────────────────────
   tasks: {
-    getAll:   ()     => ipcRenderer.invoke('tasks:getAll'),
-    add:      (task) => ipcRenderer.invoke('tasks:add', task),
-    update:   (id, data) => ipcRenderer.invoke('tasks:update', id, data),
-    complete: (id)   => ipcRenderer.invoke('tasks:complete', id),
-    delete:   (id)   => ipcRenderer.invoke('tasks:delete', id),
+    getAll: invoke('tasks:getAll'),
+    add: invoke('tasks:add'),
+    update: invoke('tasks:update'),
+    complete: invoke('tasks:complete'),
+    delete: invoke('tasks:delete'),
   },
 
-  // ── Settings ──────────────────────────────────────────────
   settings: {
-    get: ()       => ipcRenderer.invoke('settings:get'),
-    set: (data)   => ipcRenderer.invoke('settings:set', data),
+    get: invoke('settings:get'),
+    set: invoke('settings:set'),
   },
 
-  // ── Chat ─────────────────────────────────────────────────
-  chat: {
-    sendMessage: (message) => ipcRenderer.invoke('chat:sendMessage', message),
-  },
-
-  // ── Window ────────────────────────────────────────────────
   window: {
-    // Companion
-    minimize:         ()             => ipcRenderer.send('window:minimize'),
-    hide:             ()             => ipcRenderer.send('window:hide'),
-    restore:          (page)         => ipcRenderer.send('window:restore', page),
+    minimize: send('window:minimize'),
+    hide: send('window:hide'),
+    restore: send('window:restore'),
+    close: send('window:forceQuit'), // quits the whole app
+    closeSettings: send('window:closeSettings'),
+    startApp: send('window:startApp'),
 
-    // Add Task modal
-    openAddTask:      ()             => ipcRenderer.invoke('modal:openAddTask'),
-    closeAddTask:     ()             => ipcRenderer.send('modal:closeAddTask'),
-    taskAdded:        ()             => ipcRenderer.send('modal:taskAdded'),
+    openAddTask: invoke('modal:openAddTask'),
+    closeAddTask: send('modal:closeAddTask'),
+    taskAdded: send('modal:taskAdded'),
 
-    // Confirm Task modal
-    openConfirmTask:  (id, name)     => ipcRenderer.invoke('modal:openConfirmTask', { taskId: id, taskName: name }),
-    closeConfirmTask: ()             => ipcRenderer.send('modal:closeConfirmTask'),
-    taskCompleted:    ()             => ipcRenderer.send('modal:taskCompleted'),
-
-    // Refresh listener
-    onRefreshTasks:   (cb)           => ipcRenderer.on('refresh:tasks', cb),
-    // Navigation listener from main
-    onNavigate:       (cb)           => ipcRenderer.on('navigate', (_, page) => cb(page)),
-
-    // Chat window
-    openChat:         ()             => ipcRenderer.invoke('window:openChat'),
-    closeChat:        ()             => ipcRenderer.send('window:closeChat'),
-
-    // Settings window
-    closeSettings:    ()             => ipcRenderer.send('window:closeSettings'),
-    startApp:         (data)         => ipcRenderer.send('window:startApp', data),
-
-    // Benar-benar keluar aplikasi
-    close:            ()             => ipcRenderer.send('window:forceQuit'),
-    exitApp:          ()             => ipcRenderer.send('window:forceQuit'),
-
-    // Get current character
-    getSelectedCharacter: () => ipcRenderer.invoke('settings:get').then(s => s.character || 'agnesTachyon'),
+    onRefreshTasks: listen('refresh:tasks'),
+    onNavigate: listen('navigate'),
   },
 
-  // ── Character Control ──────────────────────────────────────
-  agnes: {
-    showCharacter: () => ipcRenderer.send('character:show', 'agnesTachyon'),
-    hideCharacter: () => ipcRenderer.send('character:hide', 'agnesTachyon'),
-  },
-  goldship: {
-    showCharacter: () => ipcRenderer.send('character:show', 'goldship'),
-    hideCharacter: () => ipcRenderer.send('character:hide', 'goldship'),
+  character: {
+    show: send('character:show'), // (characterKey)
+    hide: send('character:hide'),
   },
 
-  // ── Bubble ────────────────────────────────────────────────
   bubble: {
-    show: (text) => ipcRenderer.send('bubble:show', text),
-    hide: () => ipcRenderer.send('bubble:hide'),
-    taskAdded: (data) => ipcRenderer.send('bubble:taskAdded', data),
-    taskCompleted: (data) => ipcRenderer.send('bubble:taskCompleted', data),
-    
-    // Listeners for the bubble window
-    onSetText: (cb) => ipcRenderer.on('bubble:setText', (_, text) => cb(text)),
-    onShow: (cb) => ipcRenderer.on('bubble:show', (_, data) => cb(data)),
-    onHide: (cb) => ipcRenderer.on('bubble:hide', () => cb()),
-    onClear: (cb) => ipcRenderer.on('bubble:clear', () => cb()),
-    onTaskAdded: (cb) => ipcRenderer.on('bubble:taskAdded', (_, data) => cb(data)),
-    onTaskCompleted: (cb) => ipcRenderer.on('bubble:taskCompleted', (_, data) => cb(data)),
+    show: send('bubble:show'), // (text) or ({ text, emoji })
+    hide: send('bubble:hide'),
+    taskAdded: send('bubble:taskAdded'),
+    taskCompleted: send('bubble:taskCompleted'),
+
+    // Listeners used by the bubble window itself.
+    onShow: listen('bubble:show'),
+    onTaskAdded: listen('bubble:taskAdded'),
+    onTaskCompleted: listen('bubble:taskCompleted'),
   },
 
-  // ── Theme ─────────────────────────────────────────────────
-  theme: {
-    apply: (theme) => ipcRenderer.send('theme:apply', theme),
-  },
+  theme: { apply: send('theme:apply') },
+  onThemeApply: listen('theme:apply'),
 
-  onThemeApply: (cb) => ipcRenderer.on('theme:apply', (_, theme) => cb(theme)),
-
-  // ── Language ──────────────────────────────────────────────
   language: {
-    get: () => ipcRenderer.invoke('language:get'),
-    set: (lang) => ipcRenderer.send('language:set', lang),
-    onChange: (cb) => ipcRenderer.on('language:changed', (_, lang) => cb(lang))
+    get: invoke('language:get'),
+    set: send('language:set'),
+    onChange: listen('language:changed'),
   },
 
-  // ── Calendar ──────────────────────────────────────────────
   calendar: {
-    open: (currentDate) => ipcRenderer.invoke('calendar:open', currentDate),
-    selectDate: (date) => ipcRenderer.send('calendar:selectDate', date),
-    close: () => ipcRenderer.send('calendar:close'),
-    onDateSelected: (cb) => ipcRenderer.on('calendar:dateSelected', (_, date) => cb(date))
+    open: invoke('calendar:open'),
+    selectDate: send('calendar:selectDate'),
+    close: send('calendar:close'),
+    onDateSelected: listen('calendar:dateSelected'),
   },
 
-  // ── Clock ─────────────────────────────────────────────────
   clock: {
-    open: (currentTime) => ipcRenderer.invoke('clock:open', currentTime),
-    selectTime: (time) => ipcRenderer.send('clock:selectTime', time),
-    close: () => ipcRenderer.send('clock:close'),
-    onTimeSelected: (cb) => ipcRenderer.on('clock:timeSelected', (_, time) => cb(time))
+    open: invoke('clock:open'),
+    selectTime: send('clock:selectTime'),
+    close: send('clock:close'),
+    onTimeSelected: listen('clock:timeSelected'),
   },
-
 })
