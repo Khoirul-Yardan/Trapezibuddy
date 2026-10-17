@@ -8,6 +8,7 @@
     "dev": "electron . --dev",
     "dev:companion": "electron . --dev --page=companion",
     "dev:add-task": "electron . --dev --page=add-task",
+    "lint": "eslint .",
     "test": "node --test \"test/**/*.test.js\"",
     "build": "electron-builder"
   },
@@ -19,8 +20,11 @@
   "author": "TrapeziBuddy Team",
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "electron": "^41.2.2",
-    "electron-builder": "^26.8.1"
+    "electron-builder": "^26.8.1",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0"
   },
   "dependencies": {
     "electron-store": "^8.1.0"
@@ -50,5 +54,9 @@
     "directories": {
       "output": "dist"
     }
+  },
+  "allowScripts": {
+    "electron": true,
+    "electron-winstaller": false
   }
 }

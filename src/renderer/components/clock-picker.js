@@ -63,7 +63,7 @@ hourInput.addEventListener('keydown', (e) => {
     hourInput.value = hourBuffer.padStart(2, '0');
 
     if (hourBuffer.length >= 2) {
-      let clamped = Math.min(23, Math.max(0, num));
+      const clamped = Math.min(23, Math.max(0, num));
       hourInput.value = String(clamped).padStart(2, '0');
       hourBuffer = '';
       minuteInput.focus();
@@ -101,7 +101,7 @@ minuteInput.addEventListener('keydown', (e) => {
     minuteInput.value = minuteBuffer.padStart(2, '0');
 
     if (minuteBuffer.length >= 2) {
-      let clamped = Math.min(59, Math.max(0, num));
+      const clamped = Math.min(59, Math.max(0, num));
       minuteInput.value = String(clamped).padStart(2, '0');
       minuteBuffer = '';
       minuteInput.blur();

@@ -1,6 +1,6 @@
 const api = window.trapezi;
 
-let state = {
+const state = {
   character: 'agnesTachyon',
   language: 'en'
 };

@@ -8,7 +8,7 @@ document.getElementById('btn-exit')?.addEventListener('click', () => {
 // minimized-header.js — externalized from minimized-header.html to satisfy CSP
 const api = window.trapezi
 const params = new URLSearchParams(window.location.search)
-let activePage = params.get('activePage') || 'active'
+const activePage = params.get('activePage') || 'active'
 
 
 /* ── Live clock */
