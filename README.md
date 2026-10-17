@@ -85,7 +85,7 @@ Pick your companion from Settings — the entire UI adapts to match their theme.
 
 ```bash
 git clone https://github.com/Khoirul-Yardan/Trapezibuddy.git
-cd trapezibuddy/desktop-app
+cd Trapezibuddy
 npm install
 ```
 
@@ -100,14 +100,13 @@ Target a specific page during development:
 ```bash
 npm run dev:companion
 npm run dev:add-task
-npm run dev:confirm-task
 ```
 
 ### Build the installer
 
 ```bash
 npm run build
-# Output: desktop-app/dist/TrapeziBuddy Setup 1.0.0.exe
+# Output: dist/TrapeziBuddy Setup 1.0.0.exe
 ```
 
 > Prefer not to build from source? Download the ready-made `TrapeziBuddy Setup 1.0.0.exe` from [Releases](../../releases) and run the installer instead.
@@ -117,41 +116,63 @@ npm run build
 <summary>📁 Project Structure</summary>
 
 ```
-trapezibuddy/
-└── desktop-app/
-    ├── package.json
-    ├── build/
-    │   └── icons/                    ← App icon (.ico)
-    └── src/
-        ├── main/
-        │   ├── main.js               ← Electron main process: windows, tray, IPC, data
-        │   └── preload.js            ← Secure bridge exposing window.trapezi API
-        └── renderer/
-            ├── pages/
-            │   ├── companion.html    ← Main companion panel
-            │   ├── add-task.html     ← Task creation form
-            │   ├── confirm-task.html ← Task completion confirmation
-            │   ├── settings.html     ← Character & language settings
-            │   ├── app-settings.html ← Keybind / character control settings
-            │   ├── minimized-header.html ← Compact always-on-top bar
-            │   ├── calendar-picker.html  ← Custom date picker
-            │   ├── clock-picker.html     ← Custom time picker
-            │   ├── chat.html         ← Chat interface
-            │   └── bubble.html       ← Speech bubble overlay
-            ├── components/
-            │   ├── companion.js      ← Companion panel logic
-            │   ├── minimized-header.js
-            │   └── confirm-modal.js
-            ├── i18n.js               ← EN/ID translations
-            └── assets/
-                └── styles/
-                    ├── global.css    ← CSS variables + theme classes
-                    ├── companion.css ← Component styles
-                    └── images/
-                        ├── agnesTachyon/   ← Character sprite + logo
-                        ├── goldShip/       ← Character sprite + logo
-                        └── icons/          ← SVG icons (streak, freeze, trophy, …)
+Trapezibuddy/
+├── package.json
+├── assets/                           ← Character pet executables, sprites, sounds (spawned by the app)
+├── build/
+│   └── icons/                        ← App icon (.ico)
+└── src/
+    ├── main/                         ← Electron main process (Node)
+    │   ├── main.js                   ← Entry point: app lifecycle only
+    │   ├── ipc.js                    ← Every ipcMain handler (tasks, settings, windows, bubble, pickers)
+    │   ├── windows.js                ← Window factory, sizes, placement, bounds persistence
+    │   ├── character.js              ← Starts/stops the character .exe
+    │   ├── tray.js                   ← System tray icon and menu
+    │   ├── store.js                  ← electron-store instance and defaults
+    │   ├── paths.js                  ← Packaged vs. dev paths, app icon
+    │   └── preload.js                ← Secure bridge exposing window.trapezi to pages
+    └── renderer/                     ← Pages (Chromium, no Node access)
+        ├── pages/                    ← Markup only, one HTML file per window
+        │   ├── companion.html        ← Main companion panel
+        │   ├── add-task.html         ← Task creation form
+        │   ├── settings.html         ← First-run character & language picker
+        │   ├── app-settings.html     ← Character, focus timer, do-not-disturb
+        │   ├── minimized-header.html ← Compact always-on-top bar
+        │   ├── calendar-picker.html  ← Date picker
+        │   ├── clock-picker.html     ← Time picker
+        │   └── bubble.html           ← Speech bubble overlay
+        ├── components/               ← Logic of each page, same name as the page (+ confirm-modal.js)
+        ├── theme.js                  ← Shared: applies the character theme to a page
+        ├── i18n.js                   ← Shared: EN/ID dictionary and translateDOM()
+        └── assets/styles/
+            ├── global.css            ← CSS variables + theme classes
+            ├── <page>.css            ← Styles of each page, same name as the page
+            └── images/               ← Character sprites, logos, SVG icons
 ```
+
+Conventions for a page: `pages/x.html` links `assets/styles/x.css` and loads
+`i18n.js`, `theme.js`, then `components/x.js`. Pages have no inline scripts or handlers,
+which lets the Content-Security-Policy be `script-src 'self'`.
+
+</details>
+
+<details>
+<summary>🧭 Architecture</summary>
+
+Renderer pages never touch the disk or the OS. They call `window.trapezi.*` (defined in
+`src/main/preload.js`), which forwards to handlers in `src/main/ipc.js`. Those read and write
+the `electron-store` file and open or message windows through `src/main/windows.js`.
+
+```
+page (renderer) ──window.trapezi──▶ preload.js ──IPC──▶ ipc.js ──▶ store.js / windows.js / character.js
+                                                                     │
+page (renderer) ◀──────────── theme:apply · language:changed · refresh:tasks ───┘
+```
+
+- **Windows**: each window is a separate page. Main keeps one reference per name and removes it when the window closes.
+- **Theme and language** are pushed by main to every window right after it loads, and again whenever they change. `theme.js` and `i18n.js` handle that for all pages; a page with dynamic text listens for the `trapezi:language` event to re-render.
+- **Character**: the animated pet is a separate `.exe` under `assets/`. `character.js` starts and stops it. Do-not-disturb and focus mode keep it hidden.
+- **Settings** are merged on save (`settings:set`), so a window that knows only some keys cannot erase the others.
 
 </details>
 
@@ -170,7 +191,8 @@ trapezibuddy/
   reminder: boolean,
   is_done: boolean,
   created_at: string,      // ISO
-  completed_at?: string    // ISO, set on completion
+  completed_at?: string,   // ISO, set on completion
+  streak_penalty_handled?: boolean  // set once a missed deadline has cost a token or the streak
 }
 ```
 
@@ -179,11 +201,13 @@ trapezibuddy/
 {
   character: string,       // "agnesTachyon" | "goldship"
   language: string,        // "en" | "id"
-  focus_duration: number,  // minutes (default: 25)
+  focusTimer: number,      // minutes (default: 25)
   streak: number,
   longest_streak: number,
-  freezeTokens: number,    // default: 2
+  freezeTokens: number,    // 0-2, default 2; one is earned back each week
+  freezeActive: boolean,   // a token was just spent to protect the streak
   lastTaskDate: string | null,
+  lastTokenRecoveryDate: string | null,  // ISO, last weekly token refill
   doNotDisturb: boolean
 }
 ```
