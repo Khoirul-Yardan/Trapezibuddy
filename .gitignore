@@ -1,54 +1,27 @@
-# Python
+# Node
+node_modules/
+dist/
+
+# Python leftovers (legacy desktop-pet backend, no longer in repo)
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-*.egg-info/
-*.egg
-dist/
-build/
-.mypy_cache/
-.pytest_cache/
-
-# Virtual environments
 .venv/
 venv/
-ENV/
-env/
+.ipc/
+.installed
 
-# IDE
+# Editor / local tooling
 .vscode/
 .idea/
-*.swp
-*.swo
-*.swn
-*~
-.DS_Store
-
-# Environment variables
-.env
-.env.local
-.env.*.local
+.claude/
 
 # Logs
 *.log
-debug.log
-
-# Build outputs
-*.dmg
-*.dll
-*.so
-
-# Test coverage
-.coverage
-htmlcov/
-.tox/
-
-# Node (leftover)
-node_modules/
-package-lock.json
-yarn.lock
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Secrets
+.env
+.env.*
