@@ -4,7 +4,7 @@
 
 **A 2D desktop companion that keeps university students on track.**
 
-![Version](https://img.shields.io/badge/version-1.0.0-blueviolet) ![Platform](https://img.shields.io/badge/platform-Windows-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Electron](https://img.shields.io/badge/electron-41-47848F)
+[![CI](https://github.com/Khoirul-Yardan/Trapezibuddy/actions/workflows/ci.yml/badge.svg)](https://github.com/Khoirul-Yardan/Trapezibuddy/actions/workflows/ci.yml) ![Version](https://img.shields.io/badge/version-1.0.0-blueviolet) ![Platform](https://img.shields.io/badge/platform-Windows-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Electron](https://img.shields.io/badge/electron-41-47848F)
 
 </div>
 
@@ -78,7 +78,7 @@ Pick your companion from Settings — the entire UI adapts to match their theme.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 18+ and npm
+- [Node.js](https://nodejs.org/) 20.19+ (24 recommended) and npm
 - Windows 10 / 11 (64-bit)
 
 ### Install
@@ -109,7 +109,29 @@ npm run build
 # Output: dist/TrapeziBuddy Setup 1.0.0.exe
 ```
 
-> Prefer not to build from source? Download the ready-made `TrapeziBuddy Setup 1.0.0.exe` from [Releases](../../releases) and run the installer instead.
+> Prefer not to build from source? Download the ready-made `TrapeziBuddy Setup <version>.exe` from [Releases](../../releases) and run the installer instead.
+>
+> The installer is **not code-signed yet**, so Windows SmartScreen may show "Windows protected your PC". Choose **More info**, then **Run anyway**. Each release lists a SHA-256 checksum (`SHA256SUMS.txt`) you can compare with `Get-FileHash`.
+
+### Checks
+
+```bash
+npm run lint    # ESLint
+npm test        # main-process handlers and renderer wiring, Node's built-in runner, no Electron needed
+```
+
+The same checks run in GitHub Actions on every pull request and on `main`, followed by a dry-run packaging of the app.
+
+> npm 12 blocks dependency install scripts unless they are approved. `package.json` approves `electron` (which downloads its binary), so a plain `npm install` or `npm ci` is enough.
+
+### Releasing
+
+```bash
+npm version patch          # or minor / major: bumps package.json and creates the tag vX.Y.Z
+git push --follow-tags
+```
+
+Pushing the tag starts the **Release** workflow. It repeats the checks, builds the installer, and publishes it to [Releases](../../releases) with checksums and generated notes. A tag with a suffix such as `v1.2.0-rc.1` is published as a pre-release. The tag must equal `v` plus the version in `package.json`, otherwise nothing is built.
 
 
 <details>
@@ -118,6 +140,12 @@ npm run build
 ```
 Trapezibuddy/
 ├── package.json
+├── eslint.config.js                  ← Lint rules for main, renderer and tests
+├── .github/
+│   ├── workflows/ci.yml              ← Lint, test and packaging dry run on PRs and main
+│   ├── workflows/release.yml         ← Builds and publishes the installer on version tags
+│   └── dependabot.yml                ← Weekly npm and Actions updates
+├── test/                             ← node:test suites (main process, renderer wiring)
 ├── assets/                           ← Character pet executables, sprites, sounds (spawned by the app)
 ├── build/
 │   └── icons/                        ← App icon (.ico)
